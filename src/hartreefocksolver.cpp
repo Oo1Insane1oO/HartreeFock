@@ -27,6 +27,7 @@ inline void HartreeFockSolver::assemble() {
     // momentum and spin orthogonality is not satisfied)
     int orbitalp, orbitalr, spinp, spinq, spinr, spins, orbitalSumpq,
         spinSumpq;
+    double overlapTermAndkineticTerm;
     for (unsigned int p = 0; p < m_numStates; ++p) {
         orbitalp = Integrals::getBasis()->Cartesian::getSumn(p);
         spinp = *(Integrals::getBasis()->Cartesian::getStates(p)(m_dim));
@@ -34,7 +35,9 @@ inline void HartreeFockSolver::assemble() {
             orbitalSumpq = orbitalp +
                 Integrals::getBasis()->Cartesian::getSumn(q);
             spinq = *(Integrals::getBasis()->Cartesian::getStates(q)(m_dim));
-            spinSumpq = spinp + spinq; 
+            spinSumpq = spinp + spinq;
+            overlapTermAndkineticTerm = Integrals::overlapElement(p,q) +
+                Integrals::kineticElement(p,q);
             for (unsigned int r = 0; r < m_numStates; ++r) {
                 orbitalr = Integrals::getBasis()->Cartesian::getSumn(r);
                 spinr = *(Integrals::getBasis()->Cartesian::getStates(r)(m_dim));
@@ -45,7 +48,8 @@ inline void HartreeFockSolver::assemble() {
                             && (spinSumpq == (spinr + spins)) && (spinp ==
                                 spinr) && (spinq == spins)) {
                         integralElements(dIndex(m_numStates, p, q, r, s)) =
-                            Integrals::element(p, q, r, s);
+                            overlapTermAndkineticTerm +
+                            Integrals::coulombElement(p, q, r, s);
                     } // end if
                 } // end forp
             } // end forq
