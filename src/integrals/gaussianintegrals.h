@@ -17,7 +17,9 @@ class GaussianIntegrals : public GaussianBasis  {
 
         GaussianBasis* getBasis();
 
-        double element(const unsigned int&, const unsigned int&, const unsigned
+        double overlap(const unsigned int&, const unsigned int&);
+        double kinetic(const unsigned int&, const unsigned int&);
+        double coulomb(const unsigned int&, const unsigned int&, const unsigned
                 int&, const unsigned int&);
 };
 
