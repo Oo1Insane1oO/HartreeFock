@@ -9,7 +9,17 @@ class GaussianBasis;
 class GaussianIntegrals : public GaussianBasis  {
     private:
         unsigned int m_dim;
-        double expScaleFactor; 
+        double expScaleFactor, F0, F1;
+
+        Eigen::ArrayXd normalizationFactor;
+
+        inline double incompleteOverlapIntegral(const unsigned int&);
+        inline double incompleteByPartsFactorG(const unsigned int&);
+        inline double incompleteByPartsFactorF(const unsigned int&);
+        
+        void setNormalizations();
+        void setF0();
+        void setF1();
 
     public:
         GaussianIntegrals(const unsigned int, unsigned int, double=1);
@@ -17,10 +27,10 @@ class GaussianIntegrals : public GaussianBasis  {
 
         GaussianBasis* getBasis();
 
-        double overlap(const unsigned int&, const unsigned int&);
-        double kinetic(const unsigned int&, const unsigned int&);
-        double coulomb(const unsigned int&, const unsigned int&, const unsigned
-                int&, const unsigned int&);
+        double overlapElement(const unsigned int&, const unsigned int&);
+        double kineticElement(const unsigned int&, const unsigned int&);
+        double coulombElement(const unsigned int&, const unsigned int&, const
+                unsigned int&, const unsigned int&);
 };
 
 #endif /* GAUSSIANINTEGRALS_H */

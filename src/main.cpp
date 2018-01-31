@@ -1,15 +1,7 @@
 #include <iostream>
-#include <string>
-#include <fstream>
-#include <sstream>
 #include <iomanip>
-#include <chrono>
-#include <vector>
-#include <algorithm>
-#include <Eigen/Dense>
-#include <chrono>
-#include <yaml-cpp/yaml.h>
 
+#include <Eigen/Dense>
 #include <mpi.h>
 
 #ifdef TESTS
