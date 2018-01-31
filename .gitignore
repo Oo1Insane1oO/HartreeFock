@@ -1,0 +1,5 @@
+# ignore data files
+src/bin/*
+
+# ignore executable
+src/main
