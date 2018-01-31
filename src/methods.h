@@ -5,7 +5,6 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
-#include <boost/math/special_functions/factorials.hpp>
 
 class Methods {
     private:

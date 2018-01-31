@@ -52,8 +52,7 @@ const double& GaussianIntegrals::normalizationFactor(const unsigned int& n)
 double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
         int& j) {
     /* calculate and return the overlap integral element <i|j> */
-    double sum = 0;
-    return sum;
+    return 0;
 } // end function overlap
 
 double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
