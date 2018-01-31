@@ -3,7 +3,7 @@ LIBS = -L/usr/local/lib
 
 TESTS ?= OFF
 ifeq ($(TESTS),ON)
-	INC += -I/usr/local/include/UnitTest++ 
+	INC += -I/usr/local/include/UnitTest++
 	LIBS += -L/usr/local/lib/libUnitTest++.a -lUnitTest++
 endif
 
@@ -16,7 +16,7 @@ ifeq ($(DEBUG),ON)
 	CXXFLAGS := -g -std=c++17 -Wall -Wextra $(INC)
 endif
 
-ifeq ($(TESTS),ON) 
+ifeq ($(TESTS),ON)
 	CXXFLAGS += -DTESTS
 endif
 
@@ -57,13 +57,13 @@ ifeq ($(TESTS), ON)
 	TEST_DEPS = $(patsubst %.o,%.d,$(TEST_OBJ))
 endif
 
-TMPSRC = $(wildcard $(SRC)/*.cpp) $(WAVESRC) $(BASISSRC) $(OTHER_BASIS_SOURCE) $(HF_SOURCE) $(integrals)
+TMPSRC = $(wildcard $(SRC)/*.cpp) $(WAVESRC) $(BASISSRC) $(OTHER_BASIS_SOURCE) $(HF_SOURCE) $(INTEGRALS)
 SOURCES = $(filter-out $(MAINSRC), $(TMPSRC))
 HEADERS = $(wildcard $(SRC)/*.h) $(WAVEHDR) $(BASISHDR) $($(OTHER_BASIS_SOURCE):.cpp=.h) $($(HF_SOURCE):.cpp=.h) $($(integrals):.cpp=.h)
 SOURCES += $(MAINSRC)
 OBJECTS = $(patsubst $(SRC)/%.cpp,$(OBJ_DIR)/%.o,$(SOURCES))
 
-DEPS = $(patsubst %.o,%.d,$(OBJECTS))
+DEPS = $(patsubst %.o,$(OBJ_DIR)/%.d,$(OBJECTS))
 
 build: $(EXEC)
 
