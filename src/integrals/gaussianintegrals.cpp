@@ -1,4 +1,5 @@
 #include "gaussianintegrals.h"
+#include "../hermite/hermite.h"
 #include <boost/math/special_functions/factorials.hpp>
 
 GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
@@ -59,17 +60,20 @@ double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
     double sum = 0;
     for (unsigned int p = 0; p < i; ++p) {
         for (unsigned int q = 0; q < j; ++q) {
-            double prod = 1;
+            double prod = normalizationFactor(p)*normalizationFactor(q) *
+                2./sqrt(xScale);
             for (unsigned int d = 0; d < m_dim; ++d) {
-                int pq = *(GaussianBasis::Cartesian::getStates(p)(d)) +
-                    *(GaussianBasis::Cartesian::getStates(q)(d));
+                int pd = *(GaussianBasis::Cartesian::getStates(p)(d));
+                int qd = *(GaussianBasis::Cartesian::getStates(q)(d));
+                int pq = pd + pq;
                 if (pq%2==0) {
                     /* integral is zero for odd */
                     int s = pq + 1;
-                    sum += 1./sqrt(xScale) * 2./s *
+                    prod *= HC(i)[pd]*HC(j)[qd]/s *
                         boost::math::factorial<double>(s/2.);
                 } // end if
             } // end ford
+            sum += prod;
         } // end forq
     } // end forp
 

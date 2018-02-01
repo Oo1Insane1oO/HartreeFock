@@ -92,3 +92,5 @@ static std::vector<int> HC(int n) {
        default: return std::vector<int>{0};
    }
 }
+
+#endif
