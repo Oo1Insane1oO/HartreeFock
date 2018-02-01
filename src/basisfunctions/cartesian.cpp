@@ -1,5 +1,8 @@
 #include "cartesian.h"
 
+using EigenIntPtrMat = Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>;
+using EigenIntPtrVec = Eigen::Matrix<int*, Eigen::Dynamic, 1>;
+
 Cartesian::Cartesian() {
 } // end function constructor
 
@@ -18,7 +21,7 @@ void Cartesian::setup(const unsigned int cut, const unsigned int dim) {
         M = Eigen::VectorXi::Zero(cut/2);
         n = Eigen::VectorXi::Zero(M.size());
         E = Eigen::VectorXi::Zero(M.size());
-        states = Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>(cut, 5);
+        states = EigenIntPtrMat(cut, 5);
         for (unsigned int i = 0; i < cut/2; ++i) {
             M(i) = 2;
             n(i) = i;
@@ -66,9 +69,9 @@ void Cartesian::setup(const unsigned int cut, const unsigned int dim) {
 
     // allocate and set states {nx, ny, nz, s, ms, E, M}
     if (m_dim == 2) {
-        states = Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>(numStates, 6);
+        states = EigenIntPtrMat(numStates, 6);
     } else {
-        states = Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>(numStates, 7);
+        states = EigenIntPtrMat(numStates, 7);
     } // end ifelse
     unsigned int i = 0;
     unsigned int e = 0;
@@ -82,8 +85,10 @@ void Cartesian::setup(const unsigned int cut, const unsigned int dim) {
                 addState(i, tmpn.row(j)(0), tmpn.row(j)(1), e, 0);
                 addState(i, tmpn.row(j)(0), tmpn.row(j)(1), e, 1);
             } else {
-                addState(i, tmpn.row(j)(0), tmpn.row(j)(1), tmpn.row(j)(2), e, 0);
-                addState(i, tmpn.row(j)(0), tmpn.row(j)(1), tmpn.row(j)(2), e, 1);
+                addState(i, tmpn.row(j)(0), tmpn.row(j)(1), tmpn.row(j)(2), e,
+                        0);
+                addState(i, tmpn.row(j)(0), tmpn.row(j)(1), tmpn.row(j)(2), e,
+                        1);
             } // end ifelse
         } // end forj
         e++;
@@ -98,7 +103,7 @@ void Cartesian::setup(const unsigned int cut, const unsigned int dim) {
     sumn();
 } // end function setup
 
-const Eigen::Ref<const Eigen::VectorXi> Cartesian::getSumn() const {
+const Eigen::VectorXi& Cartesian::getSumn() const {
     /* return sum of n-values for all states */
     return angularMomenta;
 } // end function getsumn
@@ -108,19 +113,18 @@ const int &Cartesian::getSumn(const unsigned int &i) const {
     return angularMomenta(i);
 } // end function getsumn
 
-const Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>
-&Cartesian::getStates() const {
+const EigenIntPtrMat& Cartesian::getStates() const {
     /* return states */
     return states;
 } // end function getStates
 
-const Eigen::Matrix<int*, Eigen::Dynamic, 1> Cartesian::getStates(const
-        unsigned int &i) const {
+const Eigen::Ref<const EigenIntPtrVec> Cartesian::getStates(const unsigned int
+        &i) const {
     /* return state i */
     return states.row(i);
 } // end function getStates
 
-const Eigen::VectorXi &Cartesian::getn() const {
+const Eigen::VectorXi& Cartesian::getn() const {
     /* return vector of n-values */
     return n;
 } // end function getn
@@ -130,22 +134,22 @@ const int &Cartesian::getn(const unsigned int &i) const {
     return n(i);
 } // end function getn
 
-const Eigen::VectorXi &Cartesian::getE() const {
+const Eigen::VectorXi& Cartesian::getE() const {
     /* return vector of energies */
     return E;
 } // end function getE
 
-const int &Cartesian::getE(const unsigned int &i) const {
+const int& Cartesian::getE(const unsigned int &i) const {
     /* return energy of level i */
     return E(i);
 } // end function getE
 
-const Eigen::VectorXi &Cartesian::getMagic() const {
+const Eigen::VectorXi& Cartesian::getMagic() const {
     /* return vector of magic numbers */
     return M;
 } // end function getE
 
-const int &Cartesian::getMagic(const unsigned int &i) const {
+const int& Cartesian::getMagic(const unsigned int &i) const {
     /* return magic number for level i */
     return M(i);
 } // end function getE
@@ -157,12 +161,8 @@ const unsigned int& Cartesian::getSize() const {
 
 void Cartesian::restructureStates() {
     /* put spin-states in increasing order */
-    Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic> dStates =
-        Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>(states.rows()/2,
-                states.cols());
-    Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic> uStates =
-        Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>(states.rows()/2,
-                states.cols());
+    EigenIntPtrMat dStates = EigenIntPtrMat(states.rows()/2, states.cols());
+    EigenIntPtrMat uStates = EigenIntPtrMat(states.rows()/2, states.cols());
     for (unsigned int i = 0; i < states.rows(); i+=2) {
         dStates.row(i/2) = states.row(i);
         uStates.row(i/2) = states.row(i+1);

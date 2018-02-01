@@ -6,6 +6,8 @@
 #include "../methods.h"
 
 class Cartesian {
+    using EigenIntPtrMat = Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>;
+    using EigenIntPtrVec = Eigen::Matrix<int*, Eigen::Dynamic, 1>;
     private:
         int s;
         unsigned int m_dim, m_size;
@@ -32,10 +34,9 @@ class Cartesian {
 
         void setup(const unsigned int, const unsigned int);
 
-        const Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic> &getStates()
+        const EigenIntPtrMat &getStates() const;
+        const Eigen::Ref<const EigenIntPtrVec> getStates(const unsigned int&)
             const;
-        const Eigen::Matrix<int*, Eigen::Dynamic, 1> getStates(const unsigned
-                int&) const;
         const Eigen::VectorXi &getn() const;
         const int &getn(const unsigned int&) const;
         const Eigen::VectorXi &getE() const;
@@ -43,7 +44,7 @@ class Cartesian {
         const Eigen::VectorXi &getMagic() const;
         const int &getMagic(const unsigned int&) const;
         const int &getSumn(const unsigned int&) const;
-        const Eigen::Ref<const Eigen::VectorXi> getSumn() const;
+        const Eigen::VectorXi& getSumn() const;
         const unsigned int& getSize() const;
 
         void restructureStates();
