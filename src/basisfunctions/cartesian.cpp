@@ -43,14 +43,14 @@ void Cartesian::setup(const unsigned int cut, const unsigned int dim) {
     } // end if
 
     // find magic numbers
-    unsigned int k = 1;
+    unsigned int m_size = 1;
     unsigned int numStates = 2;
     while (numStates < cut) {
-        numStates += calculateDegeneracy(k);
-        k++;
+        numStates += calculateDegeneracy(m_size);
+        m_size++;
     } // end while
 
-    M = Eigen::VectorXi::Zero(k);
+    M = Eigen::VectorXi::Zero(m_size);
     M(0) = 2;
     for (unsigned int i = 1; i < M.size(); ++i) {
         M(i) = calculateDegeneracy(i);
@@ -149,6 +149,11 @@ const int &Cartesian::getMagic(const unsigned int &i) const {
     /* return magic number for level i */
     return M(i);
 } // end function getE
+
+const unsigned int& Cartesian::getSize() const {
+    /* return highest energy level */
+    return m_size;
+} // end function getSize
 
 void Cartesian::restructureStates() {
     /* put spin-states in increasing order */

@@ -8,7 +8,7 @@
 class Cartesian {
     private:
         int s;
-        unsigned int m_dim;
+        unsigned int m_dim, m_size;
         Eigen::VectorXi n, ms, E, M, m;
 
         Eigen::VectorXi angularMomenta;
@@ -44,6 +44,7 @@ class Cartesian {
         const int &getMagic(const unsigned int&) const;
         const int &getSumn(const unsigned int&) const;
         const Eigen::Ref<const Eigen::VectorXi> getSumn() const;
+        const unsigned int& getSize() const;
 
         void restructureStates();
 
