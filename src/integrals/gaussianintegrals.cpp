@@ -6,10 +6,12 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
         cutOff, double scaling) : GaussianBasis() {
     m_dim = dim;
     expScaleFactor = scaling;
-    sqrtFactor = sqrt(M_PI/expScaleFactor);
+    sqrtFactor = sqrt(scaling);
     GaussianBasis::setup(cutOff, dim, expScaleFactor);
 
     xScale = 1.0; // omega in HO case TODO: generalize this 
+    sqrtScale = 2./sqrt(pow(xScale, m_dim));
+    powScale = pow(xScale, 2*m_dim)
 
     setF0();
     setF1();
@@ -33,8 +35,9 @@ void GaussianIntegrals::setNormalizations() {
         Eigen::ArrayXd::Zero(GaussianBasis::Cartesian::getn().size());
     for (unsigned int i = 0; i < GaussianBasis::Cartesian::getn().size(); ++i)
     {
+        int n = GaussianBasis::Cartesian::getn(i);
         normalizationFactors(i) =
-            1./sqrt(pow(2,i)*boost::math::factorial<double>(i)*sqrtFactor);
+            1./sqrt(pow(2,n)*boost::math::factorial<double>(n)*sqrtFactor);
     } // end fori
 } // end function setNormalizations
 
@@ -54,30 +57,37 @@ const double& GaussianIntegrals::normalizationFactor(const unsigned int& n)
     return normalizationFactors(n); 
 } // end function normalizationFactor
 
-double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
-        int& j) {
-    /* calculate and return the overlap integral element <i|j> */
+inline double GaussianIntegrals::overlapd(const unsigned int& n, const unsigned
+        int& m) {
+    /* calculate and return <g_n|g_m> */
     double sum = 0;
-    for (unsigned int p = 0; p < i; ++p) {
-        for (unsigned int q = 0; q < j; ++q) {
-            double prod = normalizationFactor(p)*normalizationFactor(q) *
-                2./sqrt(xScale);
-            for (unsigned int d = 0; d < m_dim; ++d) {
-                int pd = *(GaussianBasis::Cartesian::getStates(p)(d));
-                int qd = *(GaussianBasis::Cartesian::getStates(q)(d));
-                int pq = pd + pq;
-                if (pq%2==0) {
-                    /* integral is zero for odd */
-                    int s = pq + 1;
-                    prod *= HC(i)[pd]*HC(j)[qd]/s *
-                        boost::math::factorial<double>(s/2.);
-                } // end if
-            } // end ford
-            sum += prod;
+    for (unsigned int p = 0; p < n; ++p) {
+        for (unsigned int q = 0; q < m; ++q) {
+            int pq = p + q;
+            if (pq%2==0) {
+                /* integral is zero for odd powers */
+                int s = pq + 1;
+                sum += HC(n)[p]*HC(m)[q]/s *
+                    boost::math::factorial<double>(s/2);
+            } // end if
         } // end forq
     } // end forp
 
     return sum;
+} // end function overlapd
+
+double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
+        int& j) {
+    /* calculate and return the overlap integral element <i|j> */
+    double prod = sqrtScale;
+    for (unsigned int d = 0; d < m_dim; ++d) {
+        int nid = *(GaussianBasis::Cartesian::getStates(i)(d));
+        int njd = *(GaussianBasis::Cartesian::getStates(j)(d));
+        prod *= normalizationFactor(nid) * normalizationFactor(njd) *
+            overlapd(nid,mjd);
+    } // end ford
+
+    return prod;
 } // end function overlap
 
 double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
@@ -97,6 +107,7 @@ inline double GaussianIntegrals::incompleteOverlapIntegral(const unsigned int&
         l) {
     /* calculate incomplete integral used in overlap integral element with
      * precalculated F0 and F1 */
+    return 0;
 } // end function incompleteOverlapIntegral
 
 inline double GaussianIntegrals::incompleteByPartsFactorG(const unsigned int&
