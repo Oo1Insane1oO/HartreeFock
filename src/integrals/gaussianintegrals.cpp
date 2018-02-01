@@ -5,7 +5,10 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
         cutOff, double scaling) : GaussianBasis() {
     m_dim = dim;
     expScaleFactor = scaling;
+    sqrtFactor = sqrt(M_PI/expScaleFactor);
     GaussianBasis::setup(cutOff, dim, expScaleFactor);
+
+    xScale = 1.0; // omega in HO case TODO: generalize this 
 
     setF0();
     setF1();
@@ -25,11 +28,12 @@ GaussianBasis* GaussianIntegrals::getBasis() {
 
 void GaussianIntegrals::setNormalizations() {
     /* calculate and set normalization factors for all basis functions */
-    normalizationFactor = Eigen::ArrayXd::Zero(cutOff);
-    double sqrtFactor = sqrt(M_PI/expScaleFactor);
-    for (unsigned int i = 0; i < cutOff; ++i) {
-        normalizationFactor(i) =
-            1./sqrt(pow(2,i)*boost::math::factorial(i)*sqrtFactor);
+    normalizationFactors =
+        Eigen::ArrayXd::Zero(GaussianBasis::Cartesian::getn().size());
+    for (unsigned int i = 0; i < GaussianBasis::Cartesian::getn().size(); ++i)
+    {
+        normalizationFactors(i) =
+            1./sqrt(pow(2,i)*boost::math::factorial<double>(i)*sqrtFactor);
     } // end fori
 } // end function setNormalizations
 
@@ -46,13 +50,30 @@ void GaussianIntegrals::setF1() {
 const double& GaussianIntegrals::normalizationFactor(const unsigned int& n)
     const {
     /* normalization for Gauss-Hermite of order n */
-    return normalizationFactor(n); 
+    return normalizationFactors(n); 
 } // end function normalizationFactor
 
 double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
         int& j) {
     /* calculate and return the overlap integral element <i|j> */
-    return 0;
+    double sum = 0;
+    for (unsigned int p = 0; p < i; ++p) {
+        for (unsigned int q = 0; q < j; ++q) {
+            double prod = 1;
+            for (unsigned int d = 0; d < m_dim; ++d) {
+                int pq = *(GaussianBasis::Cartesian::getStates(p)(d)) +
+                    *(GaussianBasis::Cartesian::getStates(q)(d));
+                if (pq%2==0) {
+                    /* integral is zero for odd */
+                    int s = pq + 1;
+                    sum += 1./sqrt(xScale) * 2./s *
+                        boost::math::factorial<double>(s/2.);
+                } // end if
+            } // end ford
+        } // end forq
+    } // end forp
+
+    return sum;
 } // end function overlap
 
 double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
