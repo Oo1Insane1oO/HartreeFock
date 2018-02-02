@@ -1,6 +1,8 @@
 #ifndef CARTESIAN_H
 #define CARTESIAN_H
 
+#include <string>
+
 #include <Eigen/Dense>
 
 #include "../methods.h"
@@ -50,6 +52,8 @@ class Cartesian {
         void restructureStates();
 
         void printStates();
+
+        void writeToFile(std::string);
 };
 
 #endif /* CARTESIAN_H */

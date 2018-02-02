@@ -15,6 +15,16 @@ int main(int argc, char *argv[]) {
     // let eigen use threads
     Eigen::initParallel();
 
+    // write basis to file and exit
+    #ifdef GENERATEBASIS
+        Cartesian* basis = new Cartesian();
+        basis->setup(std::atoi(argv[1]), std::atoi(argv[2]));
+        basis->restructureStates();
+        basis->writeToFile(argv[3]);
+        delete basis;
+        exit(0);
+    #endif
+
     #ifdef TESTS
         test_main();
         return 0;

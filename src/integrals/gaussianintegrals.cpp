@@ -11,7 +11,7 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
 
     xScale = 1.0; // omega in HO case TODO: generalize this 
     sqrtScale = 2./sqrt(pow(xScale, m_dim));
-    powScale = pow(xScale, 2*m_dim)
+    powScale = pow(xScale, 2*m_dim);
 
     setF0();
     setF1();
@@ -84,7 +84,7 @@ double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
         int nid = *(GaussianBasis::Cartesian::getStates(i)(d));
         int njd = *(GaussianBasis::Cartesian::getStates(j)(d));
         prod *= normalizationFactor(nid) * normalizationFactor(njd) *
-            overlapd(nid,mjd);
+            overlapd(nid,njd);
     } // end ford
 
     return prod;

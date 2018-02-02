@@ -1,3 +1,4 @@
+#include <fstream>
 #include "cartesian.h"
 
 using EigenIntPtrMat = Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>;
@@ -262,3 +263,17 @@ void Cartesian::printStates() {
     } // end fori
     std::cout << "Number of states: " << states.rows() << std::endl;
 } // end function print state
+
+void Cartesian::writeToFile(std::string filename) {
+    /* write current configuration (after possibly restructure call) if states
+     * to file */
+    std::ofstream outFile;
+    outFile.open(filename);
+    for (unsigned int i = 0; i < states.rows(); ++i) {
+        for (unsigned int j = 0; j < states.cols(); ++j) {
+            outFile << *states(i,j) << " ";
+        } // end forj
+        outFile << "\n";
+    } // end fori
+    outFile.close();
+} // end function writeToFile
