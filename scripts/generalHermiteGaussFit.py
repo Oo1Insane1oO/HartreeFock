@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.linalg import eigh
-from scipy.misc import factorial 
+from scipy.misc import factorial, factorial2
+from scipy.special import gamma
 
-# import matplotlib.pyplot as plt
+from hermite import hermite
 
 class generalizedFit:
     def __init__(self, filename, dim, cut):
@@ -31,10 +32,10 @@ class generalizedFit:
 
     def primitiveNorm(self, w, m):
         """ normalization factor for primitives """
-#         factor = np.sqrt(2*np.sqrt(w)/(2*factorial(m+0.5)/(2*m+1)))
+        factor = np.sqrt(w/np.pi) * (2*w)**m / factorial2(2*m-1)
 #         print factor, m
-#         return factor
-        return (w/np.pi)**(0.25)
+#         return (w/np.pi)**(0.5)
+        return factor
     # end function norm
 
     def overlap(self, w, n, m):
@@ -48,57 +49,61 @@ class generalizedFit:
 
     def overlapd(self, w, n, m):
         """ return <g_n|g_m> in 1d"""
-        if ((n+m)%2):
-            return 0
+        if (n+m <= -1) or ((n+m)%2):
+            return 0.0
         s = n+m+1
-        return self.primitiveNorm(w, n) * self.primitiveNorm(w, m) * \
-                1/np.sqrt(w) * 2 / s * factorial(s/2)
-#         return 1./np.sqrt(w) * 2. / s * factorial(s/2.)
+#         return self.primitiveNorm(w, n) * self.primitiveNorm(w, m) * \
+#                 (int((-1)**(float(n+m))) + 1) * factorial(s/2.) / (np.sqrt(w)*s)
+        return self.primitiveNorm(w, n+m) * gamma(s/2.) / np.sqrt(w)
     # end function overlapSolution
 
     def laplacianOverlap(self, w, n, m):
         """ return <g_n|nabla|g_m> """
-        sum1 = w*np.sum(self.states[m]*(self.states[m]+1)) * \
-                self.overlap(w,n,m) 
-        sum2 = 0
-        sum3 = 0
+        sums = np.zeros(4)
         for d in range(self.dim):
-            tmpsum2 = 1
-            tmpsum3 = 1
+            tmpProdsdd = np.ones(4)
             for dd in range(self.dim):
-                if (dd != d):
-                    md = self.states[m,d]
-                    tmpsum2 *= md*(md-1) * self.overlapd(w, self.states[n,d],
-                            md-2)
-                    tmpsum3 *= self.overlapd(w, self.states[n,d], 1)
-                else:
-                    tmpoverlapd = self.overlapd(w, self.states[n,dd],
-                            self.states[m,dd])
-                    tmpsum2 *= tmpoverlapd
-                    tmpsum3 *= tmpoverlapd
-                # end ifelse
-            sum2 += tmpsum2
-            sum3 += tmpsum3
+                tmpProdsddd = np.ones(4)
+                for ddd in range(self.dim):
+                    nddd = self.states[n,ddd]
+                    mddd = self.states[m,ddd]
+                    if ddd != d:
+                        tmpProdsddd *= self.overlapd(w,nddd,mddd)
+                    else:
+                        tmpProdsddd[0] *= mddd*(mddd-1) * \
+                                self.overlapd(w,nddd,mddd-2)
+                        tmpProdsddd[1] *= self.overlapd(w,nddd,0)
+                        tmpProdsddd[2] *= mddd*self.overlapd(w,nddd,mddd)
+                        tmpProdsddd[3] *= self.overlapd(w,nddd,2)
+                    # end ifelse
+                # end forddd
+                tmpProdsdd *= tmpProdsddd
+            # end fordd
+            sums += tmpProdsdd
         # end ford
 
-        return w/2. * (sum1 - sum2 - sum3)
+        return -0.5*w**self.dim*np.sum(sums*np.array([1,-1,-1,-1]))
     # end function laplacianOverlap
 
     def potentialOverlap(self, w, n, m):
         """ calculate and return <g_n|V(r)|g_m> """
         sum1 = 0
         for d in range(self.dim):
-            tmpsum = 1
+            tmpProd1 = 1
             for dd in range(self.dim):
-                if (dd != d):
-                    md = self.states[m,d]
-                    tmpsum *= self.overlapd(w, self.states[n,d], md-2)
-                else:
-                    tmpsum *= self.overlapd(w, self.states[n,dd],
-                            self.states[m,dd])
-                # end ifelse
+                tmpProd2 = 1
+                for ddd in range(self.dim):
+                    nddd = self.states[n,ddd]
+                    mddd = self.states[m,ddd]
+                    if ddd != d:
+                        tmpProd2 *= self.overlapd(w,nddd,mddd)
+                    else:
+                        tmpProd2 *= self.overlapd(w,nddd,mddd+2)
+                    # end ifelse
+                # end forddd
+                tmpProd1 *= tmpProd2
             # end fordd
-            sum1 += tmpsum
+            sum1 += tmpProd1
         # end ford
 
         return 0.5*w**2*sum1
@@ -126,11 +131,14 @@ class generalizedFit:
         print E, self.states[:,-1]*w
         print
         print C
+
+        return C
     # end function findCoefficients
 # end class generalizedFit
 
 if __name__ == "__main__":
     import sys
+    import matplotlib.pyplot as plt
 
     try:
         filename = sys.argv[1]
@@ -145,5 +153,19 @@ if __name__ == "__main__":
 
     # read in basis
     gF = generalizedFit(filename, dim, cut)
-    gF.findCoefficients(w)
+    coeffs = gF.findCoefficients(w)
+
+    # plot contracted function and hermite function
+    x = np.linspace(-10, 10, 1000)
+    y = np.linspace(-10,10,1000)
+    e = np.exp(-w/2*(x**2+y**2))
+    g = coeffs[0][0]*e
+    h = hermite(np.sqrt(w)*x , 0)*hermite(np.sqrt(w)*y, 0)*e
+    print np.linalg.norm(g-h)
+#     plt.title("Error: %f" % (np.linalg.norm(g-h)))
+#     plt.plot(x, g, label="Contracted")
+#     plt.plot(x, h, label="Hermite")
+#             
+#     plt.legend(loc="best")
+#     plt.show()
 # end ifmain
