@@ -1,15 +1,16 @@
 import numpy as np
 from scipy.linalg import eigh
-from scipy.misc import factorial, factorial2
+from scipy.misc import factorial 
 
 # import matplotlib.pyplot as plt
 
 class generalizedFit:
-    def __init__(self, filename, dim):
+    def __init__(self, filename, dim, cut):
         """ read in basis and set states """
         self.dim = dim
         self.states = []
         self.size = 0
+        self.cut = cut
         self.readBasis(filename)
     # end __init__
 
@@ -23,14 +24,17 @@ class generalizedFit:
                 self.states.append([int(e) for e in elements])
             # end forline
         # end open filename
+        self.states = np.array(self.states[:self.cut])
 #         self.states = np.array(self.states[:len(self.states)/2])
-        self.states = np.array(self.states[:len(self.states)/2])
         self.size = len(self.states)
     # end function readBasis
 
-    def primitiveNorm(self, a, m):
+    def primitiveNorm(self, w, m):
         """ normalization factor for primitives """
-        return np.sqrt(np.sqrt(2*a/np.pi) * (4**a)**m / factorial2(2*m-1))
+#         factor = np.sqrt(2*np.sqrt(w)/(2*factorial(m+0.5)/(2*m+1)))
+#         print factor, m
+#         return factor
+        return (w/np.pi)**(0.25)
     # end function norm
 
     def overlap(self, w, n, m):
@@ -47,9 +51,9 @@ class generalizedFit:
         if ((n+m)%2):
             return 0
         s = n+m+1
-#         return self.primitiveNorm(w/2., n) * self.primitiveNorm(w/2., m) * \
-#                 1./np.sqrt(w) * 2. / s * factorial(s/2.)
-        return 1./np.sqrt(w) * 2. / s * factorial(s/2.)
+        return self.primitiveNorm(w, n) * self.primitiveNorm(w, m) * \
+                1/np.sqrt(w) * 2 / s * factorial(s/2)
+#         return 1./np.sqrt(w) * 2. / s * factorial(s/2.)
     # end function overlapSolution
 
     def laplacianOverlap(self, w, n, m):
@@ -77,8 +81,28 @@ class generalizedFit:
             sum3 += tmpsum3
         # end ford
 
-        return w * (sum1 - sum2 - sum3)
+        return w/2. * (sum1 - sum2 - sum3)
     # end function laplacianOverlap
+
+    def potentialOverlap(self, w, n, m):
+        """ calculate and return <g_n|V(r)|g_m> """
+        sum1 = 0
+        for d in range(self.dim):
+            tmpsum = 1
+            for dd in range(self.dim):
+                if (dd != d):
+                    md = self.states[m,d]
+                    tmpsum *= self.overlapd(w, self.states[n,d], md-2)
+                else:
+                    tmpsum *= self.overlapd(w, self.states[n,dd],
+                            self.states[m,dd])
+                # end ifelse
+            # end fordd
+            sum1 += tmpsum
+        # end ford
+
+        return 0.5*w**2*sum1
+    # end function potentialOverlap
 
     def findCoefficients(self, w):
         """ find coefficients with equation HC=GCE, where C are the
@@ -87,18 +111,20 @@ class generalizedFit:
 
         H = np.zeros((self.size, self.size))
         G = np.zeros((self.size, self.size))
-#         exa = np.diagflat(self.states[:,-1])
 
         # calculate matrix elements
         for i in range(self.size):
             for j in range(self.size):
-                H[i,j] = self.overlap(w, i, j)
-                G[i,j] = self.laplacianOverlap(w, i, j)
+                H[i,j] = self.laplacianOverlap(w,i,j) + \
+                        self.potentialOverlap(w,i,j)
+                G[i,j] = self.overlap(w,i,j)
             # end forj
         # end fori
 
         # solve eigenvalue problem with scipy
         E, C = eigh(H, G)
+        print E, self.states[:,-1]*w
+        print
         print C
     # end function findCoefficients
 # end class generalizedFit
@@ -110,6 +136,7 @@ if __name__ == "__main__":
         filename = sys.argv[1]
         dim = int(sys.argv[2])
         w = float(sys.argv[3])
+        cut = int(sys.argv[4])
     except IndexError:
         print "USAGE: python generateHermiteGaussFit.py <output filename> <num"
         "dimensions> <w>"
@@ -117,6 +144,6 @@ if __name__ == "__main__":
     # end try-except
 
     # read in basis
-    gF = generalizedFit(filename, dim)
+    gF = generalizedFit(filename, dim, cut)
     gF.findCoefficients(w)
 # end ifmain
