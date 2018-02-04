@@ -55,7 +55,9 @@ class generalizedFit:
         """ normalization factor for primitives """
         if (m <= - 0.5):
             return 0.0
-        return np.sqrt(np.sqrt(w) / gamma(m+0.5))
+#         return np.sqrt(np.sqrt(w) / gamma(m+0.5))
+        return np.sqrt(2**(2*m)*factorial(m) / (np.sqrt(np.pi/w) *
+            factorial(2*m)))
     # end function norm
 
     def overlap(self, w, n, m):
@@ -73,9 +75,10 @@ class generalizedFit:
         if (s <= -1) or s%2:
             return 0.0
         # end if
-
+#         return self.primitiveNorm(w,n)*self.primitiveNorm(w,m) *\
+#                 gamma((s+1)/2.)/np.sqrt(w)
         return self.primitiveNorm(w,n)*self.primitiveNorm(w,m) *\
-                gamma((s+1)/2.)/np.sqrt(w)
+                np.sqrt(np.pi/w) * 1./2**(s) * factorial(s)/factorial(s/2.)
     # end function overlapSolution
 
     def laplacianOverlap(self, w, n, m):
@@ -93,8 +96,6 @@ class generalizedFit:
                     tmpProdsdd[0] *= w*mdd*(mdd-1)*self.overlapd(w,ndd,mdd-2)
                     tmpProdsdd[1] *= w*(2*mdd+1)*self.overlapd(w,ndd,mdd)
                     tmpProdsdd[2] *= w*self.overlapd(w,ndd,mdd+2)
-                    if (n==5 and m==5):
-                        print w*self.overlapd(w,ndd,mdd), w*self.overlapd(w,ndd,mdd+2)
                 # end ifelse
             # end fordd
             sums += tmpProdsdd
@@ -133,10 +134,22 @@ class generalizedFit:
 
         # calculate matrix elements
         for i in range(self.size):
-            for j in range(self.size):
-                H[i,j] = -0.5*self.laplacianOverlap(w,i,j) +\
-                        self.potentialOverlap(w,i,j)
+                lap = -0.5*self.laplacianOverlap(w,i,i)
+                pot = self.potentialOverlap(w,i,i)
+                H[i,i] = lap + pot
+                G[i,i] = self.overlap(w,i,i)
+            # end fori
+        # end fori
+        for i in range(self.size):
+            for j in range(i+1,self.size):
+                lap = -0.5*self.laplacianOverlap(w,i,j)
+                pot = self.potentialOverlap(w,i,j)
+                H[i,j] = lap + pot
+                H[j,i] = H[i,j]
+                if (i!=j):
+                    print lap, pot, i, j
                 G[i,j] = self.overlap(w,i,j)
+                G[j,i] = G[i,j]
             # end forj
         # end fori
 
