@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 from scipy.linalg import eigh
 from scipy.misc import factorial, factorial2
@@ -10,32 +11,51 @@ class generalizedFit:
         """ read in basis and set states """
         self.dim = dim
         self.states = []
-        self.size = 0
         self.cut = cut
+        self.size = 0
         self.readBasis(filename)
     # end __init__
 
     def readBasis(self, filename):
         """ read in premade text file with quantum numbers in give basis """
+        tmp = []
         with open(filename, "r") as ofile:
             for line in ofile:
                 """ append only quantum numbers and energy to list """
                 elements = line.split()
                 elements = elements[:dim] + [elements[self.dim+2]]
-                self.states.append([int(e) for e in elements])
+                tmp.append([int(e) for e in elements])
             # end forline
         # end open filename
-        self.states = np.array(self.states[:self.cut])
-#         self.states = np.array(self.states[:len(self.states)/2])
+        tmp = tmp[:len(tmp)/2]
+
+        tmptmp = [[tmp[0]]]
+        currE = tmptmp[0][0][-1]
+        j = 0
+        for i in range(1,len(tmp)):
+            if (currE == tmp[i][-1]):
+                tmptmp[j].append(tmp[i])
+            else:
+                tmptmp.append([tmp[i]])
+                currE = tmp[i][-1]
+                j += 1
+            # end ifelse
+        # end forenis
+
+        tmptmptmp = []
+        i = 0
+        while (i < self.cut+1):
+            tmptmptmp += tmptmp[i]
+            i += 1
+        self.states = np.array(tmptmptmp)
         self.size = len(self.states)
     # end function readBasis
 
     def primitiveNorm(self, w, m):
         """ normalization factor for primitives """
-        factor = np.sqrt(w/np.pi) * (2*w)**m / factorial2(2*m-1)
-#         print factor, m
-#         return (w/np.pi)**(0.5)
-        return factor
+        if (m <= - 0.5):
+            return 0.0
+        return np.sqrt(np.sqrt(w) / gamma(m+0.5))
     # end function norm
 
     def overlap(self, w, n, m):
@@ -49,59 +69,53 @@ class generalizedFit:
 
     def overlapd(self, w, n, m):
         """ return <g_n|g_m> in 1d"""
-        if (n+m <= -1) or ((n+m)%2):
+        s = n+m
+        if (s <= -1) or s%2:
             return 0.0
-        s = n+m+1
-#         return self.primitiveNorm(w, n) * self.primitiveNorm(w, m) * \
-#                 (int((-1)**(float(n+m))) + 1) * factorial(s/2.) / (np.sqrt(w)*s)
-        return self.primitiveNorm(w, n+m) * gamma(s/2.) / np.sqrt(w)
+        # end if
+
+        return self.primitiveNorm(w,n)*self.primitiveNorm(w,m) *\
+                gamma((s+1)/2.)/np.sqrt(w)
     # end function overlapSolution
 
     def laplacianOverlap(self, w, n, m):
         """ return <g_n|nabla|g_m> """
-        sums = np.zeros(4)
+        sums = np.zeros(3)
         for d in range(self.dim):
-            tmpProdsdd = np.ones(4)
+            tmpProdsdd = np.ones(3)
             for dd in range(self.dim):
-                tmpProdsddd = np.ones(4)
-                for ddd in range(self.dim):
-                    nddd = self.states[n,ddd]
-                    mddd = self.states[m,ddd]
-                    if ddd != d:
-                        tmpProdsddd *= self.overlapd(w,nddd,mddd)
-                    else:
-                        tmpProdsddd[0] *= mddd*(mddd-1) * \
-                                self.overlapd(w,nddd,mddd-2)
-                        tmpProdsddd[1] *= self.overlapd(w,nddd,0)
-                        tmpProdsddd[2] *= mddd*self.overlapd(w,nddd,mddd)
-                        tmpProdsddd[3] *= self.overlapd(w,nddd,2)
-                    # end ifelse
-                # end forddd
-                tmpProdsdd *= tmpProdsddd
+                ndd = self.states[n,dd]
+                mdd = self.states[m,dd]
+                if dd != d:
+                    tmpProdsdd *= w*self.overlapd(w,ndd,mdd)
+
+                else:
+                    tmpProdsdd[0] *= w*mdd*(mdd-1)*self.overlapd(w,ndd,mdd-2)
+                    tmpProdsdd[1] *= w*(2*mdd+1)*self.overlapd(w,ndd,mdd)
+                    tmpProdsdd[2] *= w*self.overlapd(w,ndd,mdd+2)
+                    if (n==5 and m==5):
+                        print w*self.overlapd(w,ndd,mdd), w*self.overlapd(w,ndd,mdd+2)
+                # end ifelse
             # end fordd
             sums += tmpProdsdd
         # end ford
 
-        return -0.5*w**self.dim*np.sum(sums*np.array([1,-1,-1,-1]))
+        return np.sum(sums*np.array([1,-1,1]))
     # end function laplacianOverlap
 
     def potentialOverlap(self, w, n, m):
-        """ calculate and return <g_n|V(r)|g_m> """
+        """ calculate and return <g_n|V(r)=1/2w^2r^2|g_m> """
         sum1 = 0
         for d in range(self.dim):
             tmpProd1 = 1
             for dd in range(self.dim):
-                tmpProd2 = 1
-                for ddd in range(self.dim):
-                    nddd = self.states[n,ddd]
-                    mddd = self.states[m,ddd]
-                    if ddd != d:
-                        tmpProd2 *= self.overlapd(w,nddd,mddd)
-                    else:
-                        tmpProd2 *= self.overlapd(w,nddd,mddd+2)
-                    # end ifelse
-                # end forddd
-                tmpProd1 *= tmpProd2
+                ndd = self.states[n,dd]
+                mdd = self.states[m,dd]
+                if dd != d:
+                    tmpProd1 *= self.overlapd(w,ndd,mdd)
+                else:
+                    tmpProd1 *= self.overlapd(w,ndd,mdd+2)
+                # end ifelse
             # end fordd
             sum1 += tmpProd1
         # end ford
@@ -120,7 +134,7 @@ class generalizedFit:
         # calculate matrix elements
         for i in range(self.size):
             for j in range(self.size):
-                H[i,j] = self.laplacianOverlap(w,i,j) + \
+                H[i,j] = -0.5*self.laplacianOverlap(w,i,j) +\
                         self.potentialOverlap(w,i,j)
                 G[i,j] = self.overlap(w,i,j)
             # end forj
@@ -128,17 +142,21 @@ class generalizedFit:
 
         # solve eigenvalue problem with scipy
         E, C = eigh(H, G)
-        print E, self.states[:,-1]*w
-        print
-        print C
+        print "Epsilon: ", E, " Exact: ", self.states[:,-1]*w
+        print self.states
+        print "H:\n", H, "\n"
+        print "G:\n", G, "\n"
+        print "C:\n", C, "\n"
 
-        return C
+        return C 
     # end function findCoefficients
 # end class generalizedFit
 
 if __name__ == "__main__":
     import sys
     import matplotlib.pyplot as plt
+
+    np.set_printoptions(linewidth=1000000000000)
 
     try:
         filename = sys.argv[1]
@@ -147,7 +165,7 @@ if __name__ == "__main__":
         cut = int(sys.argv[4])
     except IndexError:
         print "USAGE: python generateHermiteGaussFit.py <output filename> <num"
-        "dimensions> <w>"
+        " dimensions> <w>"
         sys.exit(0)
     # end try-except
 
@@ -156,12 +174,16 @@ if __name__ == "__main__":
     coeffs = gF.findCoefficients(w)
 
     # plot contracted function and hermite function
-    x = np.linspace(-10, 10, 1000)
-    y = np.linspace(-10,10,1000)
-    e = np.exp(-w/2*(x**2+y**2))
-    g = coeffs[0][0]*e
-    h = hermite(np.sqrt(w)*x , 0)*hermite(np.sqrt(w)*y, 0)*e
-    print np.linalg.norm(g-h)
+    x = np.linspace(-10,10,10000)*np.sqrt(w)
+    y = np.linspace(-10,10,10000)*np.sqrt(w)
+    e = np.exp(-1/2*(x**2+y**2))
+#     g = coeffs[0][0]*e
+#     h = hermite(np.sqrt(w)*x , 0)*hermite(np.sqrt(w)*y, 0)*e
+#     g = (coeffs[0][0] + coeffs[1][1]*y)*e
+
+#     hnorm = lambda n: np.sqrt(2**n*factorial(n)*np.sqrt(np.pi/w))
+#     h = hermite(np.sqrt(w)*x , 0)*hermite(np.sqrt(w)*y, 1)*e / (hnorm(0)*hnorm(1))
+#     print np.linalg.norm(g-h)
 #     plt.title("Error: %f" % (np.linalg.norm(g-h)))
 #     plt.plot(x, g, label="Contracted")
 #     plt.plot(x, h, label="Hermite")
