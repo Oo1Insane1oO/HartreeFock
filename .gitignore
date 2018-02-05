@@ -1,5 +1,5 @@
-# ignore data files
-src/bin/*
+# ignore objects
+bin/*
 
 # ignore executable
 src/main
