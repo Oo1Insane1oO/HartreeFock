@@ -53,11 +53,10 @@ class generalizedFit:
 
     def primitiveNorm(self, w, m):
         """ normalization factor for primitives """
-        if (m <= - 0.5):
+        if (m <= -0.5):
             return 0.0
-#         return np.sqrt(np.sqrt(w) / gamma(m+0.5))
-        return np.sqrt(2**(2*m)*factorial(m) / (np.sqrt(np.pi/w) *
-            factorial(2*m)))
+        # end if
+        return (w**0.5 / gamma(np.abs(m+0.5)))**0.5
     # end function norm
 
     def overlap(self, w, n, m):
@@ -72,18 +71,18 @@ class generalizedFit:
     def overlapd(self, w, n, m):
         """ return <g_n|g_m> in 1d"""
         s = n+m
-        if (s <= -1) or s%2:
+        if s%2:
             return 0.0
         # end if
+
 #         return self.primitiveNorm(w,n)*self.primitiveNorm(w,m) *\
-#                 gamma((s+1)/2.)/np.sqrt(w)
-        return self.primitiveNorm(w,n)*self.primitiveNorm(w,m) *\
-                np.sqrt(np.pi/w) * 1./2**(s) * factorial(s)/factorial(s/2.)
+#                 gamma((s+1)/2.)/w**0.5
+        return gamma((s+1)/2.)/w**0.5
     # end function overlapSolution
 
     def laplacianOverlap(self, w, n, m):
         """ return <g_n|nabla|g_m> """
-        sums = np.zeros(3)
+        sumsd = np.zeros(3)
         for d in range(self.dim):
             tmpProdsdd = np.ones(3)
             for dd in range(self.dim):
@@ -91,17 +90,16 @@ class generalizedFit:
                 mdd = self.states[m,dd]
                 if dd != d:
                     tmpProdsdd *= w*self.overlapd(w,ndd,mdd)
-
                 else:
                     tmpProdsdd[0] *= w*mdd*(mdd-1)*self.overlapd(w,ndd,mdd-2)
                     tmpProdsdd[1] *= w*(2*mdd+1)*self.overlapd(w,ndd,mdd)
                     tmpProdsdd[2] *= w*self.overlapd(w,ndd,mdd+2)
                 # end ifelse
             # end fordd
-            sums += tmpProdsdd
+            sumsd += tmpProdsdd
         # end ford
 
-        return np.sum(sums*np.array([1,-1,1]))
+        return np.sum(sumsd * np.array([1,-1,1]))
     # end function laplacianOverlap
 
     def potentialOverlap(self, w, n, m):
@@ -134,34 +132,23 @@ class generalizedFit:
 
         # calculate matrix elements
         for i in range(self.size):
-                lap = -0.5*self.laplacianOverlap(w,i,i)
-                pot = self.potentialOverlap(w,i,i)
-                H[i,i] = lap + pot
-                G[i,i] = self.overlap(w,i,i)
-            # end fori
-        # end fori
-        for i in range(self.size):
-            for j in range(i+1,self.size):
-                lap = -0.5*self.laplacianOverlap(w,i,j)
-                pot = self.potentialOverlap(w,i,j)
-                H[i,j] = lap + pot
-                H[j,i] = H[i,j]
-                if (i!=j):
-                    print lap, pot, i, j
-                G[i,j] = self.overlap(w,i,j)
-                G[j,i] = G[i,j]
+            for j in range(self.size):
+                norm = (self.overlap(w,i,i)*self.overlap(w,j,j))**0.5
+                lap = -0.5*self.laplacianOverlap(w,i,j) / norm
+                pot = self.potentialOverlap(w,i,j) / norm
+                H[i,j] = (lap + pot)/w
+                G[i,j] = self.overlap(w,i,j) / norm
             # end forj
         # end fori
 
         # solve eigenvalue problem with scipy
         E, C = eigh(H, G)
         print "Epsilon: ", E, " Exact: ", self.states[:,-1]*w
-        print self.states
         print "H:\n", H, "\n"
         print "G:\n", G, "\n"
         print "C:\n", C, "\n"
 
-        return C 
+        return C, self.states 
     # end function findCoefficients
 # end class generalizedFit
 
@@ -184,19 +171,30 @@ if __name__ == "__main__":
 
     # read in basis
     gF = generalizedFit(filename, dim, cut)
-    coeffs = gF.findCoefficients(w)
+    coeffs, states = gF.findCoefficients(w)
 
     # plot contracted function and hermite function
-    x = np.linspace(-10,10,10000)*np.sqrt(w)
-    y = np.linspace(-10,10,10000)*np.sqrt(w)
-    e = np.exp(-1/2*(x**2+y**2))
-#     g = coeffs[0][0]*e
-#     h = hermite(np.sqrt(w)*x , 0)*hermite(np.sqrt(w)*y, 0)*e
-#     g = (coeffs[0][0] + coeffs[1][1]*y)*e
+    N = 100
+    r = np.array([np.linspace(-10,10,N)*np.sqrt(w) for i in range(dim)])
+    g = lambda x,n: x**n*np.exp(-0.5*x**2)
+    psi = np.ones((len(coeffs),N))
+    for i in range(len(coeffs)):
+        for j in range(len(coeffs)):
+            tmp = np.ones(N)
+            for d in range(dim):
+                tmp *= g(r[d], states[j,d])
+            # end ford
+            psi[i] += coeffs[i,j]*tmp
+        # end forj
+    # end fori
 
-#     hnorm = lambda n: np.sqrt(2**n*factorial(n)*np.sqrt(np.pi/w))
-#     h = hermite(np.sqrt(w)*x , 0)*hermite(np.sqrt(w)*y, 1)*e / (hnorm(0)*hnorm(1))
-#     print np.linalg.norm(g-h)
+    hnorm = lambda n: np.sqrt(2**n*factorial(n)*np.sqrt(np.pi/w))
+    for i,p in enumerate(psi):
+        h = 1
+        for d in range(dim):
+            h *= hermite(r[d], states[i,d])*np.exp(-0.5*np.linalg.norm(r[d])**2)
+        # end ford
+        print np.linalg.norm(psi[i]-h)
 #     plt.title("Error: %f" % (np.linalg.norm(g-h)))
 #     plt.plot(x, g, label="Contracted")
 #     plt.plot(x, h, label="Hermite")
