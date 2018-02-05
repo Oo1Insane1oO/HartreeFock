@@ -148,7 +148,7 @@ class generalizedFit:
         print "G:\n", G, "\n"
         print "C:\n", C, "\n"
 
-        return C, self.states 
+        return C, self.states, E-self.states[:,-1]*w
     # end function findCoefficients
 # end class generalizedFit
 
@@ -171,34 +171,44 @@ if __name__ == "__main__":
 
     # read in basis
     gF = generalizedFit(filename, dim, cut)
-    coeffs, states = gF.findCoefficients(w)
+    coeffs, states, epsilon = gF.findCoefficients(w)
 
     # plot contracted function and hermite function
-    N = 100
-    r = np.array([np.linspace(-10,10,N)*np.sqrt(w) for i in range(dim)])
+    N = 10000
+    r = np.array([np.linspace(-2.5,2.5,N) for i in range(dim)])
     g = lambda x,n: x**n*np.exp(-0.5*x**2)
-    psi = np.ones((len(coeffs),N))
+    psi = np.zeros((len(coeffs),N))
     for i in range(len(coeffs)):
         for j in range(len(coeffs)):
-            tmp = np.ones(N)
+            gj = np.ones(N)
             for d in range(dim):
-                tmp *= g(r[d], states[j,d])
+                gj *= g(r[d]*np.sqrt(w), states[j,d])
             # end ford
-            psi[i] += coeffs[i,j]*tmp
+            psi[i] += coeffs[i,j] * gj / gF.overlap(w,j,j)**0.5
         # end forj
     # end fori
 
-    hnorm = lambda n: np.sqrt(2**n*factorial(n)*np.sqrt(np.pi/w))
+    hnorm = lambda n: (2**n*factorial(n)*(np.pi/w)**0.5)**0.5
+    hermites = np.zeros((len(coeffs),N))
     for i,p in enumerate(psi):
-        h = 1
+        h = np.ones(N)
         for d in range(dim):
-            h *= hermite(r[d], states[i,d])*np.exp(-0.5*np.linalg.norm(r[d])**2)
+            h *= hermite(r[d]*np.sqrt(w), states[i,d]) * np.exp(-0.5*w*r[d]**2) /\
+                    hnorm(states[i,d])
         # end ford
-        print np.linalg.norm(psi[i]-h)
-#     plt.title("Error: %f" % (np.linalg.norm(g-h)))
-#     plt.plot(x, g, label="Contracted")
-#     plt.plot(x, h, label="Hermite")
-#             
-#     plt.legend(loc="best")
-#     plt.show()
+        hermites[i] = h
+#         print np.abs(np.sum(p-h))
+        print np.abs(epsilon[i])
+    # end forip
+
+    for i in range(len(hermites)):
+        plt.plot(np.linalg.norm(r, axis=0), psi[i]**2, label="psi%i off:%f" %
+                (i, np.abs(np.sum(psi[i]-hermites[i]))))
+        plt.plot(np.linalg.norm(r, axis=0), hermites[i]**2, label="H%i"
+                % i, alpha=0.5)
+    # end fori
+    plt.xlabel('$r$')
+    plt.ylabel('$|\\psi(r)|^2$')
+    plt.legend(loc="best")
+    plt.show()
 # end ifmain
