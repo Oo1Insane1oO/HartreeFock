@@ -60,20 +60,10 @@ const double& GaussianIntegrals::normalizationFactor(const unsigned int& n)
 inline double GaussianIntegrals::overlapd(const unsigned int& n, const unsigned
         int& m) {
     /* calculate and return <g_n|g_m> */
-    double sum = 0;
-    for (unsigned int p = 0; p < n; ++p) {
-        for (unsigned int q = 0; q < m; ++q) {
-            int pq = p + q;
-            if (pq%2==0) {
-                /* integral is zero for odd powers */
-                int s = pq + 1;
-                sum += HC(n)[p]*HC(m)[q]/s *
-                    boost::math::factorial<double>(s/2);
-            } // end if
-        } // end forq
-    } // end forp
-
-    return sum;
+    double s = n + m;
+    return sqrt(M_PI/expScaleFactor) *
+        boost::math::factorial<double>(n)/boost::math::factorial<double>(n/2) *
+        pow(0.5, s);
 } // end function overlapd
 
 double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
@@ -93,7 +83,22 @@ double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
 double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
         int& j) {
     /* calculate and return the kinetic integral element -<i|nabla|j> */
-    return 0;
+    Eigen::Array3d sumsd = Eigen::Array3d::Zero(3);
+    for (unsigned int d = 0; d < m_dim; ++d) {
+        Eigen::Array3d tmpProdsdd = Eigen::Array3d::Constant(3,1.0);
+        for (unsigned int dd = 0; dd < m_dim; ++dd) {
+            int ndd = *(GaussianBasis::Cartesian::getStates(i)(d));
+            int ndd = *(GaussianBasis::Cartesian::getStates(j)(d));
+            if (dd != d) {
+                tmpProdsdd *= expScaleFactor * overlapd(ndd, mdd);
+            } else {
+                tmpProdsdd(0) *= w*mdd*(mdd-1)*overlapd(ndd,mdd-2)
+                tmpProdsdd(1) *= w*(2*mdd+1)*overlapd(ndd,mdd)
+                tmpProdsdd(2) *= w*overlapd(ndd,mdd+2)
+            } // end if
+        } // end fordd
+    } // end ford
+    return sumsd[0] - sumsd[1] + sumsd[2];
 } // end function kinetic
 
 double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
