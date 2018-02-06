@@ -1,8 +1,9 @@
 import sys
 import numpy as np
-from scipy.linalg import eigh
+import scipy.linalg
 from scipy.misc import factorial, factorial2
 from scipy.special import gamma
+import pickle
 
 from hermite import hermite
 
@@ -47,17 +48,9 @@ class generalizedFit:
         while (i < self.cut+1):
             tmptmptmp += tmptmp[i]
             i += 1
-        self.states = np.array(tmptmptmp)
+        self.states = np.array(tmptmptmp, dtype=np.int64)
         self.size = len(self.states)
     # end function readBasis
-
-    def primitiveNorm(self, w, m):
-        """ normalization factor for primitives """
-        if (m <= -0.5):
-            return 0.0
-        # end if
-        return (w**0.5 / gamma(np.abs(m+0.5)))**0.5
-    # end function norm
 
     def overlap(self, w, n, m):
         """ return <g_n|g_m> """
@@ -70,21 +63,21 @@ class generalizedFit:
 
     def overlapd(self, w, n, m):
         """ return <g_n|g_m> in 1d"""
-        s = n+m
-        if s%2:
+        s = int(n+m)
+        if s%2 or s<=-1:
             return 0.0
         # end if
 
-#         return self.primitiveNorm(w,n)*self.primitiveNorm(w,m) *\
-#                 gamma((s+1)/2.)/w**0.5
-        return gamma((s+1)/2.)/w**0.5
+        return np.sqrt((np.pi/w), dtype=np.longdouble) *\
+                factorial(s)/factorial(s/2) * 0.5**s
+#         return gamma((s+1)/2., dtype=float128)/np.sqrt(w, dtype=np.longdouble)
     # end function overlapSolution
 
     def laplacianOverlap(self, w, n, m):
         """ return <g_n|nabla|g_m> """
-        sumsd = np.zeros(3)
+        sumsd = np.zeros(3, dtype=np.longdouble)
         for d in range(self.dim):
-            tmpProdsdd = np.ones(3)
+            tmpProdsdd = np.ones(3, dtype=np.longdouble)
             for dd in range(self.dim):
                 ndd = self.states[n,dd]
                 mdd = self.states[m,dd]
@@ -99,7 +92,8 @@ class generalizedFit:
             sumsd += tmpProdsdd
         # end ford
 
-        return np.sum(sumsd * np.array([1,-1,1]))
+        return np.sum(np.multiply(sumsd, np.array([1,-1,1], dtype=np.longdouble),
+            dtype=np.longdouble), dtype=np.longdouble)
     # end function laplacianOverlap
 
     def potentialOverlap(self, w, n, m):
@@ -127,28 +121,37 @@ class generalizedFit:
         coefficients and the matrix elements are H_nm=<g_n|nabla+pot|g_m>,
         G_nm=<g_n|g_m>, E=diag({energy}) """
 
-        H = np.zeros((self.size, self.size))
-        G = np.zeros((self.size, self.size))
-
-        # calculate matrix elements
+        H = np.zeros((self.size, self.size), dtype=np.longdouble)
+        G = np.zeros((self.size, self.size), dtype=np.longdouble)
+       
+        norms = np.zeros(self.size, dtype=np.longdouble)
         for i in range(self.size):
-            for j in range(self.size):
-                norm = (self.overlap(w,i,i)*self.overlap(w,j,j))**0.5
-                lap = -0.5*self.laplacianOverlap(w,i,j) / norm
-                pot = self.potentialOverlap(w,i,j) / norm
-                H[i,j] = (lap + pot)/w
-                G[i,j] = self.overlap(w,i,j) / norm
+            overlapii = self.overlap(w,i,i)
+            norms[i] = 1./np.sqrt((overlapii), dtype=np.longdouble)
+            H[i,i] = (-0.5*self.laplacianOverlap(w,i,i) +
+                    self.potentialOverlap(w,i,i))/w * np.square(norms[i],
+                            dtype=np.longdouble)
+            G[i,i] = 1.0 
+        # end fori
+
+        for i in range(self.size):
+            for j in range(i+1,self.size):
+                normij = np.multiply(norms[i], norms[j], dtype=np.longdouble)
+                H[i,j] = (-0.5*self.laplacianOverlap(w,i,j) +
+                        self.potentialOverlap(w,i,j))/w * normij
+                H[j,i] = H[i,j]
+                G[i,j] = self.overlap(w,i,j) * normij 
+                G[j,i] = G[i,j]
             # end forj
         # end fori
 
-        # solve eigenvalue problem with scipy
-        E, C = eigh(H, G)
-        print "Epsilon: ", E, " Exact: ", self.states[:,-1]*w
         print "H:\n", H, "\n"
         print "G:\n", G, "\n"
-        print "C:\n", C, "\n"
 
-        return C, self.states, E-self.states[:,-1]*w
+        # solve eigenvalue problem with scipy
+        E, C = scipy.linalg.eigh(H, G)
+
+        return C, self.states, E
     # end function findCoefficients
 # end class generalizedFit
 
@@ -156,7 +159,7 @@ if __name__ == "__main__":
     import sys
     import matplotlib.pyplot as plt
 
-    np.set_printoptions(linewidth=1000000000000)
+    np.set_printoptions(linewidth=1000000000000, precision=16)
 
     try:
         filename = sys.argv[1]
@@ -172,6 +175,18 @@ if __name__ == "__main__":
     # read in basis
     gF = generalizedFit(filename, dim, cut)
     coeffs, states, epsilon = gF.findCoefficients(w)
+    print "Epsilon: ", epsilon, " Exact: ", states[:,-1]*w
+
+    tmp = np.copy(coeffs[:,3])
+    coeffs[:,3] = coeffs[:,4]
+    coeffs[:,4] = tmp
+   
+    if len(coeffs) > 5:
+        tmp = np.copy(coeffs[:,6])
+        coeffs[:,6] = coeffs[:,8]
+        coeffs[:,8] = tmp
+
+    print "C:\n", coeffs, "\n"
 
     # plot contracted function and hermite function
     N = 10000
@@ -184,7 +199,7 @@ if __name__ == "__main__":
             for d in range(dim):
                 gj *= g(r[d]*np.sqrt(w), states[j,d])
             # end ford
-            psi[i] += coeffs[i,j] * gj / gF.overlap(w,j,j)**0.5
+            psi[i] += coeffs[j,i] * gj / gF.overlap(w,j,j)**0.5
         # end forj
     # end fori
 
@@ -197,18 +212,17 @@ if __name__ == "__main__":
                     hnorm(states[i,d])
         # end ford
         hermites[i] = h
-#         print np.abs(np.sum(p-h))
-        print np.abs(epsilon[i])
     # end forip
 
-    for i in range(len(hermites)):
+    for i in range(len(coeffs)):
+#     for i in [1]:
         plt.plot(np.linalg.norm(r, axis=0), psi[i]**2, label="psi%i off:%f" %
-                (i, np.abs(np.sum(psi[i]-hermites[i]))))
-        plt.plot(np.linalg.norm(r, axis=0), hermites[i]**2, label="H%i"
+                (i, np.linalg.norm(psi[i]**2-hermites[i]**2)))
+        plt.plot(np.linalg.norm(r, axis=0), hermites[i]**2, 'o', markersize=0.15, label="H%i"
                 % i, alpha=0.5)
     # end fori
     plt.xlabel('$r$')
-    plt.ylabel('$|\\psi(r)|^2$')
-    plt.legend(loc="best")
+    plt.ylabel('$|\\psi(r)|**2$')
+    plt.legend(loc='upper right', bbox_to_anchor=(1.15,1.1))
     plt.show()
 # end ifmain

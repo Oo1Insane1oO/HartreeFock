@@ -9,7 +9,12 @@ endif
 
 CC = mpic++
 LDFLAGS	= -fopenmp -lpthread -lyaml-cpp $(LIBS)
-CXXFLAGS = -O3 -fopenmp -std=c++17 -Wall -Wextra $(INC) -D$(WRITE)
+CXXFLAGS = -O3 -fopenmp -std=c++17 -Wall -Wextra $(INC)
+
+WRITE ?= OFF
+ifeq ($(WRITE),ON)
+	CXXFLAGS += -D$(WRITE)
+endif
 
 DEBUG ?= OFF
 ifeq ($(DEBUG),ON)
