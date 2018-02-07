@@ -3,7 +3,7 @@ import numpy as np
 import scipy.linalg
 from scipy.misc import factorial, factorial2
 from scipy.special import gamma
-import pickle
+import itertools
 
 from hermite import hermite
 
@@ -92,8 +92,8 @@ class generalizedFit:
             sumsd += tmpProdsdd
         # end ford
 
-        return np.sum(np.multiply(sumsd, np.array([1,-1,1], dtype=np.longdouble),
-            dtype=np.longdouble), dtype=np.longdouble)
+        return np.sum(np.multiply(sumsd, np.array([1,-1,1],
+            dtype=np.longdouble), dtype=np.longdouble), dtype=np.longdouble)
     # end function laplacianOverlap
 
     def potentialOverlap(self, w, n, m):
@@ -115,6 +115,99 @@ class generalizedFit:
 
         return 0.5*w**2*sum1
     # end function potentialOverlap
+
+    def makeHermites(self, N):
+        """ make hermite functions for each level """
+        r = np.array([np.linspace(-2.5,2.5,N) for i in range(dim)])
+        hnorm = lambda n: (2**n*factorial(n)*(np.pi/w)**0.5)**0.5
+        hermites = np.zeros((len(self.states),N))
+        for i in range(len(self.states)):
+            h = np.ones(N)
+            for d in range(dim):
+                h *= hermite(r[d]*np.sqrt(w), self.states[i,d]) *\
+                        np.exp(-0.5*w*r[d]**2)/hnorm(self.states[i,d])
+            # end ford
+            hermites[i] = h
+        # end forip
+        
+        return hermites
+    # end function makeHermites
+
+    def makeDiffs(self, psi, N):
+        """ make list of indices for which contracted is off """
+        diffIdx = []
+        h = self.makeHermites(N)
+        for i in range(len(h)):
+            if np.linalg.norm(psi[i] - h[i]) > 1e-13:
+                diffIdx.append(i)
+            # end if
+        # end fori
+        
+        return diffIdx
+    # end function makeDiffs
+
+    def rotateCols(self, C, colIdx, n=1):
+        """ rotate columns in colIdx in matrix C by n """
+        localC = np.copy(C)
+        permIdx = colIdx[n:] + colIdx[:n]
+        j = 0
+        for i in range(len(C)):
+            if j >= len(colIdx):
+                break
+            # end if
+
+            if i == colIdx[j]:
+                C[:,i] = localC[:,permIdx[j]]
+                j += 1
+            # end if
+        # end fori
+
+        return C
+    # end function rotateCols
+
+    def sortCoefficients(self, C, w, N):
+        """ sort coefficients for degenerate eigenenergies """
+        localC = np.copy(C)
+
+        while True:
+            psi = self.buildContracted(w, localC, N)
+            diffIdx = self.makeDiffs(psi, N)
+
+            if (len(diffIdx)==0):
+                """ break if sorted """
+                break
+            # end if
+
+            # permute list once
+            localC = self.rotateCols(localC, diffIdx)
+        # end while True
+
+        return localC
+    # end function sortCoefficients
+
+    def buildContracted(self, w, C, N):
+        """ build contracted function """
+        r = np.array([np.linspace(-2.5,2.5,N) for i in range(self.dim)])
+        g = lambda x,n: x**n*np.exp(-0.5*x**2)
+        psi = np.zeros((len(C),N))
+        for i in range(len(C)):
+            for j in range(len(C)):
+                gj = np.ones(N)
+                for d in range(self.dim):
+                    gj *= g(r[d]*np.sqrt(w), self.states[j,d])
+                # end ford
+                psi[i] += C[j,i] * gj / gF.overlap(w,j,j)**0.5
+            # end forj
+        # end fori
+
+        return psi
+    # end function buildContracted
+
+    def contractedFunction(self, w, N):
+        coeffs, states, epsilon = self.findCoefficients(w)
+        coeffs = self.sortCoefficients(coeffs, w, N)
+        return self.buildContracted(w, coeffs, N), coeffs, states, epsilon
+    # end function contractedFunction
 
     def findCoefficients(self, w):
         """ find coefficients with equation HC=GCE, where C are the
@@ -145,8 +238,8 @@ class generalizedFit:
             # end forj
         # end fori
 
-        print "H:\n", H, "\n"
-        print "G:\n", G, "\n"
+#         print "H:\n", H, "\n"
+#         print "G:\n", G, "\n"
 
         # solve eigenvalue problem with scipy
         E, C = scipy.linalg.eigh(H, G)
@@ -172,57 +265,27 @@ if __name__ == "__main__":
         sys.exit(0)
     # end try-except
 
+
     # read in basis
     gF = generalizedFit(filename, dim, cut)
-    coeffs, states, epsilon = gF.findCoefficients(w)
+    N = 10000
+    psi, coeffs, states, epsilon = gF.contractedFunction(w, N)
     print "Epsilon: ", epsilon, " Exact: ", states[:,-1]*w
-
-    tmp = np.copy(coeffs[:,3])
-    coeffs[:,3] = coeffs[:,4]
-    coeffs[:,4] = tmp
-   
-    if len(coeffs) > 5:
-        tmp = np.copy(coeffs[:,6])
-        coeffs[:,6] = coeffs[:,8]
-        coeffs[:,8] = tmp
-
     print "C:\n", coeffs, "\n"
 
     # plot contracted function and hermite function
-    N = 10000
     r = np.array([np.linspace(-2.5,2.5,N) for i in range(dim)])
-    g = lambda x,n: x**n*np.exp(-0.5*x**2)
-    psi = np.zeros((len(coeffs),N))
-    for i in range(len(coeffs)):
-        for j in range(len(coeffs)):
-            gj = np.ones(N)
-            for d in range(dim):
-                gj *= g(r[d]*np.sqrt(w), states[j,d])
-            # end ford
-            psi[i] += coeffs[j,i] * gj / gF.overlap(w,j,j)**0.5
-        # end forj
-    # end fori
-
-    hnorm = lambda n: (2**n*factorial(n)*(np.pi/w)**0.5)**0.5
-    hermites = np.zeros((len(coeffs),N))
-    for i,p in enumerate(psi):
-        h = np.ones(N)
-        for d in range(dim):
-            h *= hermite(r[d]*np.sqrt(w), states[i,d]) * np.exp(-0.5*w*r[d]**2) /\
-                    hnorm(states[i,d])
-        # end ford
-        hermites[i] = h
-    # end forip
+    hermites = gF.makeHermites(N)
 
     for i in range(len(coeffs)):
-#     for i in [1]:
-        plt.plot(np.linalg.norm(r, axis=0), psi[i]**2, label="psi%i off:%f" %
-                (i, np.linalg.norm(psi[i]**2-hermites[i]**2)))
-        plt.plot(np.linalg.norm(r, axis=0), hermites[i]**2, 'o', markersize=0.15, label="H%i"
-                % i, alpha=0.5)
+        plt.plot(np.linalg.norm(r, axis=0), psi[i], label="psi%i off:%f" % (i,
+            np.linalg.norm(psi[i]-hermites[i])))
+        plt.plot(np.linalg.norm(r, axis=0), hermites[i], label="H%i" % i,
+                alpha=0.5)
     # end fori
     plt.xlabel('$r$')
-    plt.ylabel('$|\\psi(r)|**2$')
+    plt.ylabel('$\\psi(r)$')
     plt.legend(loc='upper right', bbox_to_anchor=(1.15,1.1))
+#     plt.legend(loc='best')
     plt.show()
 # end ifmain
