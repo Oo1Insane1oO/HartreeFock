@@ -2,4 +2,4 @@
 bin/*
 
 # ignore executable
-src/main
+main
