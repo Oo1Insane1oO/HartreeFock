@@ -265,11 +265,21 @@ if __name__ == "__main__":
         sys.exit(0)
     # end try-except
 
+    def swapCol(a, i, j):
+        tmp = np.copy(a[:,i])
+        a[:,i] = np.copy(a[:,j])
+        a[:,j] = tmp
+        return a
+    # end function swap
 
     # read in basis
     gF = generalizedFit(filename, dim, cut)
     N = 10000
-    psi, coeffs, states, epsilon = gF.contractedFunction(w, N)
+    coeffs, states, epsilon = gF.findCoefficients(w)
+    coeffs = swapCol(coeffs, 3, 4)
+    coeffs = swapCol(coeffs, 6, 8)
+    psi = gF.buildContracted(w, coeffs, N)
+#self     psi, coeffs, states, epsilon = gF.contractedFunction(w, N)
     print "Epsilon: ", epsilon, " Exact: ", states[:,-1]*w
     print "C:\n", coeffs, "\n"
 
