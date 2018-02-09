@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import scipy.linalg
-from scipy.misc import factorial, factorial2
+from math import factorial
 from scipy.special import gamma
 import itertools
 
@@ -24,7 +24,7 @@ class generalizedFit:
             for line in ofile:
                 """ append only quantum numbers and energy to list """
                 elements = line.split()
-                elements = elements[:dim] + [elements[self.dim+2]]
+                elements = elements[:self.dim] + [elements[self.dim+2]]
                 tmp.append([int(e) for e in elements])
             # end forline
         # end open filename
@@ -154,7 +154,7 @@ class generalizedFit:
         diffIdx = []
         h = self.makeHermites(N)
         for i in range(len(h)):
-            if np.linalg.norm(psi[i] - h[i], dtype=np.longdouble) > 1e-13:
+            if np.linalg.norm(psi[i] - h[i], dtype=np.longdouble) > 5:
                 diffIdx.append(i)
             # end if
         # end fori
@@ -242,20 +242,25 @@ class generalizedFit:
         norms = np.zeros(self.size, dtype=np.longdouble)
         for i in range(self.size):
             overlapii = self.overlap(w,i,i)
-            norms[i] = 1./np.sqrt((overlapii), dtype=np.longdouble)
-            H[i,i] = (-0.5*self.laplacianOverlap(w,i,i) +
-                    self.potentialOverlap(w,i,i))/w * np.square(norms[i],
-                            dtype=np.longdouble)
-            G[i,i] = 1.0 
+            norms[i] = np.divide(np.longdouble(1.0), np.sqrt((overlapii),
+                dtype=np.longdouble), dtype=np.longdouble)
+            H[i,i] = np.multiply(np.divide(np.multiply(-0.5,
+                self.laplacianOverlap(w,i,i), dtype=np.longdouble) +
+                self.potentialOverlap(w,i,i), w, dtype=np.longdouble),
+                np.square(norms[i], dtype=np.longdouble), dtype=np.longdouble)
+            G[i,i] = np.longdouble(1.0)
         # end fori
 
         for i in range(self.size):
             for j in range(i+1,self.size):
                 normij = np.multiply(norms[i], norms[j], dtype=np.longdouble)
-                H[i,j] = (-0.5*self.laplacianOverlap(w,i,j) +
-                        self.potentialOverlap(w,i,j))/w * normij
+                H[i,j] = np.multiply(np.divide(np.multiply(-0.5,
+                    self.laplacianOverlap(w,i,j), dtype=np.longdouble) +
+                    self.potentialOverlap(w,i,j), w, dtype=np.longdouble),
+                    normij, dtype=np.longdouble)
                 H[j,i] = H[i,j]
-                G[i,j] = self.overlap(w,i,j) * normij 
+                G[i,j] = np.multiply(self.overlap(w,i,j), normij,
+                        dtype=np.longdouble)
                 G[j,i] = G[i,j]
             # end forj
         # end fori
@@ -280,9 +285,9 @@ if __name__ == "__main__":
 
     try:
         filename = sys.argv[1]
-        dim = int(sys.argv[2])
-        w = float(sys.argv[3])
-        cut = int(sys.argv[4])
+        dim = np.int64(sys.argv[2])
+        w = np.longdouble(sys.argv[3])
+        cut = np.int64(sys.argv[4])
     except IndexError:
         print "USAGE: python generateHermiteGaussFit.py <output filename> <num"
         " dimensions> <w>"
@@ -300,9 +305,11 @@ if __name__ == "__main__":
     gF = generalizedFit(filename, dim, cut)
     N = 10000
     coeffs, states, epsilon = gF.findCoefficients(w)
-    coeffs = swapCol(coeffs, 4, 5)
-    coeffs = swapCol(coeffs, 3, 4)
-    coeffs = swapCol(coeffs, 6, 8)
+#     coeffs = swapCol(coeffs, 4, 5)
+#     coeffs = swapCol(coeffs, 3, 4)
+    coeffs = swapCol(coeffs, 6, 9)
+    coeffs = swapCol(coeffs, 7, 8)
+    coeffs = swapCol(coeffs, 7, 6)
     psi = gF.buildContracted(w, coeffs, N)
 #     psi, coeffs, states, epsilon = gF.contractedFunction(w, N)
     print "Epsilon: ", epsilon, " Exact: ", states[:,-1]*w
@@ -313,8 +320,8 @@ if __name__ == "__main__":
         range(dim)], dtype=np.longdouble)
     hermites = gF.makeHermites(N)
 
-    for i in range(len(coeffs)):
-#     for i in [3,4,5]:
+#     for i in range(len(coeffs)):
+    for i in [6,7,8,9]:
         plt.plot(np.linalg.norm(r, axis=0), psi[i], label="psi%i off:%f" % (i,
             np.linalg.norm(psi[i]-hermites[i])))
         plt.plot(np.linalg.norm(r, axis=0), hermites[i], label="H%i" % i,
@@ -322,7 +329,7 @@ if __name__ == "__main__":
     # end fori
     plt.xlabel('$r$')
     plt.ylabel('$\\psi(r)$')
-    plt.legend(loc='upper right', bbox_to_anchor=(1.15,1.1))
-#     plt.legend(loc='best')
+#     plt.legend(loc='upper right', bbox_to_anchor=(1.15,1.1))
+    plt.legend(loc='best')
     plt.show()
 # end ifmain
