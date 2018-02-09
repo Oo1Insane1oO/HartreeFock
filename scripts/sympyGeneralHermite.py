@@ -193,10 +193,10 @@ r = [sp.symbols('x%i' % i, real=True) for i in range(1,dim+1)]
 
 numBasis, states = readBasis(filename, level, dim)
 
-H = np.zeros((numBasis,numBasis))
-G = np.zeros((numBasis,numBasis))
+H = np.zeros((numBasis,numBasis), dtype=np.longdouble)
+G = np.zeros((numBasis,numBasis), dtype=np.longdouble)
 
-norms = np.zeros(numBasis)
+norms = np.zeros(numBasis, dtype=np.longdouble)
 
 limits = tuple([(i, -sp.oo, sp.oo) for i in r])
 
@@ -229,6 +229,8 @@ for i in range(numBasis):
         lapij = -0.5*sp.integrate(gi * lapFuncs[j], *limits)
         potij = sp.integrate(gi * potential(r,w) * gj, *limits)
 
+        print lapij, potij
+
         Hij = lapij + potij
         H[i,j] = Hij
         G[i,j] = overlapij
@@ -251,7 +253,16 @@ print H
 print G
 
 N = 1000
-E, coeffs = scipy.linalg.eigh(H, G)
+E = np.zeros(numBasis, dtype=np.longdouble)
+coeffs = np.zeros((numBasis, numBasis), dtype=np.longdouble)
+e, c = scipy.linalg.eigh(H, G)
+for i in range(len(e)):
+    E[i] = e[i]
+    for j in range(len(e)):
+        coeffs[i,j] = c[i,j]
+    # end forj
+# end fori
+
 print E
 # coeffs = sortCoefficients(coeffs, w, N, dim, states, norms)
 # print coeffs
