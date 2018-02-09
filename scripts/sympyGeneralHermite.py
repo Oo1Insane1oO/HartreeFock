@@ -6,6 +6,8 @@ import scipy.linalg
 import sys
 
 from hermite import hermite
+
+np.set_printoptions(linewidth=1000000000000)
     
 def readBasis(filename, cut, dim):
     """ read in premade text file with quantum numbers in give basis """
@@ -184,61 +186,127 @@ def makeHermites(w, N, dim, states):
     return r, hermites
 # end function makeHermites
 
-filename = sys.argv[1]
-dim = int(sys.argv[2])
-w = float(sys.argv[3])
-level = int(sys.argv[4])
+def matZero(N,M):
+    return sp.Matrix([[0 for j in range(N)] for i in range(M)])
+# end function sZero
 
-r = [sp.symbols('x%i' % i, real=True) for i in range(1,dim+1)]
+def vecZero(N):
+    return sp.Matrix([0 for i in range(N)])
+# end function vecZero
 
-numBasis, states = readBasis(filename, level, dim)
+def matFill(N,M,val):
+    return sp.Matrix([[val for j in range(N)] for i in range(M)])
+# end function matFill
 
-H = np.zeros((numBasis,numBasis), dtype=np.longdouble)
-G = np.zeros((numBasis,numBasis), dtype=np.longdouble)
+def vecFill(N,val):
+    return sp.Matrix([val for i in range(N)])
+# end function vecFill
 
-norms = np.zeros(numBasis, dtype=np.longdouble)
+def matDummy(N,M, D="D", r=False):
+    A = []
+    symbols = []
+    for i in range(M):
+        tmp = []
+        for j in range(N):
+            s = sp.symbols('%s_%i%i' % (D,i,j), real=r)
+            tmp.append(s)
+            symbols.append(s)
+        # end forj
+        A.append(tmp)
+    # end fori
+            
+    return sp.Matrix(A), symbols
+# end function matFill
 
-limits = tuple([(i, -sp.oo, sp.oo) for i in r])
+def vecDummy(N, D="D", r=False):
+    A = []
+    symbols = []
+    for i in range(M):
+        s = sp.symbols('%s_%i' % (D,i), real=r)
+        A.append(s)
+        symbols.append(s)
+    # end fori
+            
+    return sp.Matrix(A), symbols
+# end function vecFill
 
-basisFuncs = [gaussian(r,states[i],w) for i in range(numBasis)]
-lapFuncs = [laplacian(r,states[i],w) for i in range(numBasis)]
+def findCoefficients(w, N, dim, states):
+    r = [sp.symbols('x%i' % i, real=True) for i in range(1,dim+1)]
 
-for i in range(numBasis):
-    gii = sp.integrate(basisFuncs[i]*basisFuncs[i], *limits)
-    sqrtgii = sp.sqrt(gii)
-    norms[i] = 1.0/sqrtgii
-    basisFuncs[i] /= sqrtgii
-    lapFuncs[i] /= sqrtgii
-    
-    # integrate over all dimensions
-    lapii = -0.5*sp.integrate(basisFuncs[i] * lapFuncs[i], *limits)
-    potii = sp.integrate(basisFuncs[i] * potential(r,w) * basisFuncs[i],
-            *limits)
+#     H = np.zeros((numBasis,numBasis), dtype=np.longdouble)
+#     G = np.zeros((numBasis,numBasis), dtype=np.longdouble)
+# 
+#     norms = np.zeros(numBasis, dtype=np.longdouble)
 
-    H[i,i] = lapii + potii
-    G[i,i] = 1.0
-# end fori
+    numBasis = len(states)
+    H = matZero(numBasis, numBasis)
+    G = matZero(numBasis, numBasis)
 
-for i in range(numBasis):
-    gi = basisFuncs[i]
-    for j in range(i+1, numBasis):
-        gj = basisFuncs[j]
+    norms = vecZero(numBasis)
 
+    limits = tuple([(i, -sp.oo, sp.oo) for i in r])
+
+    basisFuncs = [gaussian(r,states[i],w) for i in range(numBasis)]
+    lapFuncs = [laplacian(r,states[i],w) for i in range(numBasis)]
+
+    for i in range(numBasis):
+        gii = sp.integrate(basisFuncs[i]*basisFuncs[i], *limits)
+        sqrtgii = sp.sqrt(gii)
+        norms[i] = 1.0/sqrtgii
+        basisFuncs[i] /= sqrtgii
+        lapFuncs[i] /= sqrtgii
+        
         # integrate over all dimensions
-        overlapij = sp.integrate(gi * gj, *limits)
-        lapij = -0.5*sp.integrate(gi * lapFuncs[j], *limits)
-        potij = sp.integrate(gi * potential(r,w) * gj, *limits)
+        lapii = -0.5*sp.integrate(basisFuncs[i] * lapFuncs[i], *limits)
+        potii = sp.integrate(basisFuncs[i] * potential(r,w) * basisFuncs[i],
+                *limits)
 
-        print lapij, potij
+        H[i,i] = lapii + potii
+        G[i,i] = 1.0
+    # end fori
 
-        Hij = lapij + potij
-        H[i,j] = Hij
-        G[i,j] = overlapij
+    for i in range(numBasis):
+        gi = basisFuncs[i]
+        for j in range(i+1, numBasis):
+            gj = basisFuncs[j]
 
-        H[j,i] = Hij
-        G[j,i] = overlapij
-    # end forj
-# end fori
+            # integrate over all dimensions
+            overlapij = sp.integrate(gi * gj, *limits)
+            lapij = -0.5*sp.integrate(gi * lapFuncs[j], *limits)
+            potij = sp.integrate(gi * potential(r,w) * gj, *limits)
+
+            Hij = lapij + potij
+            H[i,j] = Hij
+            G[i,j] = overlapij
+
+            H[j,i] = Hij
+            G[j,i] = overlapij
+        # end forj
+    # end fori
+
+    print "H"
+    sp.pprint(H)
+    print "G"
+    sp.pprint(G)
+
+    A = G**(-1)*H
+    sp.pprint(A.eigenvects())
+    sys.exit(1)
+
+#     print "Eigenvalues:"
+#     sp.pprint(E)
+#     print "Eigenvectors:"
+#     sp.pprint(C)
+#     sys.exit(1)
+
+#     E, C = scipy.linalg.eigh(H, G)
+    # C = sortCoefficients(coeffs, w, N, dim, states, norms)
+
+#     print "Eigenvalues:", E, "Exact:", [s[-1] for s in states]
+#     print "EigenVectors:\n", C 
+
+    return E, C, norms
+# end function findCoefficients
 
 def swapCol(a, i, j):
     tmp = np.copy(a[:,i])
@@ -247,33 +315,16 @@ def swapCol(a, i, j):
     return a
 # end function swap
 
-np.set_printoptions(linewidth=1000000000000)
+filename = sys.argv[1]
+dim = int(sys.argv[2])
+w = float(sys.argv[3])
+level = int(sys.argv[4])
 
-print H
-print G
+numBasis, states = readBasis(filename, level, dim)
 
 N = 1000
-E = np.zeros(numBasis, dtype=np.longdouble)
-coeffs = np.zeros((numBasis, numBasis), dtype=np.longdouble)
-e, c = scipy.linalg.eigh(H, G)
-for i in range(len(e)):
-    E[i] = e[i]
-    for j in range(len(e)):
-        coeffs[i,j] = c[i,j]
-    # end forj
-# end fori
 
-print E
-# coeffs = sortCoefficients(coeffs, w, N, dim, states, norms)
-# print coeffs
-# print "done"
-
-# coeffs[1,:] *= -1
-# coeffs = swapCol(coeffs, 1,2)
-# coeffs = swapCol(coeffs, 4,5)
-# coeffs = swapCol(coeffs, 3,4)
-print coeffs
-
+E, coeffs, norms = findCoefficients(w, N, dim, states);
 psi = buildContracted(w, coeffs, N, dim, states, norms)
 r, hermites = makeHermites(w, N, dim, states)
 
