@@ -4,6 +4,7 @@ import scipy.linalg
 from math import factorial
 from scipy.special import gamma
 import itertools
+import decimal
 
 from hermite import hermite
 
@@ -154,7 +155,7 @@ class generalizedFit:
         diffIdx = []
         h = self.makeHermites(N)
         for i in range(len(h)):
-            if np.linalg.norm(psi[i] - h[i], dtype=np.longdouble) > 5:
+            if np.linalg.norm(psi[i] - h[i]) > 1e-13:
                 diffIdx.append(i)
             # end if
         # end fori
@@ -184,7 +185,9 @@ class generalizedFit:
     def sortCoefficients(self, C, w, N):
         """ sort coefficients for degenerate eigenenergies """
         localC = np.copy(C)
-
+    
+        oldLength = 0
+        rotateCount = 0
         while True:
             psi = self.buildContracted(w, localC, N)
             diffIdx = self.makeDiffs(psi, N)
@@ -194,8 +197,23 @@ class generalizedFit:
                 break
             # end if
 
+            # reset rotation count if correct vector is found
+            if (len(diffIdx) != oldLength):
+                rotateCount = 0
+            # end if
+
+            # shift sign of eigenvector if rotated once 
+            if rotateCount == len(diffIdx):
+                for i in range(len(diffIdx)):
+                    localC[:,i] *= -1
+                # end fori
+                rotateCount = 0
+            # end rotates
+
             # permute list once
             localC = self.rotateCols(localC, diffIdx)
+            rotateCount += 1
+            oldLength = len(diffIdx)
         # end while True
 
         return localC
@@ -265,13 +283,13 @@ class generalizedFit:
             # end forj
         # end fori
 
-#         print "H:\n", H, "\n"
-#         print "G:\n", G, "\n"
+        print "H:\n", H, "\n"
+        print "G:\n", G, "\n"
 
         # solve eigenvalue problem with scipy
-        E, C = scipy.linalg.eigh(H, G)
-        C = C.astype(np.longdouble)
-        E = E.astype(np.longdouble)
+        E, C = (H, G)
+#         C = C.astype(np.longdouble)
+#         E = E.astype(np.longdouble)
 
         return C, self.states, E
     # end function findCoefficients
@@ -307,9 +325,9 @@ if __name__ == "__main__":
     coeffs, states, epsilon = gF.findCoefficients(w)
 #     coeffs = swapCol(coeffs, 4, 5)
 #     coeffs = swapCol(coeffs, 3, 4)
-    coeffs = swapCol(coeffs, 6, 9)
-    coeffs = swapCol(coeffs, 7, 8)
-    coeffs = swapCol(coeffs, 7, 6)
+#     coeffs = swapCol(coeffs, 6, 9)
+#     coeffs = swapCol(coeffs, 7, 8)
+#     coeffs = swapCol(coeffs, 7, 6)
     psi = gF.buildContracted(w, coeffs, N)
 #     psi, coeffs, states, epsilon = gF.contractedFunction(w, N)
     print "Epsilon: ", epsilon, " Exact: ", states[:,-1]*w
@@ -320,8 +338,8 @@ if __name__ == "__main__":
         range(dim)], dtype=np.longdouble)
     hermites = gF.makeHermites(N)
 
-#     for i in range(len(coeffs)):
-    for i in [6,7,8,9]:
+    for i in range(len(coeffs)):
+#     for i in [6,7,8,9]:
         plt.plot(np.linalg.norm(r, axis=0), psi[i], label="psi%i off:%f" % (i,
             np.linalg.norm(psi[i]-hermites[i])))
         plt.plot(np.linalg.norm(r, axis=0), hermites[i], label="H%i" % i,
