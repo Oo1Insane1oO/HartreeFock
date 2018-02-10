@@ -240,7 +240,7 @@ class generalizedFit:
             H[i,i] = (-0.5*self.laplacianOverlap(w,i,i) +
                     self.potentialOverlap(w,i,i))/w * np.square(norms[i],
                             dtype=np.longdouble)
-            G[i,i] = overlapii * norms[i]**2
+            G[i,i] = 1.0
         # end fori
 
         for i in range(self.size):
@@ -254,11 +254,13 @@ class generalizedFit:
             # end forj
         # end fori
 
-#         print "H:\n", H, "\n"
-#         print "G:\n", G, "\n"
+        print "H:\n", H, "\n"
+        print "G:\n", G, "\n"
 
         # solve eigenvalue problem with scipy
         E, C = scipy.linalg.eigh(H, G)
+#         E = scipy.linalg.eigvalsh(H, G)
+#         C = scipy.linalg.solve(H, G*np.diag(E), sym_pos=True)
 
         return C, self.states, E
     # end function findCoefficients
@@ -268,7 +270,7 @@ if __name__ == "__main__":
     import sys
     import matplotlib.pyplot as plt
 
-    np.set_printoptions(linewidth=1000000000000, precision=16)
+    np.set_printoptions(linewidth=1000000000000)
 
     try:
         filename = sys.argv[1]
@@ -290,10 +292,10 @@ if __name__ == "__main__":
 
     # read in basis
     gF = generalizedFit(filename, dim, cut)
-    N = 10000
+    N = 1000
     coeffs, states, epsilon = gF.findCoefficients(w)
 #     coeffs = swapCol(coeffs, 3, 4)
-#     coeffs = swapCol(coeffs, 6, 8)
+#     coeffs = swapCol(coeffs, 6, 7)
     psi = gF.buildContracted(w, coeffs, N)
 #     psi, coeffs, states, epsilon = gF.contractedFunction(w, N)
     print "Epsilon: ", epsilon, " Exact: ", states[:,-1]*w

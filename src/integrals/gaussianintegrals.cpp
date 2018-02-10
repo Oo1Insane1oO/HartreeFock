@@ -3,13 +3,12 @@
 #include <boost/math/special_functions/factorials.hpp>
 
 GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
-        cutOff, double scaling) : GaussianBasis() {
+        cutOff, double scaling) : GaussianBasis(cutOff, dim, scaling) {
     m_dim = dim;
     expScaleFactor = scaling;
     sqrtFactor = sqrt(scaling);
-    GaussianBasis::setup(cutOff, dim, expScaleFactor);
 
-    xScale = 1.0; // omega in HO case TODO: generalize this 
+    xScale = 1.0; // omega in HO case FIXME: generalize this 
     sqrtScale = 2./sqrt(pow(xScale, m_dim));
     powScale = pow(xScale, 2*m_dim);
 
@@ -17,7 +16,6 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
     setF1();
 
     setNormalizations();
-
 } // end constructor
 
 GaussianIntegrals::~GaussianIntegrals() {
@@ -83,23 +81,61 @@ double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
 double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
         int& j) {
     /* calculate and return the kinetic integral element -<i|nabla|j> */
-    Eigen::Array3d sumsd = Eigen::Array3d::Zero(3);
-    for (unsigned int d = 0; d < m_dim; ++d) {
-        Eigen::Array3d tmpProdsdd = Eigen::Array3d::Constant(3,1.0);
-        for (unsigned int dd = 0; dd < m_dim; ++dd) {
-            int ndd = *(GaussianBasis::Cartesian::getStates(i)(d));
-            int ndd = *(GaussianBasis::Cartesian::getStates(j)(d));
-            if (dd != d) {
-                tmpProdsdd *= expScaleFactor * overlapd(ndd, mdd);
-            } else {
-                tmpProdsdd(0) *= w*mdd*(mdd-1)*overlapd(ndd,mdd-2)
-                tmpProdsdd(1) *= w*(2*mdd+1)*overlapd(ndd,mdd)
-                tmpProdsdd(2) *= w*overlapd(ndd,mdd+2)
-            } // end if
-        } // end fordd
-    } // end ford
-    return sumsd[0] - sumsd[1] + sumsd[2];
+    double sums = 0.0;
+    for (unsigned int p = 0; p < i; ++p) {
+        for (unsigned int q = 0; q < j; ++q) {
+            Eigen::Array3d sumsd = Eigen::Array3d::Zero(3);
+            for (unsigned int d = 0; d < m_dim; ++d) {
+                Eigen::Array3d tmpProdsdd = Eigen::Array3d::Constant(3,1.0);
+                for (unsigned int dd = 0; dd < m_dim; ++dd) {
+                    int ndd = *(GaussianBasis::Cartesian::getStates(p)(dd));
+                    int mdd = *(GaussianBasis::Cartesian::getStates(q)(dd));
+                    double CpCq = HC(p)[ndd]*HC(q)[mdd];
+                    if (dd != d) {
+                        tmpProdsdd *= CpCq*xScale*overlapd(ndd, mdd);
+                    } else {
+                        tmpProdsdd(0) *= CpCq*xScale *
+                            mdd*(mdd-1)*overlapd(ndd,mdd-2);
+                        tmpProdsdd(1) *= CpCq*xScale *
+                            (2*mdd+1)*overlapd(ndd,mdd);
+                        tmpProdsdd(2) *= CpCq*xScale *
+                            overlapd(ndd,mdd+2);
+                    } // end if
+                } // end fordd
+                sumsd += tmpProdsdd;
+            } // end ford
+            sums += sumsd[0] - sumsd[1] + sumsd[2];
+        } // end forq
+    } // end forp
+    return sums; 
 } // end function kinetic
+
+double GaussianIntegrals::potentialElement(const unsigned int& i, const
+        unsigned int& j) {
+    /* calculate and return <i|0.5w^2r^2|j> */
+    double sums = 0.0;
+    for (unsigned int p = 0; p < i; ++p) {
+        for (unsigned int q = 0; q < j; ++q) {
+            double sumsd = 0.0;
+            for (unsigned int d = 0; d < m_dim; ++d) {
+                double tmpProdsdd = 1.0; 
+                for (unsigned int dd = 0; dd < m_dim; ++dd) {
+                    int ndd = *(GaussianBasis::Cartesian::getStates(p)(dd));
+                    int mdd = *(GaussianBasis::Cartesian::getStates(q)(dd));
+                    double CpCq = HC(p)[ndd]*HC(q)[mdd];
+                    if (dd != d) {
+                        tmpProdsdd *= CpCq*xScale*overlapd(ndd,mdd);
+                    } else {
+                        tmpProdsdd *= CpCq*overlapd(ndd,mdd+2);
+                    } // end if
+                } // end fordd
+                sumsd += tmpProdsdd;
+            } // end ford
+            sums += sumsd;
+        } // end forq
+    } // end forp
+    return 0.5*xScale*sums;
+} // end function potentialElement
 
 double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {

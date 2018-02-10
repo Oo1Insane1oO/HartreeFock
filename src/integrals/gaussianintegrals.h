@@ -35,6 +35,7 @@ class GaussianIntegrals : public GaussianBasis  {
         double kineticElement(const unsigned int&, const unsigned int&);
         double coulombElement(const unsigned int&, const unsigned int&, const
                 unsigned int&, const unsigned int&);
+        double potentialElement(const unsigned int&, const unsigned int&);
 };
 
 #endif /* GAUSSIANINTEGRALS_H */

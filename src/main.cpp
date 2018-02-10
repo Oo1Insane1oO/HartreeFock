@@ -29,4 +29,9 @@ int main(int argc, char *argv[]) {
         test_main();
         return 0;
     #endif
+
+    HartreeFockSolver* HFS = new HartreeFockSolver(2, 6, 2);
+    HFS->iterate(100, 1e-8);
+
+    delete HFS;
 } // end main

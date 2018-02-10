@@ -11,7 +11,7 @@ class GaussianBasis : public Cartesian, public GaussianContractedBasis {
 
     public:
         GaussianBasis ();
-        GaussianBasis (unsigned int, unsigned int);
+        GaussianBasis (unsigned int, unsigned int, double);
         virtual ~GaussianBasis ();
 
         void setup(unsigned int, unsigned int, double=1);

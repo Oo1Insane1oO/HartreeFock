@@ -56,12 +56,12 @@ def gaussian(r, n, w):
         prod *= (sp.sqrt(w)*i)**n[j]
     # end forji
 
-    return prod * sp.exp(-0.5*w*sSquaredNorm(r))
+    return prod * sp.exp(-sp.Rational(w,2)*sSquaredNorm(r))
 
 # end function gaussian
 
 def potential(r, w):
-    return 0.5 * w**2 * sSquaredNorm(r)
+    return sp.Rational(w**2,2) * sSquaredNorm(r)
 # end function potential
 
 def laplacian(r, n, w):
@@ -81,7 +81,7 @@ def laplacian(r, n, w):
         suml += prod
     # end ford
 
-    return suml * sp.exp(-w/2 * sSquaredNorm(r))
+    return suml * sp.exp(-sp.Rational(w,2) * sSquaredNorm(r))
 # end function laplacian
 
 def rotateCols(C, colIdx, n=1):
@@ -242,7 +242,7 @@ def findCoefficients(w, N, dim, states):
     H = matZero(numBasis, numBasis)
     G = matZero(numBasis, numBasis)
 
-    norms = vecZero(numBasis)
+    norms = vecFill(numBasis, 1)
 
     limits = tuple([(i, -sp.oo, sp.oo) for i in r])
 
@@ -250,19 +250,20 @@ def findCoefficients(w, N, dim, states):
     lapFuncs = [laplacian(r,states[i],w) for i in range(numBasis)]
 
     for i in range(numBasis):
-        gii = sp.integrate(basisFuncs[i]*basisFuncs[i], *limits)
+        gii = sp.S(sp.integrate(basisFuncs[i]*basisFuncs[i], *limits))
         sqrtgii = sp.sqrt(gii)
-        norms[i] = 1.0/sqrtgii
+        norms[i] /= sqrtgii
         basisFuncs[i] /= sqrtgii
         lapFuncs[i] /= sqrtgii
         
         # integrate over all dimensions
-        lapii = -0.5*sp.integrate(basisFuncs[i] * lapFuncs[i], *limits)
-        potii = sp.integrate(basisFuncs[i] * potential(r,w) * basisFuncs[i],
-                *limits)
+        lapii = -sp.Rational(1,2)*sp.S(sp.integrate(basisFuncs[i] *
+            lapFuncs[i], *limits)) 
+        potii = sp.S(sp.integrate(basisFuncs[i] * potential(r,w) *
+            basisFuncs[i], *limits))
 
         H[i,i] = lapii + potii
-        G[i,i] = 1.0
+        G[i,i] = sp.S(1.0)
     # end fori
 
     for i in range(numBasis):
@@ -271,9 +272,10 @@ def findCoefficients(w, N, dim, states):
             gj = basisFuncs[j]
 
             # integrate over all dimensions
-            overlapij = sp.integrate(gi * gj, *limits)
-            lapij = -0.5*sp.integrate(gi * lapFuncs[j], *limits)
-            potij = sp.integrate(gi * potential(r,w) * gj, *limits)
+            overlapij = sp.S(sp.integrate(gi * gj, *limits))
+            lapij = -sp.Rational(1,2)*sp.S(sp.integrate(gi * lapFuncs[j],
+                *limits))
+            potij = sp.S(sp.integrate(gi * potential(r,w) * gj, *limits))
 
             Hij = lapij + potij
             H[i,j] = Hij
@@ -289,21 +291,18 @@ def findCoefficients(w, N, dim, states):
     print "G"
     sp.pprint(G)
 
-    A = G**(-1)*H
+    Ginv = G**(-1)
+    print "Ginv"
+    sp.pprint(G**(-1))
+    A = Ginv*H
+    print "A"
+    sp.pprint(A)
     sp.pprint(A.eigenvects())
-    sys.exit(1)
-
-#     print "Eigenvalues:"
-#     sp.pprint(E)
-#     print "Eigenvectors:"
-#     sp.pprint(C)
-#     sys.exit(1)
-
+# 
 #     E, C = scipy.linalg.eigh(H, G)
-    # C = sortCoefficients(coeffs, w, N, dim, states, norms)
-
-#     print "Eigenvalues:", E, "Exact:", [s[-1] for s in states]
-#     print "EigenVectors:\n", C 
+#     print "Energy: ", E
+#     print "C\n", C
+    sys.exit(1)
 
     return E, C, norms
 # end function findCoefficients
