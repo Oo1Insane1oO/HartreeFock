@@ -12,7 +12,7 @@ class Cartesian {
     using EigenIntPtrVec = Eigen::Matrix<int*, Eigen::Dynamic, 1>;
     private:
         int s;
-        unsigned int m_dim, m_size;
+        unsigned int m_dim, m_size, m_numStates;
         Eigen::VectorXi n, ms, E, M, m;
 
         Eigen::VectorXi angularMomenta;
@@ -48,6 +48,7 @@ class Cartesian {
         const int &getSumn(const unsigned int&) const;
         const Eigen::VectorXi& getSumn() const;
         const unsigned int& getSize() const;
+        const unsigned int& getNumberOfStates() const;
 
         void restructureStates();
 

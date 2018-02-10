@@ -1,6 +1,7 @@
 #include "gaussianintegrals.h"
 #include "../hermite/hermite.h"
 #include <boost/math/special_functions/factorials.hpp>
+#include <boost/math/special_functions/gamma.hpp>
 
 GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
         cutOff, double scaling) : GaussianBasis(cutOff, dim, scaling) {
@@ -30,12 +31,15 @@ GaussianBasis* GaussianIntegrals::getBasis() {
 void GaussianIntegrals::setNormalizations() {
     /* calculate and set normalization factors for all basis functions */
     normalizationFactors =
-        Eigen::ArrayXd::Zero(GaussianBasis::Cartesian::getn().size());
-    for (unsigned int i = 0; i < GaussianBasis::Cartesian::getn().size(); ++i)
-    {
-        int n = GaussianBasis::Cartesian::getn(i);
-        normalizationFactors(i) =
-            1./sqrt(pow(2,n)*boost::math::factorial<double>(n)*sqrtFactor);
+        Eigen::ArrayXd::Constant(GaussianBasis::Cartesian::getNumberOfStates(),
+                1.0);
+    for (unsigned int i = 0; i < GaussianBasis::Cartesian::getNumberOfStates();
+            ++i) {
+        for (unsigned int d = 0; d < m_dim; ++d) {
+            int n = *(GaussianBasis::Cartesian::getStates(i)(d));
+            normalizationFactors(i) *= 1.0 / sqrt(pow(2,n) *
+                    boost::math::factorial<double>(n)*sqrtFactor);
+        } // end ford
     } // end fori
 } // end function setNormalizations
 
@@ -58,10 +62,14 @@ const double& GaussianIntegrals::normalizationFactor(const unsigned int& n)
 inline double GaussianIntegrals::overlapd(const unsigned int& n, const unsigned
         int& m) {
     /* calculate and return <g_n|g_m> */
-    double s = n + m;
-    return sqrt(M_PI/expScaleFactor) *
-        boost::math::factorial<double>(n)/boost::math::factorial<double>(n/2) *
-        pow(0.5, s);
+    int s = n + m;
+    if (s%2 || s<=-1) {
+        return 0.0;
+    } // end if
+    return boost::math::tgamma<double>((s+1)/2.) / sqrt(xScale);
+//     return sqrt(M_PI/xScale) *
+//         boost::math::factorial<double>(n)/boost::math::factorial<double>(n/2) *
+//         pow(0.5, s);
 } // end function overlapd
 
 double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
@@ -75,7 +83,7 @@ double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
             overlapd(nid,njd);
     } // end ford
 
-    return prod;
+    return prod * normalizationFactor(i) * normalizationFactor(j);
 } // end function overlap
 
 double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
@@ -107,7 +115,7 @@ double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
             sums += sumsd[0] - sumsd[1] + sumsd[2];
         } // end forq
     } // end forp
-    return sums; 
+    return -0.5*sums * normalizationFactor(i) * normalizationFactor(j); 
 } // end function kinetic
 
 double GaussianIntegrals::potentialElement(const unsigned int& i, const
@@ -134,7 +142,7 @@ double GaussianIntegrals::potentialElement(const unsigned int& i, const
             sums += sumsd;
         } // end forq
     } // end forp
-    return 0.5*xScale*sums;
+    return 0.5*xScale*sums * normalizationFactor(i) * normalizationFactor(j);
 } // end function potentialElement
 
 double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
