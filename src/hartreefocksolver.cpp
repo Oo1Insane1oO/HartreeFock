@@ -1,9 +1,10 @@
 #include "hartreefocksolver.h"
 
 HartreeFockSolver::HartreeFockSolver(const unsigned int dimension, unsigned int
-        cut) : Integrals(m_dim, cut) {
+        cut, const unsigned int numParticles) : Integrals(dimension, cut) {
         m_dim = dimension;
         m_numStates = Integrals::getBasis()->Cartesian::getStates().rows();
+        m_numParticles = numParticles;
 } // end constructor
 
 HartreeFockSolver::~HartreeFockSolver() {
@@ -14,7 +15,7 @@ inline unsigned int HartreeFockSolver::dIndex(const unsigned int& N, const
         unsigned int& l) {
     /* calculate offset for 4d-matrix (square case) for indices (i,j,k,l) */
     return i + N * (j + N * (k + N*l));
-} // end function dIndex 
+} // end function dIndex
 
 inline void HartreeFockSolver::assemble() {
     /* assemble integral elements (with symmetries) */
@@ -31,7 +32,8 @@ inline void HartreeFockSolver::assemble() {
     for (unsigned int p = 0; p < m_numStates; ++p) {
         orbitalp = Integrals::getBasis()->Cartesian::getSumn(p);
         spinp = *(Integrals::getBasis()->Cartesian::getStates(p)(m_dim));
-        for (unsigned int q = p; q < m_numStates; ++q) {
+//         for (unsigned int q = p; q < m_numStates; ++q) {
+        for (unsigned int q = 0; q < m_numStates; ++q) {
             orbitalSumpq = orbitalp +
                 Integrals::getBasis()->Cartesian::getSumn(q);
             spinq = *(Integrals::getBasis()->Cartesian::getStates(q)(m_dim));
@@ -41,7 +43,8 @@ inline void HartreeFockSolver::assemble() {
             for (unsigned int r = 0; r < m_numStates; ++r) {
                 orbitalr = Integrals::getBasis()->Cartesian::getSumn(r);
                 spinr = *(Integrals::getBasis()->Cartesian::getStates(r)(m_dim));
-                for (unsigned int s = r; s < m_numStates; ++s) {
+//                 for (unsigned int s = r; s < m_numStates; ++s) {
+                for (unsigned int s = 0; s < m_numStates; ++s) {
                     spins = *(Integrals::getBasis()->Cartesian::getStates(s)(m_dim));
                     if ((orbitalSumpq == (orbitalr +
                                     Integrals::getBasis()->Cartesian::getSumn(s)))
@@ -56,15 +59,16 @@ inline void HartreeFockSolver::assemble() {
         } // end forr
     } // end fors
 
-    // set symmetric values
-    for (unsigned int p = 0; p < m_numStates; ++p) {
-        for (unsigned int q = p; q < m_numStates; ++q) {
-            for (unsigned int r = 0; r < m_numStates; ++r) {
-                for (unsigned int s = r; s < m_numStates; ++s) {
-                } // end forp
-            } // end forq
-        } // end forr
-    } // end fors
+//     // set symmetric values
+//     for (unsigned int p = 0; p < m_numStates; ++p) {
+//         for (unsigned int q = p; q < m_numStates; ++q) {
+//             for (unsigned int r = 0; r < m_numStates; ++r) {
+//                 for (unsigned int s = r; s < m_numStates; ++s) {
+//                     integralElements(dIndex(m_numStates, p,
+//                 } // end forp
+//             } // end forq
+//         } // end forr
+//     } // end fors
 } // end function assemble
 
 inline void HartreeFockSolver::setDensityMatrix() {
@@ -140,4 +144,21 @@ void HartreeFockSolver::iterate(const unsigned int& maxIterations, const
         previousEnergies = eigenSolver.eigenvalues();
         count++;
     } // end while count
+
+    // find estimate for gound state energy for m_numParticles
+    double groundStateEnergy = eigenSolver.eigenvalues().segment(0,
+            m_numParticles).sum();
+    for (unsigned int a = 0; a < m_numStates; ++a) {
+        for (unsigned int b = 0; b < m_numStates; ++b) {
+            for (unsigned int c = 0; c < m_numStates; ++c) {
+                for (unsigned int d = 0; d < m_numStates; ++d) {
+                    groundStateEnergy -= 0.5 * densityMatrix(a,c) *
+                        densityMatrix(b,d) *
+                        integralElements(dIndex(m_numStates, a,b,c,d));
+                } // end ford
+            } // end forc
+        } // end forb
+    } // end fora
+
+    std::cout << groundStateEnergy << std::endl;
 } // end function iterate

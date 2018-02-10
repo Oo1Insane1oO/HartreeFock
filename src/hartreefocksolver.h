@@ -10,7 +10,7 @@ using Integrals = GaussianIntegrals;
 
 class HartreeFockSolver : public Integrals {
     private:
-        unsigned int m_dim, m_numStates;
+        unsigned int m_dim, m_numStates, m_numParticles;
 
         Eigen::ArrayXd integralElements;
 
@@ -25,7 +25,8 @@ class HartreeFockSolver : public Integrals {
                 const unsigned int&, const unsigned int&, const unsigned int&);
 
     public:
-        HartreeFockSolver (const unsigned int, unsigned int);
+        HartreeFockSolver (const unsigned int, unsigned int, const unsigned
+                int);
         virtual ~HartreeFockSolver ();
 
         void iterate(const unsigned int&, const double&);

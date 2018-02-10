@@ -5,9 +5,9 @@ GaussianBasis::GaussianBasis() : Cartesian::Cartesian(),
         /* default constructor */
 } // end constructor
 
-GaussianBasis::GaussianBasis(unsigned int cut, unsigned int dimension) :
-    GaussianContractedBasis::GaussianContractedBasis() {
-    GaussianBasis::setup(cut, dimension);
+GaussianBasis::GaussianBasis(unsigned int cut, unsigned int dimension, double
+        scaling) : GaussianContractedBasis::GaussianContractedBasis() {
+    GaussianBasis::setup(cut, dimension, scaling);
 } // end constructor
 
 GaussianBasis::~GaussianBasis() {
