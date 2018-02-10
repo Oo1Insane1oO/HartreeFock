@@ -91,7 +91,7 @@ inline void HartreeFockSolver::setHartreeFockMatrix() {
             for (unsigned int k = 0; k < m_numStates; ++k) {
                 for (unsigned int l = 0; l < m_numStates; ++l) {
                     HartreeFockMatrix(i,j) += densityMatrix(k,l) *
-                        integralElements(dIndex(m_numStates, i, j, k, l));
+                        integralElements(dIndex(m_numStates, i, k, j, l));
                 } // end forl
             } // end fork
 
@@ -160,5 +160,5 @@ void HartreeFockSolver::iterate(const unsigned int& maxIterations, const
         } // end forb
     } // end fora
 
-    std::cout << groundStateEnergy << std::endl;
+    std::cout << groundStateEnergy << " " << count << std::endl;
 } // end function iterate

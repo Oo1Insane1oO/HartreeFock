@@ -102,6 +102,9 @@ void Cartesian::setup(const unsigned int cut, const unsigned int dim) {
     // set angular momenta
     angularMomenta = Eigen::VectorXi::Zero(states.rows());
     sumn();
+
+    // set number of states built
+    m_numStates = states.rows();
 } // end function setup
 
 const Eigen::VectorXi& Cartesian::getSumn() const {
@@ -159,6 +162,11 @@ const unsigned int& Cartesian::getSize() const {
     /* return highest energy level */
     return m_size;
 } // end function getSize
+
+const unsigned int& Cartesian::getNumberOfStates() const {
+    /* return number of staates built */
+    return m_numStates;
+} // end function getNumberOfStates
 
 void Cartesian::restructureStates() {
     /* put spin-states in increasing order */
