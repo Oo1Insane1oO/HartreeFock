@@ -32,8 +32,7 @@ inline void HartreeFockSolver::assemble() {
     for (unsigned int p = 0; p < m_numStates; ++p) {
         orbitalp = Integrals::getBasis()->Cartesian::getSumn(p);
         spinp = *(Integrals::getBasis()->Cartesian::getStates(p)(m_dim));
-//         for (unsigned int q = p; q < m_numStates; ++q) {
-        for (unsigned int q = 0; q < m_numStates; ++q) {
+        for (unsigned int q = p; q < m_numStates; ++q) {
             orbitalSumpq = orbitalp +
                 Integrals::getBasis()->Cartesian::getSumn(q);
             spinq = *(Integrals::getBasis()->Cartesian::getStates(q)(m_dim));
@@ -42,40 +41,42 @@ inline void HartreeFockSolver::assemble() {
                 Integrals::kineticElement(p,q);
             for (unsigned int r = 0; r < m_numStates; ++r) {
                 orbitalr = Integrals::getBasis()->Cartesian::getSumn(r);
-                spinr = *(Integrals::getBasis()->Cartesian::getStates(r)(m_dim));
-//                 for (unsigned int s = r; s < m_numStates; ++s) {
-                for (unsigned int s = 0; s < m_numStates; ++s) {
-                    spins = *(Integrals::getBasis()->Cartesian::getStates(s)(m_dim));
-                    if ((orbitalSumpq == (orbitalr +
-                                    Integrals::getBasis()->Cartesian::getSumn(s)))
-                            && (spinSumpq == (spinr + spins)) && (spinp ==
-                                spinr) && (spinq == spins)) {
-                        integralElements(dIndex(m_numStates, p, q, r, s)) =
-                            overlapTermAndkineticTerm +
+                spinr = *(Integrals::getBasis()->
+                        Cartesian::getStates(r)(m_dim));
+                for (unsigned int s = r; s < m_numStates; ++s) {
+                    spins = *(Integrals::getBasis()->
+                            Cartesian::getStates(s)(m_dim));
+                    if ((orbitalSumpq == (orbitalr + Integrals::getBasis()->
+                                    Cartesian::getSumn(s))) && (spinSumpq ==
+                                (spinr + spins))) {
+                        /* make sure sum quantum numbers are conserved */
+                        unsigned int idx = dIndex(m_numStates, p,q,r,s);
+                        integralElements(idx) = overlapTermAndkineticTerm;
+                        if ((spinp == spinr) && (spinq == spins)) {
+                            /* make sure spin orthogonality is satisfied */
+                            integralElements(idx) +=
                             Integrals::coulombElement(p, q, r, s);
+                        } // end if
+                        if ((spinp == spins) && (spinq == spinr)) {
+                            /* make sure spin orthogonality is satisfied for
+                             * antisymmetric term */
+                            integralElements(idx) -=
+                            Integrals::coulombElement(p, q, s, r);
+                        } // end if
+                        integralElements(dIndex(m_numStates, p,q,s,r)) =
+                            -integralElements(idx);
                     } // end if
                 } // end forp
             } // end forq
         } // end forr
     } // end fors
-
-//     // set symmetric values
-//     for (unsigned int p = 0; p < m_numStates; ++p) {
-//         for (unsigned int q = p; q < m_numStates; ++q) {
-//             for (unsigned int r = 0; r < m_numStates; ++r) {
-//                 for (unsigned int s = r; s < m_numStates; ++s) {
-//                     integralElements(dIndex(m_numStates, p,
-//                 } // end forp
-//             } // end forq
-//         } // end forr
-//     } // end fors
 } // end function assemble
 
 inline void HartreeFockSolver::setDensityMatrix() {
     /* set density matrix in HartreeFock */
+    densityMatrix.setZero();
     for (unsigned int c = 0; c < coefficients.rows(); ++c) {
         for (unsigned int d = 0; d < coefficients.cols(); ++d) {
-            densityMatrix(c,d) = 0;
             for (unsigned int i = 0; i < m_numStates; ++i) {
                 densityMatrix(c,d) += coefficients(c,i) * coefficients(d,i);
             } // end fori
@@ -118,6 +119,12 @@ void HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     // set eigen solver for matrix
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
 
+//     for (unsigned int i = 0; i < integralElements.size(); ++i) {
+//         if (integralElements(i) != 0) {
+//             std::cout << integralElements(i) << std::endl;
+//         }
+//     }
+
     // run Hartree-Fock algorithm
     unsigned int count = 0;
     double diff = 1. + eps;
@@ -137,8 +144,7 @@ void HartreeFockSolver::iterate(const unsigned int& maxIterations, const
 
         // set difference between previes and current values for convergence
         // test
-        diff = (eigenSolver.eigenvalues() -
-                previousEnergies).cwiseAbs().mean();
+        diff = fabs((eigenSolver.eigenvalues() - previousEnergies).mean());
 
         // update previous energies and increment count
         previousEnergies = eigenSolver.eigenvalues();
@@ -160,5 +166,5 @@ void HartreeFockSolver::iterate(const unsigned int& maxIterations, const
         } // end forb
     } // end fora
 
-    std::cout << groundStateEnergy << " " << count << std::endl;
+    std::cout << "E: " << groundStateEnergy << " Iter: " << count << std::endl;
 } // end function iterate
