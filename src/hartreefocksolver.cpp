@@ -25,6 +25,7 @@ inline void HartreeFockSolver::assemble() {
             m_numStates * m_numStates);
 
     // matrix containing elements <i|h|j>
+    overlapElements = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
     oneBodyElements = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
 
     // set values based on conserved numbers (skip calculation if total angular
@@ -35,13 +36,16 @@ inline void HartreeFockSolver::assemble() {
         orbitalp = Integrals::getBasis()->Cartesian::getSumn(p);
         spinp = *(Integrals::getBasis()->Cartesian::getStates(p)(m_dim));
         for (unsigned int q = p; q < m_numStates; ++q) {
+            overlapElements(p,q) = Integrals::overlapElement(p,q);
+            overlapElements(q,p) = overlapElements(p,q);
+            oneBodyElements(p,q) = Integrals::kineticElement(p,q) +
+            Integrals::potentialElement(p,q);
+            oneBodyElements(q,p) = oneBodyElements(p,q);
+
             orbitalSumpq = orbitalp +
                 Integrals::getBasis()->Cartesian::getSumn(q);
             spinq = *(Integrals::getBasis()->Cartesian::getStates(q)(m_dim));
             spinSumpq = spinp + spinq;
-            oneBodyElements(p,q) = Integrals::overlapElement(p,q) +
-                Integrals::kineticElement(p,q) +
-                Integrals::potentialElement(p,q);
             for (unsigned int r = 0; r < m_numStates; ++r) {
                 orbitalr = Integrals::getBasis()->Cartesian::getSumn(r);
                 spinr = *(Integrals::getBasis()->
@@ -86,21 +90,21 @@ inline void HartreeFockSolver::setDensityMatrix() {
     } // end forc
 } // end function setDensityMatrix
 
-inline void HartreeFockSolver::setHartreeFockMatrix() {
+inline void HartreeFockSolver::setFockMatrix() {
     /* set Hartree-Fock matrix */
-    HartreeFockMatrix.setZero();
+    FockMatrix.setZero();
     for (unsigned int i = 0; i < m_numStates; ++i) {
         for (unsigned int j = i; j < m_numStates; ++j) {
-            HartreeFockMatrix(i,j) += oneBodyElements(i,j); 
+            FockMatrix(i,j) += oneBodyElements(i,j); 
             for (unsigned int k = 0; k < m_numStates; ++k) {
                 for (unsigned int l = 0; l < m_numStates; ++l) {
-                    HartreeFockMatrix(i,j) += densityMatrix(k,l) *
+                    FockMatrix(i,j) += densityMatrix(k,l) *
                         twoBodyElements(dIndex(m_numStates, i, k, j, l));
                 } // end forl
             } // end fork
 
             // matrix is symmetric by definition
-            HartreeFockMatrix(j,i) = HartreeFockMatrix(i,j);
+            FockMatrix(j,i) = FockMatrix(i,j);
         } // end forj
     } // end fori
 } // end function sethartreeFockMatrix
@@ -110,44 +114,40 @@ void HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     /* run Hartree-Fock algorithm for finding coefficients and energy until
      * threshold convergence or until maxIterations is reached */
 
-    // pre-calculate matrix-elements, allocate coefficient matrix and
-    // Hartree-Fock matrix and set density matrix with unity
+    // pre-calculate one- and two-body matrix-elements and set initial density
+    // matrix with coefficient matrix set to identity
     assemble();
     coefficients = Eigen::MatrixXd::Identity(m_numStates, m_numStates);
     densityMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
     setDensityMatrix();
-    HartreeFockMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
+    FockMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
     Eigen::VectorXd previousEnergies = Eigen::VectorXd::Zero(m_numStates);
 
-    // set eigen solver for matrix
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
+    // initialize eigenvalue/vector solver for hermitian matrix (Fock matrix is
+    // build to be hermitian)
+    Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
 
     // run Hartree-Fock algorithm
     unsigned int count = 0;
-    double diff = 0.0; 
     do {
         /* run for maxIterations or until convergence is reached */
 
         // set HF-matrix with current coefficients
-        setHartreeFockMatrix();
+        setFockMatrix();
 
-        // find eigenvalues and eigenvector (HF-energies and coefficients
-        // respectively)
-        eigenSolver.compute(HartreeFockMatrix);
+        // find eigenvalues and eigenvector (HartreeFock-energies and
+        // coefficients respectively)
+        eigenSolver.compute(FockMatrix, overlapElements);
         coefficients = eigenSolver.eigenvectors();
 
-        std::cout << eigenSolver.eigenvalues().transpose() << std::endl;
         // set density matrix with new coefficients
         setDensityMatrix();
-
-        // set difference between previes and current values for convergence
-        // test
-        diff = fabs((eigenSolver.eigenvalues() - previousEnergies).mean());
 
         // update previous energies and increment count
         previousEnergies = eigenSolver.eigenvalues();
         count++;
-    } while ((count < maxIterations) && (diff > eps));
+    } while ((count < maxIterations) && (fabs((eigenSolver.eigenvalues() -
+                        previousEnergies).norm()) > eps));
 
     // find estimate for gound state energy for m_numParticles
     double groundStateEnergy = eigenSolver.eigenvalues().segment(0,
