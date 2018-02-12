@@ -62,65 +62,65 @@ const double& GaussianIntegrals::normalizationFactor(const unsigned int& n)
 
 inline double GaussianIntegrals::overlapd(const unsigned int& n, const unsigned
         int& m) {
-    /* calculate and return <g_n|g_m> */
+    /* calculate and return <g_n|g_m> (overlap) in 1 dimension */
     int s = n + m;
     if (s%2 || s<=-1) {
         return 0.0;
     } // end if
     return boost::math::tgamma<double>((s+1)/2.) / sqrt(xScale);
-//     return sqrt(M_PI/xScale) *
-//         boost::math::factorial<double>(n)/boost::math::factorial<double>(n/2) *
-//         pow(0.5, s);
 } // end function overlapd
+
+inline double GaussianIntegrals::ddexpr(const int& ndd, const int& mdd,
+        double(GaussianIntegrals::* f)(const int&, const int&)) {
+    /* expression for sum over contracted functions */
+    double sums = 0.0;
+    int p = 0;
+    int q = 0;
+    do {
+        /* run atleast once to take care of ndd=0 */
+        do {
+            /* run atleast once to take care of mdd=0 */
+            sums += HC(ndd)[p]*HC(mdd)[q] * (this->*f)(p,q);
+            q++;
+        } while(q<mdd);
+        p++;
+    } while(p<ndd);
+    return sums;
+} // end function ddexpr
+
+inline double GaussianIntegrals::ddexprOverlap(const int& p, const int& q) {
+    /* expression for 1D overlap element */
+    return xScale * overlapd(p,q);
+} // end function ddexpr1
+
+inline double GaussianIntegrals::ddexprLaplacian(const int& p, const int& q) {
+    /* expression for 1D laplacian element */
+    return xScale * (q*(q-1)*overlapd(p,q-2) - (2*q+1)*overlapd(p,q) +
+            overlapd(p,q+2));
+} // end function ddexpr2
+
+inline double GaussianIntegrals::ddexprPotential(const int& p, const int& q) {
+    /* expression for 1D potential element */
+    return xScale * overlapd(p,q+2);
+} // end function ddexpr1
 
 double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
         int& j) {
     /* calculate and return the overlap integral element <i|j> */
-//     double sum = 0;
-//     for (unsigned int p = 0; p < i; ++p) {
-//         for (unsigned int q = 0; q < j; ++q) {
-//             double prod = sqrtScale;
-//             for (unsigned int d = 0; d < m_dim; ++d) {
-//                 int nid = *(GaussianBasis::Cartesian::getStates(i)(d));
-//                 int njd = *(GaussianBasis::Cartesian::getStates(j)(d));
-//                 prod *= HC(nid)[p]*HC(njd)[q] * overlapd(nid,njd);
-//             } // end ford
-//             sum += prod;
-//         } // end forq
-//     } // end forp
+    double prod = 1.0;
+    for (unsigned int d = 0; d < m_dim; ++d) {
+        prod *= ddexpr(*(GaussianBasis::Cartesian::getStates(i)(d)),
+                *(GaussianBasis::Cartesian::getStates(j)(d)),
+                &GaussianIntegrals::ddexprOverlap);
+    } // end ford
 
-    return (i==j ? sqrtScale1 : 0.0);
-//     return sum * normalizationFactor(i) * normalizationFactor(j);
-} // end function overlap
-
-double GaussianIntegrals::ddexpr(int ndd, int mdd, double(GaussianIntegrals::*
-            f)(const int&, const int&)) {
-    /* expression for laplacian on g_pdd */
-    double sumsdd = 0.0;
-    for (unsigned int p = 0; p < ndd; ++p) {
-        for (unsigned int q = 0; q < mdd; ++q) {
-            sumsdd += HC(ndd)[p]*HC(mdd)[q] * (this->*f)(p,q);
-        } // end forq
-    } // end forp
-    return sumsdd;
-} // end lambda ddexpr
-
-double GaussianIntegrals::ddexprOverlap(const int& p, const int& q) {
-    return xScale * overlapd(p,q);
-} // end lambda ddexpr1
-
-double GaussianIntegrals::ddexprLaplacian(const int& p, const int& q) {
-    return xScale * (q*(q-1)*overlapd(p,q-2) - (2*q+1)*overlapd(p,q) +
-            overlapd(p,q+2));
-} // end lambda ddexpr2
-
-double GaussianIntegrals::ddexprPotential(const int& p, const int& q) {
-    return xScale * overlapd(p,q+2);
-} // end lambda ddexpr1
+//     return (i==j ? sqrtScale1 : 0.0);
+    return prod * sqrtScale1 * normalizationFactor(i) * normalizationFactor(j);
+} // end function overlapElement
 
 double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
         int& j) {
-    /* calculate and return the kinetic integral element -<i|nabla|j> */
+    /* calculate and return the kinetic integral element -0.5<i|nabla|j> */
     double sums = 0.0;
     for (unsigned int d = 0; d < m_dim; ++d) {
         double tmpProdsd = 1.0;
@@ -139,7 +139,7 @@ double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
     } // end ford
 
     return -0.5*sums * normalizationFactor(i) * normalizationFactor(j);
-} // end function kinetic
+} // end function kineticElement
 
 double GaussianIntegrals::potentialElement(const unsigned int& i, const
         unsigned int& j) {
@@ -161,15 +161,15 @@ double GaussianIntegrals::potentialElement(const unsigned int& i, const
         sums += tmpProdsd;
     } // end ford
 
-    return -0.5*xScale*sums * normalizationFactor(i) * normalizationFactor(j);
+    return 0.5*xScale*sums * normalizationFactor(i) * normalizationFactor(j);
 } // end function kinetic
 
 double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
-    return 0;
-} // end function coulomb
+    return 0.0;
+} // end function coulombElement
 
 inline double GaussianIntegrals::incompleteOverlapIntegral(const unsigned int&
         l) {
