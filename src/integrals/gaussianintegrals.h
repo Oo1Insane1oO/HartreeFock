@@ -9,9 +9,15 @@ class GaussianBasis;
 class GaussianIntegrals : public GaussianBasis  {
     private:
         unsigned int m_dim;
-        double expScaleFactor, sqrtFactor, F0, F1, xScale, sqrtScale, powScale;
+        double expScaleFactor, sqrtFactor, F0, F1, xScale, sqrtScale, powScale,
+               sqrtScale1;
 
         Eigen::ArrayXd normalizationFactors;
+
+        double ddexpr(int, int, double(GaussianIntegrals::*)(const int&, const int&));
+        double ddexprOverlap(const int&, const int&);
+        double ddexprLaplacian(const int&, const int&);
+        double ddexprPotential(const int&, const int&);
 
         inline double incompleteOverlapIntegral(const unsigned int&);
         inline double incompleteByPartsFactorG(const unsigned int&);
