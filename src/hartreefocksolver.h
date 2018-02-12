@@ -12,7 +12,8 @@ class HartreeFockSolver : public Integrals {
     private:
         unsigned int m_dim, m_numStates, m_numParticles;
 
-        Eigen::ArrayXd integralElements;
+        Eigen::ArrayXd twoBodyElements;
+        Eigen::MatrixXd oneBodyElements;
 
         Eigen::MatrixXd HartreeFockMatrix, densityMatrix, coefficients;
 
