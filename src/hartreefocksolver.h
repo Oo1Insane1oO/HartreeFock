@@ -13,14 +13,14 @@ class HartreeFockSolver : public Integrals {
         unsigned int m_dim, m_numStates, m_numParticles;
 
         Eigen::ArrayXd twoBodyElements;
-        Eigen::MatrixXd oneBodyElements;
+        Eigen::MatrixXd oneBodyElements, overlapElements;
 
-        Eigen::MatrixXd HartreeFockMatrix, densityMatrix, coefficients;
+        Eigen::MatrixXd FockMatrix, densityMatrix, coefficients;
 
         inline void assemble();
         
         inline void setDensityMatrix();
-        inline void setHartreeFockMatrix();
+        inline void setFockMatrix();
 
         inline unsigned int dIndex(const unsigned int&, const unsigned int&,
                 const unsigned int&, const unsigned int&, const unsigned int&);

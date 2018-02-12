@@ -254,6 +254,17 @@ class generalizedFit:
             # end forj
         # end fori
 
+        with open("H.txt", "w") as oFile:
+            for i in range(len(H)):
+                for j in range(len(H)):
+                    oFile.write(str(H[i,j]) + " ")
+                oFile.write("\n")
+        with open("G.txt", "w") as oFile:
+            for i in range(len(H)):
+                for j in range(len(H)):
+                    oFile.write(str(G[i,j]) + " ")
+                oFile.write("\n")
+
         print "H:\n", H, "\n"
         print "G:\n", G, "\n"
 
@@ -294,8 +305,16 @@ if __name__ == "__main__":
     gF = generalizedFit(filename, dim, cut)
     N = 1000
     coeffs, states, epsilon = gF.findCoefficients(w)
-#     coeffs = swapCol(coeffs, 3, 4)
-#     coeffs = swapCol(coeffs, 6, 7)
+    coeffs = np.zeros((21,21))
+    with open("C.txt", "r") as coeffFile:
+        i = 0
+        for line in coeffFile:
+            row = line.split();
+            for j,rw in enumerate(row):
+                coeffs[i,j] = np.longdouble(rw);
+            i += 1
+    print coeffs
+    coeffs = gF.sortCoefficients(coeffs, w, N)
     psi = gF.buildContracted(w, coeffs, N)
 #     psi, coeffs, states, epsilon = gF.contractedFunction(w, N)
     print "Epsilon: ", epsilon, " Exact: ", states[:,-1]*w
@@ -308,8 +327,8 @@ if __name__ == "__main__":
     for i in range(len(coeffs)):
         plt.plot(np.linalg.norm(r, axis=0), psi[i], label="psi%i off:%f" % (i,
             np.linalg.norm(psi[i]-hermites[i])))
-        plt.plot(np.linalg.norm(r, axis=0), hermites[i], label="H%i" % i,
-                alpha=0.5)
+#         plt.plot(np.linalg.norm(r, axis=0), hermites[i], label="H%i" % i,
+#                 alpha=0.5)
     # end fori
     plt.xlabel('$r$')
     plt.ylabel('$\\psi(r)$')
