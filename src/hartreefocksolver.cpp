@@ -19,6 +19,7 @@ inline unsigned int HartreeFockSolver::dIndex(const unsigned int& N, const
 
 inline void HartreeFockSolver::assemble() {
     /* assemble integral elements (with symmetries) */
+//     m_numStates /= 2;
 
     // array containing elements <ij|1/r_12|ij>_AS 
     twoBodyElements = Eigen::ArrayXd::Zero(m_numStates * m_numStates *
@@ -149,9 +150,10 @@ void HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     } while ((count < maxIterations) && (fabs((eigenSolver.eigenvalues() -
                         previousEnergies).norm()) > eps));
 
-    // find estimate for gound state energy for m_numParticles
+    // find estimate for ground state energy for m_numParticles
     double groundStateEnergy = eigenSolver.eigenvalues().segment(0,
-            m_numParticles).sum();
+            m_numParticles).sum() + oneBodyElements.diagonal().segment(0,
+                m_numParticles).sum();
     for (unsigned int a = 0; a < m_numStates; ++a) {
         for (unsigned int b = 0; b < m_numStates; ++b) {
             for (unsigned int c = 0; c < m_numStates; ++c) {
