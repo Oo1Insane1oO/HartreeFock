@@ -30,7 +30,9 @@ class HartreeFockSolver : public Integrals {
                 int);
         virtual ~HartreeFockSolver ();
 
-        void iterate(const unsigned int&, const double&);
+        Integrals* getIntegralObj();
+
+        double iterate(const unsigned int&, const double&);
 };
 
 #endif /* HARTREEFOCKSOLVER_H */

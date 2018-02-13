@@ -38,6 +38,8 @@ class GaussianIntegrals : public GaussianBasis  {
 
         GaussianBasis* getBasis();
 
+        void initializeParameters(double);
+
         double overlapElement(const unsigned int&, const unsigned int&);
         double kineticElement(const unsigned int&, const unsigned int&);
         double coulombElement(const unsigned int&, const unsigned int&, const

@@ -30,9 +30,13 @@ int main(int argc, char *argv[]) {
         return 0;
     #endif
 
+    // TODO: fix input file and parser
+
     // dimensions, cutoff, numParticles
-    HartreeFockSolver* HFS = new HartreeFockSolver(3, 20, 8);
-    HFS->iterate(100, 1e-8);
+    double w = 0.5;
+    HartreeFockSolver* HFS = new HartreeFockSolver(2, 6, 2);
+    HFS->getIntegralObj()->initializeParameters(w);
+    double E = HFS->iterate(100, 1e-8);
 
     delete HFS;
 } // end main

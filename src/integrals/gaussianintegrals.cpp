@@ -9,15 +9,8 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
     expScaleFactor = scaling;
     sqrtFactor = sqrt(scaling);
 
-    xScale = 0.5; // omega in HO case FIXME: generalize this 
-    sqrtScale1 = sqrt(pow(xScale, m_dim));
-    sqrtScale = 1./sqrtScale1;
-    powScale = pow(xScale, 2*m_dim);
-
     setF0();
     setF1();
-
-    setNormalizations();
 } // end constructor
 
 GaussianIntegrals::~GaussianIntegrals() {
@@ -28,6 +21,16 @@ GaussianBasis* GaussianIntegrals::getBasis() {
     return dynamic_cast<GaussianBasis*>(this);
 } // end function getBasis
 
+void GaussianIntegrals::initializeParameters(double omega) {
+    /* set value of oscillator frequency */
+    xScale = omega;
+    sqrtScale1 = sqrt(pow(xScale, m_dim));
+    sqrtScale = 1./sqrtScale1;
+    powScale = pow(xScale, 2*m_dim);
+
+    setNormalizations();
+} // end function setPositionScaling
+
 void GaussianIntegrals::setNormalizations() {
     /* calculate and set normalization factors for all basis functions */
     normalizationFactors =
@@ -37,8 +40,6 @@ void GaussianIntegrals::setNormalizations() {
             ++i) {
         for (unsigned int d = 0; d < m_dim; ++d) {
             int n = *(GaussianBasis::Cartesian::getStates(i)(d));
-//             normalizationFactors(i) *= 1.0 / pow(2,n) *
-//                 boost::math::factorial<double>(n)*sqrtFactor;
             normalizationFactors(i) *= 1.0 / ddexpr(n,n,
                     &GaussianIntegrals::ddexprOverlap);
         } // end ford

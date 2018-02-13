@@ -2,13 +2,20 @@
 
 HartreeFockSolver::HartreeFockSolver(const unsigned int dimension, unsigned int
         cut, const unsigned int numParticles) : Integrals(dimension, cut) {
-        m_dim = dimension;
-        m_numStates = Integrals::getBasis()->Cartesian::getStates().rows();
-        m_numParticles = numParticles;
+    /* set dimensions, cutoff and number of particles and initialize basis and
+     * integrals */
+    m_dim = dimension;
+    m_numStates = Integrals::getBasis()->Cartesian::getStates().rows();
+    m_numParticles = numParticles;
 } // end constructor
 
 HartreeFockSolver::~HartreeFockSolver() {
 } // end deconstructor
+
+Integrals* HartreeFockSolver::getIntegralObj() {
+    /* return a pointer to Integrals */
+    return dynamic_cast<Integrals*>(this);
+} // end function getIntegralObj
 
 inline unsigned int HartreeFockSolver::dIndex(const unsigned int& N, const
         unsigned int& i, const unsigned int& j, const unsigned int& k, const
@@ -110,7 +117,7 @@ inline void HartreeFockSolver::setFockMatrix() {
     } // end fori
 } // end function sethartreeFockMatrix
 
-void HartreeFockSolver::iterate(const unsigned int& maxIterations, const
+double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
         double& eps) {
     /* run Hartree-Fock algorithm for finding coefficients and energy until
      * threshold convergence or until maxIterations is reached */
@@ -166,5 +173,5 @@ void HartreeFockSolver::iterate(const unsigned int& maxIterations, const
         } // end forb
     } // end fora
 
-    std::cout << "E: " << groundStateEnergy << " Iter: " << count << std::endl;
+    return groundStateEnergy;
 } // end function iterate
