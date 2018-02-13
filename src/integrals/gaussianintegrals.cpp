@@ -9,7 +9,7 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
     expScaleFactor = scaling;
     sqrtFactor = sqrt(scaling);
 
-    xScale = 1.0; // omega in HO case FIXME: generalize this 
+    xScale = 0.5; // omega in HO case FIXME: generalize this 
     sqrtScale1 = sqrt(pow(xScale, m_dim));
     sqrtScale = 1./sqrtScale1;
     powScale = pow(xScale, 2*m_dim);
@@ -135,7 +135,7 @@ double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
         sums += tmpProdsd;
     } // end ford
 
-    return -0.5*sums * normalizationFactor(i) * normalizationFactor(j);
+    return -0.5*xScale*sums * normalizationFactor(i) * normalizationFactor(j);
 } // end function kineticElement
 
 double GaussianIntegrals::potentialElement(const unsigned int& i, const
