@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     #endif
 
     // dimensions, cutoff, numParticles
-    HartreeFockSolver* HFS = new HartreeFockSolver(2, 6, 2);
+    HartreeFockSolver* HFS = new HartreeFockSolver(3, 20, 8);
     HFS->iterate(100, 1e-8);
 
     delete HFS;
