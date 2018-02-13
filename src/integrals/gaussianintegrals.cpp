@@ -25,7 +25,6 @@ GaussianIntegrals::~GaussianIntegrals() {
 
 GaussianBasis* GaussianIntegrals::getBasis() {
     /* return a pointer to GaussianBasis */
-    // TODO: check that caller actually gets GaussianBasis
     return dynamic_cast<GaussianBasis*>(this);
 } // end function getBasis
 
@@ -38,10 +37,13 @@ void GaussianIntegrals::setNormalizations() {
             ++i) {
         for (unsigned int d = 0; d < m_dim; ++d) {
             int n = *(GaussianBasis::Cartesian::getStates(i)(d));
-            normalizationFactors(i) *= 1.0 / sqrt(pow(2,n) *
-                    boost::math::factorial<double>(n)*sqrtFactor);
+//             normalizationFactors(i) *= 1.0 / pow(2,n) *
+//                 boost::math::factorial<double>(n)*sqrtFactor;
+            normalizationFactors(i) *= 1.0 / ddexpr(n,n,
+                    &GaussianIntegrals::ddexprOverlap);
         } // end ford
     } // end fori
+    normalizationFactors = normalizationFactors.cwiseSqrt();
 } // end function setNormalizations
 
 void GaussianIntegrals::setF0() {
@@ -64,9 +66,10 @@ inline double GaussianIntegrals::overlapd(const unsigned int& n, const unsigned
         int& m) {
     /* calculate and return <g_n|g_m> (overlap) in 1 dimension */
     int s = n + m;
-    if (s%2 || s<=-1) {
+    if ((s<=-1) || (s%2)) {
         return 0.0;
     } // end if
+
     return boost::math::tgamma<double>((s+1)/2.) / sqrt(xScale);
 } // end function overlapd
 
@@ -74,17 +77,12 @@ inline double GaussianIntegrals::ddexpr(const int& ndd, const int& mdd,
         double(GaussianIntegrals::* f)(const int&, const int&)) {
     /* expression for sum over contracted functions */
     double sums = 0.0;
-    int p = 0;
-    int q = 0;
-    do {
-        /* run atleast once to take care of ndd=0 */
-        do {
-            /* run atleast once to take care of mdd=0 */
+    for (unsigned int p = 0; p <= ndd; ++p) {
+        for (unsigned int q = 0; q <= mdd; ++q) {
             sums += HC(ndd)[p]*HC(mdd)[q] * (this->*f)(p,q);
-            q++;
-        } while(q<mdd);
-        p++;
-    } while(p<ndd);
+        } // end forq
+    } // end forp
+
     return sums;
 } // end function ddexpr
 
@@ -114,7 +112,6 @@ double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
                 &GaussianIntegrals::ddexprOverlap);
     } // end ford
 
-//     return (i==j ? sqrtScale1 : 0.0);
     return prod * sqrtScale1 * normalizationFactor(i) * normalizationFactor(j);
 } // end function overlapElement
 
