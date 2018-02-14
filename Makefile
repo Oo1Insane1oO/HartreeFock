@@ -46,13 +46,23 @@ endif
 OBJ_DIR = bin
 TEST_DIR = tests
 
-BASISSRC = $(wildcard $(SRC)/basis/*.cpp)
+BASIS = GAUSSHERMITE
+
+ifeq ($(BASIS),GAUSSHERMITE)
+	OTHER_BASIS_SOURCE := $(SRC)/basisfunctions/cartesian.cpp
+	INTEGRALS := $(wildcard $(SRC)/integrals/gaussianintegrals.cpp)
+	BASISSRC = $(SRC)/basis/gaussianbasis.cpp
+endif
+
+ifeq ($(BASIS),STYPEGAUSSIAN)
+	OTHER_BASIS_SOURCE := $(SRC)/basisfunctions/gaussianprimitivebasis.cpp $(SRC)/basisfunctions/gaussiancontractedbasis.cpp
+	INTEGRALS := $(wildcard $(SRC)/integrals/gaussianstypeintegrals.cpp)
+	BASISSRC = $(SRC)/basis/stypebasis.cpp
+endif
+
 BASISHDR = $(patsubst %.cpp,%.h,$(BASISSRC))
-
-OTHER_BASIS_SOURCE = $(SRC)/basisfunctions/cartesian.cpp
-OTHER_BASIS_SOURCE += $(SRC)/basisfunctions/gaussianprimitivebasis.cpp $(SRC)/basisfunctions/gaussiancontractedbasis.cpp
-
-INTEGRALS = $(wildcard $(SRC)/integrals/*.cpp)
+	
+CXXFLAGS += -D$(BASIS)
 
 MAINSRC = $(SRC)/main.cpp
 

@@ -3,22 +3,19 @@
 
 #include "../basisfunctions/cartesian.h"
 #include "../methods.h"
-#include "../basisfunctions/gaussiancontractedbasis.h"
 
-class GaussianBasis : public Cartesian, public GaussianContractedBasis {
+class GaussianBasis : public Cartesian {
     private:
         unsigned int m_dim;
 
     public:
         GaussianBasis ();
-        GaussianBasis (unsigned int, unsigned int, double);
+        GaussianBasis (unsigned int, unsigned int);
         virtual ~GaussianBasis ();
 
-        void setup(unsigned int, unsigned int, double=1);
-        void setPrimitives(const double scaling);
+        unsigned int getSize();
 
-        const Eigen::Ref<const Eigen::VectorXi> getExpVec(const unsigned int&)
-            const;
+        void setup(unsigned int, unsigned int);
 };
 
 #endif /* GAUSSIANBASIS_H */

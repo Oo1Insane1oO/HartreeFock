@@ -2,7 +2,6 @@
 #define GAUSSIANINTEGRALS_H
 
 #include "../basis/gaussianbasis.h"
-#include "../basisfunctions/gaussiancontractedbasis.h"
 
 class GaussianBasis;
 
