@@ -34,9 +34,11 @@ int main(int argc, char *argv[]) {
 
     // dimensions, cutoff, numParticles
     double w = 0.5;
-    HartreeFockSolver* HFS = new HartreeFockSolver(2, 6, 2);
+    HartreeFockSolver* HFS = new HartreeFockSolver(2, 2, 2);
     HFS->getIntegralObj()->initializeParameters(w);
     double E = HFS->iterate(100, 1e-8);
+
+    std::cout << E << std::endl;
 
     delete HFS;
 } // end main

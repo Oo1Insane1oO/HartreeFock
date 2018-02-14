@@ -17,3 +17,8 @@ const GaussianPrimitiveBasis* GaussianContractedBasis::getPrimitive(const
         unsigned int& j) const {
     return m_primitives.at(j).get();
 } // end function getPrimitive
+
+unsigned int GaussianContractedBasis::getNumPrimitives() {
+    /* get number of primitives (size of basis) */
+    return m_primitives.size();
+} // end function getNumPrimitives

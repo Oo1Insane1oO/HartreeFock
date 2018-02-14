@@ -3,10 +3,19 @@
 
 #include <Eigen/Dense>
 
-#include "integrals/gaussianintegrals.h"
+#ifdef GAUSSHERMITE
+    #include "integrals/gaussianintegrals.h"
 
-class GaussianIntegrals;
-using Integrals = GaussianIntegrals;
+    class GaussianIntegrals;
+    using Integrals = GaussianIntegrals;
+#endif
+
+#ifdef STYPEGAUSSIAN
+    #include "integrals/gaussianstypeintegrals.h"
+
+    class GaussianStypeIntegrals;
+    using Integrals = GaussianStypeIntegrals;
+#endif
 
 class HartreeFockSolver : public Integrals {
     private:

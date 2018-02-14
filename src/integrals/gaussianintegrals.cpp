@@ -4,7 +4,7 @@
 #include <boost/math/special_functions/gamma.hpp>
 
 GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
-        cutOff, double scaling) : GaussianBasis(cutOff, dim, scaling) {
+        cutOff, double scaling) : GaussianBasis(cutOff, dim) {
     m_dim = dim;
     expScaleFactor = scaling;
     sqrtFactor = sqrt(scaling);
@@ -166,6 +166,21 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
+    if (((GaussianBasis::Cartesian::getSumn(i) +
+                    GaussianBasis::Cartesian::getSumn(j)) !=
+                (GaussianBasis::Cartesian::getSumn(k) +
+                 GaussianBasis::Cartesian::getSumn(l))) ||
+            ((*(GaussianBasis::Cartesian::getStates(i)(m_dim)) +
+              *(GaussianBasis::Cartesian::getStates(j)(m_dim))) !=
+             *((GaussianBasis::Cartesian::getStates(k)(m_dim)) +
+                 *(GaussianBasis::Cartesian::getStates(l)(m_dim)))) ||
+            (*(GaussianBasis::Cartesian::getStates(i)(m_dim)) !=
+             *(GaussianBasis::Cartesian::getStates(k)(m_dim))) ||
+            (*(GaussianBasis::Cartesian::getStates(j)(m_dim)) !=
+             *(GaussianBasis::Cartesian::getStates(l)(m_dim)))) {
+        /* make sure total angular momentum and total spin is conserved */
+        return 0.0;
+    } // end if
     return 0.0;
 } // end function coulombElement
 
