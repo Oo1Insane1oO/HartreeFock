@@ -16,7 +16,8 @@ class GaussianStypeIntegrals : public StypeBasis {
 
         StypeBasis* getBasis();
 
-        void initializeParameters(double);
+        void initializeParameters(const Eigen::VectorXd&);
+        void initializeParameters(const Eigen::MatrixXd&);
         
         double overlapElement(const unsigned int&, const unsigned int&);
         double kineticElement(const unsigned int&, const unsigned int&);

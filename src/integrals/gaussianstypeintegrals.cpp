@@ -2,7 +2,6 @@
 
 GaussianStypeIntegrals::GaussianStypeIntegrals(const unsigned int dim, unsigned
         int numParameters, double scaling) : StypeBasis(dim) {
-    /* TODO: fix for general scaling */
     m_dim = dim;
 }// end constructor
 
@@ -14,9 +13,17 @@ StypeBasis* GaussianStypeIntegrals::getBasis() {
     return dynamic_cast<StypeBasis*>(this);
 } // end function getBasis
 
-void GaussianStypeIntegrals::initializeParameters(double w) {
-    /* TODO: fix for general scaling */
-} // end function initializzeParameters
+void GaussianStypeIntegrals::initializeParameters(const Eigen::VectorXd&
+        scalingVector) {
+    /* initialize scaling factors and primitives for isotropic case */
+    StypeBasis::setPrimitives(scalingVector);
+} // end function initializeParameters
+
+void GaussianStypeIntegrals::initializeParameters(const Eigen::MatrixXd&
+        scalingMatrix) {
+    /* initialize scaling factors and primitives for non-isotropic case */
+    StypeBasis::setPrimitives(scalingMatrix);
+} // end function initializeParameters
         
 double GaussianStypeIntegrals::overlapElement(const unsigned int& i, const
         unsigned int& j) {

@@ -6,10 +6,10 @@ GaussianContractedBasis::GaussianContractedBasis() {
 GaussianContractedBasis::~GaussianContractedBasis() {
 } // end deconstructor
 
-void GaussianContractedBasis::addPrimitive(const double weight, const
-        Eigen::VectorXi& expVec) {
+void GaussianContractedBasis::addPrimitive(const Eigen::VectorXd& scaling,
+        const Eigen::VectorXi& expVec) {
     /* add primitive */
-    m_primitives.push_back(std::make_unique<GaussianPrimitiveBasis>(weight,
+    m_primitives.push_back(std::make_unique<GaussianPrimitiveBasis>(scaling,
                 expVec));
 } // end function addPrimitives
 

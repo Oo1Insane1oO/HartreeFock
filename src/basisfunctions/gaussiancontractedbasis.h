@@ -15,8 +15,8 @@ class GaussianContractedBasis {
         GaussianContractedBasis();
         virtual ~GaussianContractedBasis();
 
-        void addPrimitive(const double, const Eigen::VectorXi&);
-        const GaussianPrimitiveBasis* getPrimitive(const unsigned int&) const ;
+        void addPrimitive(const Eigen::VectorXd&, const Eigen::VectorXi&);
+        const GaussianPrimitiveBasis* getPrimitive(const unsigned int&) const;
         unsigned int getNumPrimitives();
 };
 
