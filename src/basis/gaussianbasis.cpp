@@ -20,5 +20,5 @@ void GaussianBasis::setup(unsigned int cut, unsigned int dimension) {
     /* set number of dimensions */
     m_dim = dimension;
     Cartesian::setup(cut, m_dim);
-//     Cartesian::restructureStates();
+    Cartesian::restructureStates();
 } // end function setDim

@@ -1,10 +1,13 @@
 #include "gaussianstypeintegrals.h"
+
+#include <boost/math/special_functions/erf.hpp>
 #include <iostream>
 
 GaussianStypeIntegrals::GaussianStypeIntegrals(const unsigned int dim, unsigned
         int numParameters, double scaling) : StypeBasis(dim) {
     m_dim = dim;
     sqrt2pi = sqrt(2*M_PI);
+    sqrtpi = sqrt(M_PI);
 }// end constructor
 
 GaussianStypeIntegrals::~GaussianStypeIntegrals() {
@@ -20,6 +23,7 @@ void GaussianStypeIntegrals::initializeParameters(const Eigen::VectorXd&
     /* initialize scaling factors and primitives for isotropic case */
     StypeBasis::setPrimitives(scalingVector);
     setNormalizations();
+    isotropic = true;
 } // end function initializeParameters
 
 void GaussianStypeIntegrals::initializeParameters(const Eigen::MatrixXd&
@@ -27,6 +31,7 @@ void GaussianStypeIntegrals::initializeParameters(const Eigen::MatrixXd&
     /* initialize scaling factors and primitives for non-isotropic case */
     StypeBasis::setPrimitives(scalingMatrix);
     setNormalizations();
+    isotropic = false;
 } // end function initializeParameters
 
 void GaussianStypeIntegrals::setNormalizations() {
@@ -63,12 +68,34 @@ double GaussianStypeIntegrals::overlapElement(const unsigned int& i, const
 
 double GaussianStypeIntegrals::kineticElement(const unsigned int& i, const
         unsigned int& j) {
-    return 0.0;
+    /* evaluate and return preset kineticFunc */
+    double sum = 0.0;
+    for (unsigned int d = 0; d < m_dim; ++d) {
+        double a = StypeBasis::getBasis()->getPrimitive(i)->scaling(d);
+        double b = StypeBasis::getBasis()->getPrimitive(j)->scaling(d);
+        double prod = a*b * (sqrtpi / (2*pow((a+b), 1.5)));
+        for (unsigned int dd = 0; dd < m_dim; ++dd) {
+            if (dd != d) {
+                prod *= sqrtpi / sqrt(StypeBasis::getBasis()->getPrimitive(i)
+                        -> scaling(dd) +
+                        StypeBasis::getBasis()->getPrimitive(j) ->
+                        scaling(dd));
+            } // end if
+        } // end fordd
+        sum += prod;
+    } // end ford
+    return 0.5 * sum * normalizationFactors(i) * normalizationFactors(j);
 } // end function kineticElement
 
-double GaussianStypeIntegrals::potentialElement(const unsigned int&, const
-        unsigned int&) {
-    return 0.0;
+double GaussianStypeIntegrals::potentialElement(const unsigned int& i, const
+        unsigned int& j) {
+    double prod = 0.0;
+    for (unsigned int d = 0; d < m_dim; ++d) {
+        prod *= sqrt2pi /
+            pow(StypeBasis::getBasis()->getPrimitive(i)->scaling(d) +
+                    StypeBasis::getBasis()->getPrimitive(j)->scaling(d), 1.5);
+    } // end ford
+    return 0.5 * prod * normalizationFactors(i) * normalizationFactors(j);
 } // end function potentialElement
 
 double GaussianStypeIntegrals::coulombElement(const unsigned int& i, const
