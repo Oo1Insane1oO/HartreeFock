@@ -24,6 +24,11 @@ const Eigen::VectorXi& GaussianPrimitiveBasis::expVec() const {
     return m_exponentVector;
 } // end function dExponent
 
+const double& GaussianPrimitiveBasis::scaling(const unsigned int& dIdx) const {
+    /* return scaling factor for dimensions dIdx */
+    return m_scalingVector(dIdx);
+} // end function scaling
+
 const Eigen::VectorXd& GaussianPrimitiveBasis::scalingVec() const {
     /* return scaling for all dimension */
     return m_scalingVector;

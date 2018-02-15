@@ -8,6 +8,13 @@ class StypeBasis;
 class GaussianStypeIntegrals : public StypeBasis {
     private:
         unsigned int m_dim;
+        double sqrt2pi;
+
+        Eigen::ArrayXd normalizationFactors;
+
+        void setNormalizations();
+
+        double overlapd(const unsigned int&, const unsigned int&);
 
     public:
         GaussianStypeIntegrals (const unsigned int, const unsigned int,

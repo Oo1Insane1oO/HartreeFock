@@ -17,6 +17,7 @@ class GaussianPrimitiveBasis {
         int dExponent(const unsigned int&);
         const Eigen::VectorXi& expVec() const;
         const Eigen::VectorXd& scalingVec() const;
+        const double& scaling(const unsigned int&) const;
         void setExponent(int, const unsigned int);
         void setExponent(const Eigen::VectorXi&);
 
