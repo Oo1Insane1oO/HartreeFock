@@ -5,7 +5,6 @@ HartreeFockSolver::HartreeFockSolver(const unsigned int dimension, unsigned int
     /* set dimensions, cutoff and number of particles and initialize basis and
      * integrals */
     m_dim = dimension;
-    m_numStates = Integrals::getBasis()->getSize();
     m_numParticles = numParticles;
 } // end constructor
 
@@ -26,6 +25,7 @@ inline unsigned int HartreeFockSolver::dIndex(const unsigned int& N, const
 
 inline void HartreeFockSolver::assemble() {
     /* assemble integral elements (with symmetries) */
+    m_numStates = Integrals::getBasis()->getSize();
 //     m_numStates /= 2;
 
     // array containing elements <ij|1/r_12|ij>_AS 

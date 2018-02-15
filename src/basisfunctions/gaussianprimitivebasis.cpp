@@ -4,29 +4,35 @@ GaussianPrimitiveBasis::GaussianPrimitiveBasis() {
     /* default constructor */
 } // end constructor
 
-GaussianPrimitiveBasis::GaussianPrimitiveBasis(double weight, Eigen::VectorXi
-        expVec) {
-    m_weight = weight;
+GaussianPrimitiveBasis::GaussianPrimitiveBasis(Eigen::VectorXd scalingVec,
+        Eigen::VectorXi expVec) {
+    /* initialize */
+    m_scalingVector = scalingVec;
     m_exponentVector = expVec;
 } // end constructor
 
 GaussianPrimitiveBasis::~GaussianPrimitiveBasis() {
 } // end deconstructor
 
-int GaussianPrimitiveBasis::dExponent(const unsigned int& dIdx) const {
+int GaussianPrimitiveBasis::dExponent(const unsigned int& dIdx) {
     /* return exponent for dimension dIdx */
     return m_exponentVector(dIdx);
 } // end function dExponent
 
-const Eigen::VectorXi &GaussianPrimitiveBasis::expVec() const {
-    /* return exponent for dimension dIdx */
+const Eigen::VectorXi& GaussianPrimitiveBasis::expVec() const {
+    /* return exponent for all dimension */
     return m_exponentVector;
 } // end function dExponent
 
-void GaussianPrimitiveBasis::setWeight(double weight) {
-    /* set m_weight to weight */
-    m_weight = weight;
-} // end function setWeight
+const Eigen::VectorXd& GaussianPrimitiveBasis::scalingVec() const {
+    /* return scaling for all dimension */
+    return m_scalingVector;
+} // end function dExponent
+
+void GaussianPrimitiveBasis::setScaling(const Eigen::VectorXd& scalingVector) {
+    /* set m_scalingVector to scalingVector */
+    m_scalingVector = scalingVector;
+} // end functionsetScaling 
 
 void GaussianPrimitiveBasis::setExponent(int value, const unsigned int dIdx) {
     /* set exponent in dimension dIdx */

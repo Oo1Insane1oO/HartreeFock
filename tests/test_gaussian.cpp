@@ -1,3 +1,4 @@
+#ifdef GAUSSHERMITE
 #include <UnitTest++/UnitTest++.h>
 
 #include <memory>
@@ -128,3 +129,4 @@ SUITE(HFGaussUnperturbed) {
         CHECK_CLOSE(15, HFS->iterate(100, 1e-8), 1e-14);
     } // end TEST_FIXTURE check3Dw1N20
 } // end SUITE HFGauss
+#endif

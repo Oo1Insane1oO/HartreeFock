@@ -14,8 +14,12 @@ class StypeBasis : public GaussianContractedBasis {
         virtual ~StypeBasis ();
 
         unsigned int getSize();
+
+        GaussianContractedBasis* getBasis();
         
         void setPrimitives(const double);
+        void setPrimitives(const Eigen::VectorXd&);
+        void setPrimitives(const Eigen::MatrixXd&);
 };
 
 #endif /* STYPEBASIS_H */
