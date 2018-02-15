@@ -18,7 +18,7 @@ SUITE(HFGaussUnperturbed) {
 
             HFGaussUnperturbedFix() {
                 HFS = std::make_unique<HartreeFockSolver>(2,2,2);
-                eps = 1e-14;
+                eps = 1e-13;
             } // end constructor
             ~HFGaussUnperturbedFix() {
             } // end deconstructor
@@ -27,7 +27,7 @@ SUITE(HFGaussUnperturbed) {
     TEST_FIXTURE(HFGaussUnperturbedFix, check2DN2) {
         /* check energies in 2D for N=2 */
         HFS->~HartreeFockSolver();
-        new (&*HFS) HartreeFockSolver(2,6,2);
+        new (&*HFS) HartreeFockSolver(2,12,2);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
         CHECK_CLOSE(2, HFS->iterate(100, 1e-8), 1e-14);
@@ -42,7 +42,7 @@ SUITE(HFGaussUnperturbed) {
     TEST_FIXTURE(HFGaussUnperturbedFix, check2DN6) {
         /* check energies in 2D for N=6 */
         HFS->~HartreeFockSolver();
-        new (&*HFS) HartreeFockSolver(2,12,6);
+        new (&*HFS) HartreeFockSolver(2,20,6);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
         CHECK_CLOSE(10, HFS->iterate(100, 1e-8), 1e-14);
@@ -117,7 +117,7 @@ SUITE(HFGaussUnperturbed) {
     TEST_FIXTURE(HFGaussUnperturbedFix, check3DN20) {
         /* check energies in 3D for N=20 */
         HFS->~HartreeFockSolver();
-        new (&*HFS) HartreeFockSolver(3,30,20);
+        new (&*HFS) HartreeFockSolver(3,40,20);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
         CHECK_CLOSE(60, HFS->iterate(100, 1e-8), 1e-14);

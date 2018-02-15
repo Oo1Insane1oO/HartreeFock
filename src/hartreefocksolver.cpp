@@ -1,4 +1,5 @@
 #include "hartreefocksolver.h"
+#include <iostream>
 
 HartreeFockSolver::HartreeFockSolver(const unsigned int dimension, unsigned int
         cut, const unsigned int numParticles) : Integrals(dimension, cut) {
@@ -26,7 +27,7 @@ inline unsigned int HartreeFockSolver::dIndex(const unsigned int& N, const
 inline void HartreeFockSolver::assemble() {
     /* assemble integral elements (with symmetries) */
     m_numStates = Integrals::getBasis()->getSize();
-//     m_numStates /= 2;
+//     m_numStates = (m_numStates%2==0 ? m_numStates/2 : (m_numStates+1)/2);
 
     // array containing elements <ij|1/r_12|ij>_AS 
     twoBodyElements = Eigen::ArrayXd::Zero(m_numStates * m_numStates *
@@ -63,7 +64,7 @@ inline void HartreeFockSolver::setDensityMatrix() {
     densityMatrix.setZero();
     for (unsigned int c = 0; c < coefficients.rows(); ++c) {
         for (unsigned int d = 0; d < coefficients.cols(); ++d) {
-            for (unsigned int i = 0; i < m_numStates; ++i) {
+            for (unsigned int i = 0; i < m_numParticles/2; ++i) {
                 densityMatrix(c,d) += coefficients(c,i) * coefficients(d,i);
             } // end fori
         } // end ford
@@ -75,7 +76,7 @@ inline void HartreeFockSolver::setFockMatrix() {
     FockMatrix.setZero();
     for (unsigned int i = 0; i < m_numStates; ++i) {
         for (unsigned int j = i; j < m_numStates; ++j) {
-            FockMatrix(i,j) += oneBodyElements(i,j); 
+            FockMatrix(i,j) = oneBodyElements(i,j); 
             for (unsigned int k = 0; k < m_numStates; ++k) {
                 for (unsigned int l = 0; l < m_numStates; ++l) {
                     FockMatrix(i,j) += densityMatrix(k,l) *
@@ -106,6 +107,7 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     // initialize eigenvalue/vector solver for hermitian matrix (Fock matrix is
     // build to be hermitian)
     Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
+//     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
 
     // run Hartree-Fock algorithm
     unsigned int count = 0;
@@ -118,6 +120,7 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
         // find eigenvalues and eigenvector (HartreeFock-energies and
         // coefficients respectively)
         eigenSolver.compute(FockMatrix, overlapElements);
+//         eigenSolver.compute(FockMatrix);
         coefficients = eigenSolver.eigenvectors();
 
         // set density matrix with new coefficients
@@ -130,9 +133,9 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
                         previousEnergies).norm()) > eps));
 
     // find estimate for ground state energy for m_numParticles
-    double groundStateEnergy = eigenSolver.eigenvalues().segment(0,
-            m_numParticles).sum() + oneBodyElements.diagonal().segment(0,
-                m_numParticles).sum();
+    double groundStateEnergy = (eigenSolver.eigenvalues().segment(0,
+                m_numParticles/2).sum() + oneBodyElements.diagonal().segment(0,
+                    m_numParticles/2).sum());
     for (unsigned int a = 0; a < m_numStates; ++a) {
         for (unsigned int b = 0; b < m_numStates; ++b) {
             for (unsigned int c = 0; c < m_numStates; ++c) {

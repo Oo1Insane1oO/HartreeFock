@@ -8,8 +8,8 @@ class StypeBasis;
 class GaussianStypeIntegrals : public StypeBasis {
     private:
         unsigned int m_dim;
-        double sqrt2pi;
-
+        double sqrt2pi, sqrtpi;
+        bool isotropic; 
         Eigen::ArrayXd normalizationFactors;
 
         void setNormalizations();
