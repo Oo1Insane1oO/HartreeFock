@@ -78,8 +78,8 @@ inline double GaussianIntegrals::ddexpr(const int& ndd, const int& mdd,
         double(GaussianIntegrals::* f)(const int&, const int&)) {
     /* expression for sum over contracted functions */
     double sums = 0.0;
-    for (unsigned int p = 0; p <= ndd; ++p) {
-        for (unsigned int q = 0; q <= mdd; ++q) {
+    for (int p = 0; p <= ndd; ++p) {
+        for (int q = 0; q <= mdd; ++q) {
             sums += HC(ndd)[p]*HC(mdd)[q] * (this->*f)(p,q);
         } // end forq
     } // end forp
@@ -89,7 +89,7 @@ inline double GaussianIntegrals::ddexpr(const int& ndd, const int& mdd,
 
 inline double GaussianIntegrals::ddexprOverlap(const int& p, const int& q) {
     /* expression for 1D overlap element */
-    return xScale * overlapd(p,q);
+    return overlapd(p,q);
 } // end function ddexpr1
 
 inline double GaussianIntegrals::ddexprLaplacian(const int& p, const int& q) {
@@ -100,25 +100,12 @@ inline double GaussianIntegrals::ddexprLaplacian(const int& p, const int& q) {
 
 inline double GaussianIntegrals::ddexprPotential(const int& p, const int& q) {
     /* expression for 1D potential element */
-    return xScale * overlapd(p,q+2);
+    return overlapd(p,q+2);
 } // end function ddexpr1
 
-double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
-        int& j) {
-    /* calculate and return the overlap integral element <i|j> */
-    double prod = 1.0;
-    for (unsigned int d = 0; d < m_dim; ++d) {
-        prod *= ddexpr(*(GaussianBasis::Cartesian::getStates(i)(d)),
-                *(GaussianBasis::Cartesian::getStates(j)(d)),
-                &GaussianIntegrals::ddexprOverlap);
-    } // end ford
-
-    return prod * sqrtScale1 * normalizationFactor(i) * normalizationFactor(j);
-} // end function overlapElement
-
-double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
-        int& j) {
-    /* calculate and return the kinetic integral element -0.5<i|nabla|j> */
+inline double GaussianIntegrals::laplacianElement(const unsigned int& i, const
+        unsigned int& j) {
+    /* calculate and return the laplacian integral element <i|nabla|j> */
     double sums = 0.0;
     for (unsigned int d = 0; d < m_dim; ++d) {
         double tmpProdsd = 1.0;
@@ -136,12 +123,12 @@ double GaussianIntegrals::kineticElement(const unsigned int& i, const unsigned
         sums += tmpProdsd;
     } // end ford
 
-    return -0.5*xScale*sums * normalizationFactor(i) * normalizationFactor(j);
+    return sums * normalizationFactor(i) * normalizationFactor(j);
 } // end function kineticElement
 
-double GaussianIntegrals::potentialElement(const unsigned int& i, const
+inline double GaussianIntegrals::potentialElement(const unsigned int& i, const
         unsigned int& j) {
-    /* calculate and return the kinetic integral element -<i|nabla|j> */
+    /* calculate and return the HO potential integral element <i|0.5wr^2|j> */
     double sums = 0.0;
     for (unsigned int d = 0; d < m_dim; ++d) {
         double tmpProdsd = 1.0;
@@ -162,6 +149,36 @@ double GaussianIntegrals::potentialElement(const unsigned int& i, const
     return 0.5*xScale*sums * normalizationFactor(i) * normalizationFactor(j);
 } // end function kinetic
 
+double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
+        int& j) {
+    /* calculate and return the overlap integral element <i|j> */
+    if (*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) !=
+            *(GaussianBasis::Cartesian::getStates(j)(m_dim+1))) {
+        /* respect spin orthogonality */
+        return 0.0;
+    } // end if
+    double prod = 1.0;
+    for (unsigned int d = 0; d < m_dim; ++d) {
+        prod *= ddexpr(*(GaussianBasis::Cartesian::getStates(i)(d)),
+                *(GaussianBasis::Cartesian::getStates(j)(d)),
+                &GaussianIntegrals::ddexprOverlap);
+    } // end ford
+
+    return prod * normalizationFactor(i) * normalizationFactor(j);
+} // end function overlapElement
+
+double GaussianIntegrals::oneBodyElement(const unsigned int& i, const unsigned
+        int& j) {
+    /* calculate and return oneBodyElement <i|K|j> + <i|P|j>, where K is the
+     * kinetic part and P is the potential part */
+    if (*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) !=
+            *(GaussianBasis::Cartesian::getStates(j)(m_dim+1))) {
+        /* respect spin orthogonality */
+        return 0.0;
+    } // end if
+    return -0.5*laplacianElement(i,j) + potentialElement(i,j);
+} // end function oneBodyElements
+
 double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
@@ -170,14 +187,14 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
                     GaussianBasis::Cartesian::getSumn(j)) !=
                 (GaussianBasis::Cartesian::getSumn(k) +
                  GaussianBasis::Cartesian::getSumn(l))) ||
-            ((*(GaussianBasis::Cartesian::getStates(i)(m_dim)) +
-              *(GaussianBasis::Cartesian::getStates(j)(m_dim))) !=
-             *((GaussianBasis::Cartesian::getStates(k)(m_dim)) +
+            ((*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) +
+              *(GaussianBasis::Cartesian::getStates(j)(m_dim+1))) !=
+             *((GaussianBasis::Cartesian::getStates(k)(m_dim+1)) +
                  *(GaussianBasis::Cartesian::getStates(l)(m_dim)))) ||
-            (*(GaussianBasis::Cartesian::getStates(i)(m_dim)) !=
-             *(GaussianBasis::Cartesian::getStates(k)(m_dim))) ||
-            (*(GaussianBasis::Cartesian::getStates(j)(m_dim)) !=
-             *(GaussianBasis::Cartesian::getStates(l)(m_dim)))) {
+            (*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) !=
+             *(GaussianBasis::Cartesian::getStates(k)(m_dim+1))) ||
+            (*(GaussianBasis::Cartesian::getStates(j)(m_dim+1)) !=
+             *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) {
         /* make sure total angular momentum and total spin is conserved */
         return 0.0;
     } // end if

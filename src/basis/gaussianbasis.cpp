@@ -4,8 +4,9 @@ GaussianBasis::GaussianBasis() : Cartesian::Cartesian() {
     /* default constructor */
 } // end constructor
 
-GaussianBasis::GaussianBasis(unsigned int cut, unsigned int dimension) {
-    setup(cut, dimension);
+GaussianBasis::GaussianBasis(unsigned int numSingleParticleStates, unsigned int
+        dimension) {
+    setup(numSingleParticleStates, dimension);
 } // end constructor
 
 GaussianBasis::~GaussianBasis() {
@@ -16,9 +17,10 @@ unsigned int GaussianBasis::getSize() {
     return Cartesian::getStates().rows();
 } // end function getSize
 
-void GaussianBasis::setup(unsigned int cut, unsigned int dimension) {
+void GaussianBasis::setup(unsigned int numSingleParticleStates, unsigned int
+        dimension) {
     /* set number of dimensions */
     m_dim = dimension;
-    Cartesian::setup(cut, m_dim);
-    Cartesian::restructureStates();
+    Cartesian::setup(numSingleParticleStates, m_dim);
+//     Cartesian::restructureStates();
 } // end function setDim

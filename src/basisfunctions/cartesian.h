@@ -29,12 +29,14 @@ class Cartesian {
         void sumn();
 
         unsigned int calculateDegeneracy(const unsigned int&);
+
+        void setStates(const unsigned int&);
     
     public:
         Cartesian ();
         virtual ~Cartesian ();
 
-        void setup(const unsigned int, const unsigned int);
+        void setup(unsigned int, const unsigned int);
 
         const EigenIntPtrMat &getStates() const;
         const Eigen::Ref<const EigenIntPtrVec> getStates(const unsigned int&)
