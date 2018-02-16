@@ -72,7 +72,7 @@ SUITE(HFGaussUnperturbed) {
     TEST_FIXTURE(HFGaussUnperturbedFix, check2DN20) {
         /* check energies in 2D for N=12 */
         HFS->~HartreeFockSolver();
-        new (&*HFS) HartreeFockSolver(2,42,20);
+        new (&*HFS) HartreeFockSolver(2,20,20);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
         CHECK_CLOSE(60, HFS->iterate(100, 1e-8), 1e-14);

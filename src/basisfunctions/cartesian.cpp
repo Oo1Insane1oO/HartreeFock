@@ -1,4 +1,5 @@
 #include <fstream>
+#include <cmath>
 #include "cartesian.h"
 
 using EigenIntPtrMat = Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>;
@@ -10,7 +11,7 @@ Cartesian::Cartesian() {
 Cartesian::~Cartesian() {
 } // end function deconstructor
 
-void Cartesian::setup(const unsigned int cut, const unsigned int dim) {
+void Cartesian::setup(unsigned int cut, const unsigned int dim) {
     s = 1;
     ms = Eigen::VectorXi(2);
     ms(0) = -1;
@@ -18,20 +19,38 @@ void Cartesian::setup(const unsigned int cut, const unsigned int dim) {
 
     m_dim = dim;
 
+    setStates(cut);
+
+    for (unsigned int i = 1; i < M.size(); ++i) {
+        M(i) += M(i-1);
+    } // end fori
+
+    // set angular momenta
+    angularMomenta = Eigen::VectorXi::Zero(states.rows());
+    sumn();
+
+    // set number of states built
+    m_numStates = states.rows();
+} // end function setup
+
+void Cartesian::setStates(const unsigned int& cut) {
+    /* set states with given cutOff */
     if (m_dim == 1) {
-        M = Eigen::VectorXi::Zero(cut/2);
+        unsigned int cutHalf = cut/2;
+        M = Eigen::VectorXi::Zero(cutHalf);
         n = Eigen::VectorXi::Zero(M.size());
         E = Eigen::VectorXi::Zero(M.size());
         states = EigenIntPtrMat(cut, 5);
-        for (unsigned int i = 0; i < cut/2; ++i) {
+        for (unsigned int i = 0; i < cutHalf; ++i) {
             M(i) = 2;
             n(i) = i;
             E(i) = i+1;
-        }
+        } // end fori
         for (unsigned int i = 1; i < M.size(); ++i) {
             M(i) += M(i-1);
         } // end fori
-        for (unsigned int i = 0; i < cut/2; ++i) {
+
+        for (unsigned int i = 0; i < cutHalf; ++i) {
             states.row(2*i)(0) = &(n(i));
             states.row(2*i)(1) = &s;
             states.row(2*i)(2) = &(ms(0));
@@ -94,18 +113,7 @@ void Cartesian::setup(const unsigned int cut, const unsigned int dim) {
         } // end forj
         e++;
     } // end while
-
-    for (unsigned int i = 1; i < M.size(); ++i) {
-        M(i) += M(i-1);
-    } // end fori
-
-    // set angular momenta
-    angularMomenta = Eigen::VectorXi::Zero(states.rows());
-    sumn();
-
-    // set number of states built
-    m_numStates = states.rows();
-} // end function setup
+} // end function setStates
 
 const Eigen::VectorXi& Cartesian::getSumn() const {
     /* return sum of n-values for all states */

@@ -12,6 +12,11 @@ class GaussianIntegrals : public GaussianBasis  {
                sqrtScale1;
 
         Eigen::ArrayXd normalizationFactors;
+        
+        inline double laplacianElement(const unsigned int&, const unsigned
+                int&);
+        inline double potentialElement(const unsigned int&, const unsigned
+                int&);
 
         inline double ddexpr(const int&, const int&,
                 double(GaussianIntegrals::*)(const int&, const int&));
@@ -40,10 +45,9 @@ class GaussianIntegrals : public GaussianBasis  {
         void initializeParameters(double);
 
         double overlapElement(const unsigned int&, const unsigned int&);
-        double kineticElement(const unsigned int&, const unsigned int&);
+        double oneBodyElement(const unsigned int&, const unsigned int&);
         double coulombElement(const unsigned int&, const unsigned int&, const
                 unsigned int&, const unsigned int&);
-        double potentialElement(const unsigned int&, const unsigned int&);
 };
 
 #endif /* GAUSSIANINTEGRALS_H */

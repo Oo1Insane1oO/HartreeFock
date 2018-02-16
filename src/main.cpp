@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
     // dimensions, cutoff, numParticles
     #ifdef GAUSSHERMITE
         double w = 0.5;
-        HartreeFockSolver* HFS = new HartreeFockSolver(2, 42, 20);
+        HartreeFockSolver* HFS = new HartreeFockSolver(2, 6, 2);
         HFS->getIntegralObj()->initializeParameters(w);
         double E = HFS->iterate(100, 1e-8);
     #endif
@@ -43,12 +43,12 @@ int main(int argc, char *argv[]) {
     #ifdef STYPEGAUSSIAN
         Eigen::VectorXd scalingVec = Eigen::VectorXd::Zero(4);
         scalingVec << 0.25, 0.5, 1.0, 1.5;
-        HartreeFockSolver* HFS = new HartreeFockSolver(2, 4, 2);
+        HartreeFockSolver* HFS = new HartreeFockSolver(2, 3, 2);
         HFS->getIntegralObj()->initializeParameters(scalingVec);
         double E = HFS->iterate(100, 1e-8);
     #endif
 
-    std::cout << E << std::endl;
+    std::cout << "E0 = " << E << std::endl;
 
     delete HFS;
 } // end main
