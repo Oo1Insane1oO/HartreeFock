@@ -5,10 +5,11 @@ GaussianPrimitiveBasis::GaussianPrimitiveBasis() {
 } // end constructor
 
 GaussianPrimitiveBasis::GaussianPrimitiveBasis(Eigen::VectorXd scalingVec,
-        Eigen::VectorXi expVec) {
+        Eigen::VectorXi expVec, Eigen::VectorXd centralVec) {
     /* initialize */
     m_scalingVector = scalingVec;
     m_exponentVector = expVec;
+    m_centralVector = centralVec;
 } // end constructor
 
 GaussianPrimitiveBasis::~GaussianPrimitiveBasis() {
@@ -32,6 +33,16 @@ const double& GaussianPrimitiveBasis::scaling(const unsigned int& dIdx) const {
 const Eigen::VectorXd& GaussianPrimitiveBasis::scalingVec() const {
     /* return scaling for all dimension */
     return m_scalingVector;
+} // end function dExponent
+
+const double& GaussianPrimitiveBasis::central(const unsigned int& dIdx) const {
+    /* return centrum for dimension dIdx */
+    return m_centralVector(dIdx);
+} // end function dExponent
+
+const Eigen::VectorXd& GaussianPrimitiveBasis::centralVec() const {
+    /* return centrum for all dimension */
+    return m_centralVector;
 } // end function dExponent
 
 void GaussianPrimitiveBasis::setScaling(const Eigen::VectorXd& scalingVector) {

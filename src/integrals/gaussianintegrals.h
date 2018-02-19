@@ -31,6 +31,13 @@ class GaussianIntegrals : public GaussianBasis  {
         inline double overlapd(const unsigned int&, const unsigned int&); 
 
         const double& normalizationFactor(const unsigned int&) const;
+
+        double (GaussianIntegrals::*coulombElementFunc)(const unsigned int&,
+                const unsigned int&, const unsigned int&, const unsigned int&);
+        inline double coulombElement2D(const unsigned int&, const unsigned
+                int&, const unsigned int&, const unsigned int&);
+        inline double coulombElement3D(const unsigned int&, const unsigned
+                int&, const unsigned int&, const unsigned int&);
         
         void setNormalizations();
         void setF0();

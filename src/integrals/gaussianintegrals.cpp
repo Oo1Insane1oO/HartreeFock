@@ -28,6 +28,14 @@ void GaussianIntegrals::initializeParameters(double omega) {
     sqrtScale = 1./sqrtScale1;
     powScale = pow(xScale, 2*m_dim);
 
+    // choose coulombElement function for 2D or 3D
+    if (m_dim == 2) {
+        coulombElementFunc = &GaussianIntegrals::coulombElement2D;
+    } else {
+        coulombElementFunc = &GaussianIntegrals::coulombElement3D;
+    } // end if
+
+    // calculate and set normalization factors to array
     setNormalizations();
 } // end function setPositionScaling
 
@@ -124,7 +132,7 @@ inline double GaussianIntegrals::laplacianElement(const unsigned int& i, const
     } // end ford
 
     return sums * normalizationFactor(i) * normalizationFactor(j);
-} // end function kineticElement
+} // end function laplacianElement 
 
 inline double GaussianIntegrals::potentialElement(const unsigned int& i, const
         unsigned int& j) {
@@ -147,7 +155,19 @@ inline double GaussianIntegrals::potentialElement(const unsigned int& i, const
     } // end ford
 
     return 0.5*xScale*sums * normalizationFactor(i) * normalizationFactor(j);
-} // end function kinetic
+} // end function potentialElement
+
+inline double GaussianIntegrals::coulombElement2D(const unsigned int& i, const
+        unsigned int& j, const unsigned int& k, const unsigned int& l) {
+    /* calculate and return the two-body coulomb integral element
+     * <ij|1/r_12|kl> in 2D */
+} // end function coulombElement2D
+
+inline double GaussianIntegrals::coulombElement3D(const unsigned int& i, const
+        unsigned int& j, const unsigned int& k, const unsigned int& l) {
+    /* calculate and return the two-body coulomb integral element
+     * <ij|1/r_12|kl> in 3D */
+} // end function coulombElement3D
 
 double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
         int& j) {
@@ -169,13 +189,14 @@ double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
 
 double GaussianIntegrals::oneBodyElement(const unsigned int& i, const unsigned
         int& j) {
-    /* calculate and return oneBodyElement <i|K|j> + <i|P|j>, where K is the
-     * kinetic part and P is the potential part */
+    /* calculate and return oneBodyElement <i|h|k> = <i|K|j> + <i|P|j>, where K
+     * is the kinetic part and P is the potential part */
     if (*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) !=
             *(GaussianBasis::Cartesian::getStates(j)(m_dim+1))) {
         /* respect spin orthogonality */
         return 0.0;
     } // end if
+
     return -0.5*laplacianElement(i,j) + potentialElement(i,j);
 } // end function oneBodyElements
 
@@ -198,6 +219,7 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         /* make sure total angular momentum and total spin is conserved */
         return 0.0;
     } // end if
+
     return 0.0;
 } // end function coulombElement
 
