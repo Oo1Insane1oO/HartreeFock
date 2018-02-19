@@ -16,19 +16,22 @@ GaussianContractedBasis* StypeBasis::getBasis() {
     return dynamic_cast<GaussianContractedBasis*>(this);
 } // end function getPrimitive
 
-void StypeBasis::setPrimitives(const Eigen::VectorXd& scalingVector) {
+void StypeBasis::setPrimitives(const Eigen::VectorXd& scalingVector, const
+        Eigen::MatrixXd& centralMatrix) {
     /* create and set primitive functions in contracted basis (isotropic) */
     for (unsigned int i = 0; i < scalingVector.size(); ++i) {
         GaussianContractedBasis::addPrimitive(Eigen::VectorXd::Constant(m_dim,
-                    scalingVector(i)), Eigen::VectorXi::Zero(m_dim));
+                    scalingVector(i)), Eigen::VectorXi::Zero(m_dim),
+                centralMatrix.row(i));
     } // end fori
 } // end function setPrimitives
 
-void StypeBasis::setPrimitives(const Eigen::MatrixXd& scalingMatrix) {
+void StypeBasis::setPrimitives(const Eigen::MatrixXd& scalingMatrix, const
+        Eigen::MatrixXd& centralMatrix) {
     /* create and set primitive functions in contracted basis (non-isotropic)
      * */
     for (unsigned int i = 0; i < scalingMatrix.rows(); ++i) {
         GaussianContractedBasis::addPrimitive(scalingMatrix.row(i),
-                Eigen::VectorXi::Zero(m_dim));
+                Eigen::VectorXi::Zero(m_dim), centralMatrix.row(i));
     } // end fori
 } // end function setPrimitives

@@ -18,8 +18,8 @@ class StypeBasis : public GaussianContractedBasis {
         GaussianContractedBasis* getBasis();
         
         void setPrimitives(const double);
-        void setPrimitives(const Eigen::VectorXd&);
-        void setPrimitives(const Eigen::MatrixXd&);
+        void setPrimitives(const Eigen::VectorXd&, const Eigen::MatrixXd&);
+        void setPrimitives(const Eigen::MatrixXd&, const Eigen::MatrixXd&);
 };
 
 #endif /* STYPEBASIS_H */

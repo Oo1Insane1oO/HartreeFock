@@ -42,9 +42,15 @@ int main(int argc, char *argv[]) {
     
     #ifdef STYPEGAUSSIAN
         Eigen::VectorXd scalingVec = Eigen::VectorXd::Zero(4);
+        Eigen::MatrixXd centralMatrix = Eigen::MatrixXd::Zero(4,2);
         scalingVec << 0.25, 0.5, 1.0, 1.5;
-        HartreeFockSolver* HFS = new HartreeFockSolver(2, 3, 2);
-        HFS->getIntegralObj()->initializeParameters(scalingVec);
+        centralMatrix << 0, 0,
+                         0, 0,
+                         0, 0,
+                         0, 0;
+
+        HartreeFockSolver* HFS = new HartreeFockSolver(2, 6, 2);
+        HFS->getIntegralObj()->initializeParameters(scalingVec, centralMatrix);
         double E = HFS->iterate(100, 1e-8);
     #endif
 
