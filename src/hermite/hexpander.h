@@ -3,9 +3,11 @@
 
 #include <Eigen/Dense>
 
+using EigMatMatXd = Eigen::Matrix<Eigen::MatrixXd, Eigen::Dynamic, Eigen::Dynamic>;
+
 class Hexpander {
     private:
-        Eigen::Matrix<Eigen::MatrixXd, Eigen::Dynamic, Eigen::Dynamic> coeffs;
+        EigMatMatXd coeffs;
 
         double calculateCoeff(const int&, const int&, const int&, const
                 double&, const double&, const double&);
@@ -19,8 +21,8 @@ class Hexpander {
         void setup(const size_t&, const size_t&, const double&, const double&,
                 const Eigen::VectorXd&, const Eigen::VectorXd&);
 
-        const double& coeff(const size_t&, const size_t&, const size_t&, const
-                size_t&) const;
+        const double& coeff(const unsigned int&, const unsigned int&, const
+                unsigned int&, const unsigned int&) const;
 };
 
 #endif /* HEXPANDER_H */
