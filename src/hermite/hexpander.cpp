@@ -21,8 +21,7 @@ void Hexpander::setup(const size_t& N, const size_t& dim, const double& a,
     /* calculate and set coefficients in coefficient matrix */
 
     Eigen::VectorXd diffAB = A - B;
-    coeffs = Eigen::Matrix<Eigen::MatrixXd, Eigen::Dynamic,
-           Eigen::Dynamic>(N,N);
+    coeffs = EigMatMatXd(N,N);
     for (unsigned int i = 0; i < N; ++i) {
         for (unsigned int j = 0; j < N; ++j) {
             coeffs(i,j) = Eigen::MatrixXd(i+j+1,dim);
@@ -60,8 +59,8 @@ double Hexpander::calculateCoeff(const int& i, const int& j, const int& t,
     } // end ifeifeifelse
 } // end function calculateCoeff
 
-const double& Hexpander::coeff(const size_t& i, const size_t& j, const size_t&
-        t, const size_t& d) const {
+const double& Hexpander::coeff(const unsigned int& i, const unsigned int& j,
+        const unsigned int& t, const unsigned int& d) const {
     /* get coefficient for t'th Hermite function in dimension d at level i+j */
     return coeffs(i,j)(t,d);
 } // end function getCoefficient
