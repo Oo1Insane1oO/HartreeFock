@@ -8,9 +8,6 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
     m_dim = dim;
     expScaleFactor = scaling;
     sqrtFactor = sqrt(scaling);
-
-    setF0();
-    setF1();
 } // end constructor
 
 GaussianIntegrals::~GaussianIntegrals() {
@@ -54,16 +51,6 @@ void GaussianIntegrals::setNormalizations() {
     } // end fori
     normalizationFactors = normalizationFactors.cwiseSqrt();
 } // end function setNormalizations
-
-void GaussianIntegrals::setF0() {
-    /* set first incomplete overlap integral factor */
-    F0 = sqrt(M_PI/expScaleFactor);
-} // end function setF0
-
-void GaussianIntegrals::setF1() {
-    /* set second incomplete overlap integral factor */
-    F1 = 0;
-} // end function setF1
 
 const double& GaussianIntegrals::normalizationFactor(const unsigned int& n)
     const {
@@ -160,13 +147,15 @@ inline double GaussianIntegrals::potentialElement(const unsigned int& i, const
 inline double GaussianIntegrals::coulombElement2D(const unsigned int& i, const
         unsigned int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
-     * <ij|1/r_12|kl> in 2D */
+     * <ij|1/r_12|kl> in 2D for level (i,k,j,l) (calculate 1D integral
+     * numerically) */
 } // end function coulombElement2D
 
 inline double GaussianIntegrals::coulombElement3D(const unsigned int& i, const
         unsigned int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
-     * <ij|1/r_12|kl> in 3D */
+     * <ij|1/r_12|kl> in 3D for level (i,k,j,l) (calculate 1D integral
+     * numerically) */
 } // end function coulombElement3D
 
 double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
@@ -220,31 +209,23 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         return 0.0;
     } // end if
 
-    return 0.0;
+    double sum = 0.0;
+    for (unsigned int d = 0; d < m_dim; ++d) {
+        int idd = *(GaussianBasis::Cartesian::getStates(i)(d));
+        int kdd = *(GaussianBasis::Cartesian::getStates(k)(d));
+        int jdd = *(GaussianBasis::Cartesian::getStates(j)(d));
+        int ldd = *(GaussianBasis::Cartesian::getStates(l)(d));
+        for (int p = 0; p < idd; ++p) {
+            for (int q = 0; q < kdd; ++q) {
+                for (int r = 0; r < jdd; ++r) {
+                    for (int s = 0; s < ldd; ++s) {
+                        sum += HC(idd)[p]*HC(kdd)[q]*HC(jdd)[r]*HC(ldd)[s] *
+                            (this->*coulombElementFunc)(p,q,r,s);
+                    } // end fors
+                } // end forr
+            } // end forp
+        } // end forq
+    } // end ford
+
+    return sum;
 } // end function coulombElement
-
-inline double GaussianIntegrals::incompleteOverlapIntegral(const unsigned int&
-        l) {
-    /* calculate incomplete integral used in overlap integral element with
-     * precalculated F0 and F1 */
-    return 0;
-} // end function incompleteOverlapIntegral
-
-inline double GaussianIntegrals::incompleteByPartsFactorG(const unsigned int&
-        m) {
-    /* calculate first part of incomplete overlap integral */
-    return 0;
-} // end function incompleteByPartsFactor
-
-inline double GaussianIntegrals::incompleteByPartsFactorF(const unsigned int&
-        l) {
-    /* calculate second part of incomplete overlap integral */
-    if (l%2==0) {
-        /* even case */
-        return 0;
-    } // end if
-
-    return 2*sqrt(M_PI) * 2*boost::math::factorial<double>(l) /
-        boost::math::factorial<double>(l/2) * pow(1/(2*sqrt(expScaleFactor)),
-                l+1);
-} // end function incompleteByPartsFactorF

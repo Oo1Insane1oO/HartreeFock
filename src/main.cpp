@@ -15,13 +15,13 @@ int main(int argc, char *argv[]) {
     /* main function */
     // let eigen use threads
     Eigen::initParallel();
-
-    unsigned int dim = 3;
-    Hexpander* h = new Hexpander(6, dim, 1, 1, Eigen::VectorXd::Zero(dim),
-            Eigen::VectorXd::Zero(dim));
-    std::cout << h->coeff(0,1,0,0) << std::endl;
-    delete h;
-    exit(1);
+// 
+//     unsigned int dim = 3;
+//     Hexpander* h = new Hexpander(6, dim, 1, 1, Eigen::VectorXd::Zero(dim),
+//             Eigen::VectorXd::Zero(dim));
+//     std::cout << h->coeff(0,1,0,0) << std::endl;
+//     delete h;
+//     exit(1);
 
     // write basis to file and exit
     #ifdef GENERATEBASIS

@@ -24,10 +24,6 @@ class GaussianIntegrals : public GaussianBasis  {
         inline double ddexprLaplacian(const int&, const int&);
         inline double ddexprPotential(const int&, const int&);
 
-        inline double incompleteOverlapIntegral(const unsigned int&);
-        inline double incompleteByPartsFactorG(const unsigned int&);
-        inline double incompleteByPartsFactorF(const unsigned int&);
-
         inline double overlapd(const unsigned int&, const unsigned int&); 
 
         const double& normalizationFactor(const unsigned int&) const;
@@ -40,8 +36,6 @@ class GaussianIntegrals : public GaussianBasis  {
                 int&, const unsigned int&, const unsigned int&);
         
         void setNormalizations();
-        void setF0();
-        void setF1();
 
     public:
         GaussianIntegrals(const unsigned int, unsigned int, double=1);
