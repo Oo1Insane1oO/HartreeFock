@@ -149,6 +149,37 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& i, const
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> in 2D for level (i,k,j,l) (calculate 1D integral
      * numerically) */
+    double sum = 0.0;
+    int Ix = *(GaussianBasis::Cartesian::getStates(i)(0));
+    int Iy = *(GaussianBasis::Cartesian::getStates(i)(1));
+    int Kx = *(GaussianBasis::Cartesian::getStates(k)(0));
+    int Ky = *(GaussianBasis::Cartesian::getStates(k)(1));
+    int Jx = *(GaussianBasis::Cartesian::getStates(j)(0));
+    int Jy = *(GaussianBasis::Cartesian::getStates(j)(1));
+    int Lx = *(GaussianBasis::Cartesian::getStates(l)(0));
+    int Ly = *(GaussianBasis::Cartesian::getStates(l)(1));
+    for (int ix = 0; ix < Ix; ++ix) {
+        for (int iy = 0; iy < Iy; ++iy) {
+            for (int jx = 0; jx < Jx; ++jx) {
+                for (int jy = 0; jy < Jy; ++jy) {
+                    for (int kx = 0; kx < Kx; ++kx) {
+                        for (int ky = 0; ky < Ky; ++ky) {
+                            for (int lx = 0; lx < Lx; ++lx) {
+                                for (int ly = 0; ly < Ly; ++ly) {
+                                    sum += HC(Ix)[ix]*HC(Iy)[iy] *
+                                        HC(Jx)[jx]*HC(Jy)[jy] *
+                                        HC(Kx)[kx]*HC(Ky)[ky] *
+                                        HC(Lx)[lx]*HC(Ly)[ly];
+                                    // TODO: fix numerical part
+                                } // end forly
+                            } // end forlx
+                        } // end forky
+                    } // end forkx
+                } // end forjy
+            } // end forjx
+        } // end foriy
+    } // end foriy
+    return sum;
 } // end function coulombElement2D
 
 inline double GaussianIntegrals::coulombElement3D(const unsigned int& i, const
@@ -156,6 +187,51 @@ inline double GaussianIntegrals::coulombElement3D(const unsigned int& i, const
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> in 3D for level (i,k,j,l) (calculate 1D integral
      * numerically) */
+    double sum = 0.0;
+    int Ix = *(GaussianBasis::Cartesian::getStates(i)(0));
+    int Iy = *(GaussianBasis::Cartesian::getStates(i)(1));
+    int Iz = *(GaussianBasis::Cartesian::getStates(i)(2));
+    int Kx = *(GaussianBasis::Cartesian::getStates(k)(0));
+    int Ky = *(GaussianBasis::Cartesian::getStates(k)(1));
+    int Kz = *(GaussianBasis::Cartesian::getStates(k)(2));
+    int Jx = *(GaussianBasis::Cartesian::getStates(j)(0));
+    int Jy = *(GaussianBasis::Cartesian::getStates(j)(1));
+    int Jz = *(GaussianBasis::Cartesian::getStates(z)(2));
+    int Lx = *(GaussianBasis::Cartesian::getStates(l)(0));
+    int Ly = *(GaussianBasis::Cartesian::getStates(l)(1));
+    int Lz = *(GaussianBasis::Cartesian::getStates(l)(2));
+    for (int ix = 0; ix < Ix; ++ix) {
+        for (int iy = 0; iy < Iy; ++iy) {
+            for (int iz = 0; iz < Iz; ++iz) {
+                for (int jx = 0; jx < Jx; ++jx) {
+                    for (int jy = 0; jy < Jy; ++jy) {
+                        for (int jz = 0; jz < Jz; ++jz) {
+                            for (int kx = 0; kx < Kx; ++kx) {
+                                for (int ky = 0; ky < Ky; ++ky) {
+                                    for (int kz = 0; kz < Kz; ++kz) {
+                                        for (int lx = 0; lx < Lx; ++lx) {
+                                            for (int ly = 0; ly < Ly; ++ly) {
+                                                for (int lz = 0; lz < Lz; ++lz)
+                                                {
+                                                    sum +=
+                                                        HC(Ix)[ix]*HC(Iy)[iy] *
+                                                        HC(Jx)[jx]*HC(Jy)[jy] *
+                                                        HC(Kx)[kx]*HC(Ky)[ky] *
+                                                        HC(Lx)[lx]*HC(Ly)[ly];
+                                                    // TODO: fix numerical part
+                                                } // end forlz
+                                            } // end forly
+                                        } // end forlx
+                                    } // end forkz
+                                } // end forky
+                            } // end forkx
+                        } // end forjz
+                    } // end forjy
+                } // end forjx
+            } // end foriz
+        } // end foriy
+    } // end forix
+    return sum;
 } // end function coulombElement3D
 
 double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
@@ -209,23 +285,5 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         return 0.0;
     } // end if
 
-    double sum = 0.0;
-    for (unsigned int d = 0; d < m_dim; ++d) {
-        int idd = *(GaussianBasis::Cartesian::getStates(i)(d));
-        int kdd = *(GaussianBasis::Cartesian::getStates(k)(d));
-        int jdd = *(GaussianBasis::Cartesian::getStates(j)(d));
-        int ldd = *(GaussianBasis::Cartesian::getStates(l)(d));
-        for (int p = 0; p < idd; ++p) {
-            for (int q = 0; q < kdd; ++q) {
-                for (int r = 0; r < jdd; ++r) {
-                    for (int s = 0; s < ldd; ++s) {
-                        sum += HC(idd)[p]*HC(kdd)[q]*HC(jdd)[r]*HC(ldd)[s] *
-                            (this->*coulombElementFunc)(p,q,r,s);
-                    } // end fors
-                } // end forr
-            } // end forp
-        } // end forq
-    } // end ford
-
-    return sum;
+    return (this->*coulombElementFunc)(i,j,k,l);
 } // end function coulombElement
