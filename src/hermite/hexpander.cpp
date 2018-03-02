@@ -1,4 +1,7 @@
 #include "hexpander.h"
+
+#include <boost/numeric/odeint.hpp>
+
 #include <cmath>
 #include <iostream>
 
@@ -10,33 +13,83 @@ Hexpander::Hexpander(const size_t& N, const size_t& dim, const double& a, const
         double& b, const Eigen::VectorXd& A, const Eigen::VectorXd& B) {
     /* grab maximum angular momentum N (aka number of states) and fill
      * coefficients matrix */
-    setup(N, dim, a, b, A, B);
 } // end constructor
 
 Hexpander::~Hexpander() {
 } // end deconstructor
 
-void Hexpander::setup(const size_t& N, const size_t& dim, const double& a,
-        const double& b, const Eigen::VectorXd& A, const Eigen::VectorXd& B) {
-    /* calculate and set coefficients in coefficient matrix */
+double Hexpander::boysIntegrand(double x, const unsigned int& n, const double&
+        pRR) {
+    return 0.0;
+} // end function boysIntegrand
 
-    Eigen::VectorXd diffAB = A - B;
-    coeffs = EigMatMatXd(N,N);
-    for (unsigned int i = 0; i < N; ++i) {
-        for (unsigned int j = 0; j < N; ++j) {
-            coeffs(i,j) = Eigen::MatrixXd(i+j+1,dim);
-            for (unsigned int t = 0; t < coeffs(i,j).rows(); ++t) {
-                for (unsigned int d = 0; d < dim; ++d) {
-                    coeffs(i,j)(t,d) = calculateCoeff(i, j, t, a, b,
-                            diffAB(d));
-                } // end ford
-            } // end fort
-        } // end forj
-    } // end fori
-} // end function setup
+double Hexpander::modifiedIntegrand(double u, const unsigned int& n, const
+        double& pRR) {
+    return pow(u, 2*n) / sqrt(1-u*u) * exp(-u*u*pRR);
+} // end function modifiedIntegrand
 
-double Hexpander::calculateCoeff(const int& i, const int& j, const int& t,
-        const double& a, const double& b, const double& Qx) {
+double Hexpander::boys(const unsigned int& n, const double& pRR) {
+    /* calcualate boys function */
+    return 0.0;
+} // end function boys
+
+double Hexpander::modified(const unsigned int& n, const double& pRR) {
+    /* calculate modified function */
+    return 2 * simpsons(0, 1-1e-14, this, &Hexpander::modifiedIntegrand, n,
+            pRR);
+} // end function boys
+
+double Hexpander::auxiliary3D(const unsigned int& ix, const unsigned int& iy,
+        const unsigned int& iz, const unsigned int& n, const unsigned int& p,
+        const Eigen::VectorXd& P, const double& R) {
+    /* calculate auxiliary integral (Boys function) */
+    double val = 0.0;
+    if ((ix==0) && (iy==iz) && (iz==ix)) {
+        val += pow(-2*p, n) * boys(n, p*R*R);
+    } else if ((ix==iy) && (iy==0)) {
+        if (iz > 1) {
+            val += (iz-1) * auxiliary3D(ix,iy,iz-2,n+1,p,P,R);
+        } // end if
+        val += P(2) * auxiliary3D(ix,iy,iz-1,n+1,p,P,R);
+    } else if (ix==0) {
+        if (iy > 1) {
+            val += (iy-1) * auxiliary3D(ix,iy-2,iz,n+1,p,P,R);
+        } // end if
+        val += P(1) * auxiliary3D(ix,iy-1,iz,n+1,p,P,R);
+    } else {
+        if (ix > 1) {
+            val += (ix-1) * auxiliary3D(ix-2,iy,iz,n+1,p,P,R);
+        } // end if
+        val += P(0) * auxiliary3D(ix-1,iy,iz,n+1,p,P,R);
+    } // end ifeifeifelse
+
+    return val;
+} // end function auxiliary3D
+
+double Hexpander::auxiliary2D(const unsigned int& ix, const unsigned int& iy,
+        const unsigned int& n, const unsigned int& p, const Eigen::VectorXd& P,
+        const double& R) {
+    /* calculate auxiliary integral (Modified Bessel function) */
+    double val = 0.0;
+    if ((ix==0) && (iy==ix)) {
+        val += pow(-2*p, n) * modified(n, p*R*R);
+    } else if (ix==0) {
+        if (iy > 1) {
+            val += (iy-1) * auxiliary2D(ix,iy-2,n+1,p,P,R);
+        } // end if
+        val += P(1) * auxiliary2D(ix,iy-1,n+1,p,P,R);
+    } else {
+        if (ix > 1) {
+            val += (ix-1) * auxiliary2D(ix-2,iy,n+1,p,P,R);
+        } // end if
+        val += P(0) * auxiliary2D(ix-1,iy,n+1,p,P,R);
+    } // end ifeifeifelse
+
+    return val;
+} // end function auxiliary3D
+
+double Hexpander::coeff(const int& i, const int& j, const int& t, const double&
+        a, const double& b, const double& Qx) {
     /* calculate Hermite coefficient */
     double p = a+b;
     double q = a*b/p;
@@ -48,19 +101,13 @@ double Hexpander::calculateCoeff(const int& i, const int& j, const int& t,
         return exp(-q*Qx*Qx);
     } else if (j==0) {
         /* decrement level i */
-        return 0.5/p * calculateCoeff(i-1,j,t-1,a,b,Qx) - q*Qx/a *
-            calculateCoeff(i-1,j,t,a,b,Qx) + (t+1)
-            * calculateCoeff(i-1,j,t+1,a,b,Qx);
+        return 0.5/p * coeff(i-1,j,t-1,a,b,Qx) - q*Qx/a * coeff(i-1,j,t,a,b,Qx)
+            + (t+1)
+            * coeff(i-1,j,t+1,a,b,Qx);
     } else {
         /* decrement level j */
-        return 0.5/p * calculateCoeff(i,j-1,t-1,a,b,Qx) - q*Qx/b *
-            calculateCoeff(i,j-1,t,a,b,Qx) + (t+1)
-            * calculateCoeff(i,j-1,t+1,a,b,Qx);
+        return 0.5/p * coeff(i,j-1,t-1,a,b,Qx) - q*Qx/b * coeff(i,j-1,t,a,b,Qx)
+            + (t+1)
+            * coeff(i,j-1,t+1,a,b,Qx);
     } // end ifeifeifelse
-} // end function calculateCoeff
-
-const double& Hexpander::coeff(const unsigned int& i, const unsigned int& j,
-        const unsigned int& t, const unsigned int& d) const {
-    /* get coefficient for t'th Hermite function in dimension d at level i+j */
-    return coeffs(i,j)(t,d);
-} // end function getCoefficient
+} // end function coeff
