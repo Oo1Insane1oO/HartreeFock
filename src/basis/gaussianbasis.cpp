@@ -1,11 +1,12 @@
 #include "gaussianbasis.h"
 
-GaussianBasis::GaussianBasis() : Cartesian::Cartesian() {
+GaussianBasis::GaussianBasis() : Cartesian::Cartesian(), Hexpander::Hexpander()
+{
     /* default constructor */
 } // end constructor
 
 GaussianBasis::GaussianBasis(unsigned int numSingleParticleStates, unsigned int
-        dimension) {
+        dimension): Cartesian::Cartesian(), Hexpander::Hexpander() {
     setup(numSingleParticleStates, dimension);
 } // end constructor
 
@@ -23,4 +24,4 @@ void GaussianBasis::setup(unsigned int numSingleParticleStates, unsigned int
     m_dim = dimension;
     Cartesian::setup(numSingleParticleStates, m_dim);
 //     Cartesian::restructureStates();
-} // end function setDim
+} // end function setup
