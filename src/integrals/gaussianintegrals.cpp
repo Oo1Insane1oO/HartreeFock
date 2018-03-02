@@ -282,5 +282,7 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         return 0.0;
     } // end if
 
-    return (this->*coulombElementFunc)(i,j,k,l);
+    return normalizationFactor(i) * normalizationFactor(j) *
+        normalizationFactor(k) * normalizationFactor(l) *
+        (this->*coulombElementFunc)(i,j,k,l);
 } // end function coulombElement
