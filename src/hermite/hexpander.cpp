@@ -34,9 +34,13 @@ double Hexpander::boys(const unsigned int& n, const double& pRR) {
 } // end function boys
 
 double Hexpander::modified(const unsigned int& n, const double& pRR) {
-    /* calculate modified function */
-    return 2 * simpsons(0, 1-1e-14, this, &Hexpander::modifiedIntegrand, n,
-            pRR);
+    /* calculate modified function using Simpson's rule */
+    double sum = 0.0;
+    for (double i = 0.1; i < 1-1e-14; i+=0.1) {
+        sum += 2 * simpsons(i-0.1, i, this, &Hexpander::modifiedIntegrand, n,
+                pRR);
+    } // end fori
+    return sum;
 } // end function boys
 
 double Hexpander::auxiliary3D(const unsigned int& ix, const unsigned int& iy,
@@ -84,7 +88,6 @@ double Hexpander::auxiliary2D(const unsigned int& ix, const unsigned int& iy,
         } // end if
         val += P(0) * auxiliary2D(ix-1,iy,n+1,p,P,R);
     } // end ifeifeifelse
-
     return val;
 } // end function auxiliary3D
 

@@ -3,11 +3,8 @@
 
 #include <Eigen/Dense>
 
-using EigMatMatXd = Eigen::Matrix<Eigen::MatrixXd, Eigen::Dynamic, Eigen::Dynamic>;
-
 class Hexpander {
     private:
-        EigMatMatXd coeffs;
         double boys(const unsigned int&, const double&);
         double modified(const unsigned int&, const double&);
 

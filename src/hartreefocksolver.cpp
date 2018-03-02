@@ -38,7 +38,7 @@ inline void HartreeFockSolver::assemble() {
     overlapElements = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
     oneBodyElements = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
 
-    // set matrix integral elements 
+    // set one-body (uncoupled) elements and overlap elements
     for (unsigned int p = 0; p < m_numStates; ++p) {
         for (unsigned int q = p; q < m_numStates; ++q) {
             overlapElements(p,q) = Integrals::overlapElement(p,q);
@@ -48,17 +48,38 @@ inline void HartreeFockSolver::assemble() {
                 overlapElements(q,p) = overlapElements(p,q);
                 oneBodyElements(q,p) = oneBodyElements(p,q);
             } // end if
-            for (unsigned int r = 0; r < m_numStates; ++r) {
+        } // end forq
+    } // end forp
+
+    // set two-body coupled (Coulomb) integral elements 
+    for (unsigned int p = 0; p < m_numStates; ++p) {
+        for (unsigned int r = 0; r < m_numStates; ++r) {
+            for (unsigned int q = p; q < m_numStates; ++q) {
                 for (unsigned int s = r; s < m_numStates; ++s) {
-                    unsigned int pqrs = dIndex(m_numStates, p,q,r,s);
-                    twoBodyElements(pqrs) = Integrals::coulombElement(p,q,r,s)
-                        - Integrals::coulombElement(p,q,s,r);
-                    twoBodyElements(dIndex(m_numStates, p,q,s,r)) =
-                        -twoBodyElements(pqrs);
-                } // end forp
+                    twoBodyElements(dIndex(m_numStates, p,r,q,s)) =
+                        Integrals::coulombElement(p,q,r,s) -
+                        Integrals::coulombElement(p,q,s,r);
+                } // end fors
             } // end forq
         } // end forr
-    } // end fors
+    } // end forp
+    for (unsigned int p = 0; p < m_numStates; ++p) {
+        for (unsigned int r = 0; r < m_numStates; ++r) {
+            for (unsigned int q = p; q < m_numStates; ++q) {
+                for (unsigned int s = r; s < m_numStates; ++s) {
+                    double value = twoBodyElements(dIndex(m_numStates,
+                                p,r,q,s));
+                    twoBodyElements(dIndex(m_numStates, q,s,p,r)) = value;
+                    twoBodyElements(dIndex(m_numStates, q,r,p,s)) = value;
+                    twoBodyElements(dIndex(m_numStates, p,s,q,r)) = value;
+                    twoBodyElements(dIndex(m_numStates, r,p,s,q)) = value;
+                    twoBodyElements(dIndex(m_numStates, s,p,r,q)) = value;
+                    twoBodyElements(dIndex(m_numStates, r,q,s,p)) = value;
+                    twoBodyElements(dIndex(m_numStates, s,q,r,p)) = value;
+                } // end fors
+            } // end forq
+        } // end forr
+    } // end forp
 } // end function assemble
 
 inline void HartreeFockSolver::setDensityMatrix() {
@@ -133,8 +154,8 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
                         previousEnergies).mean()) > eps));
 
     // find estimate for ground state energy for m_numParticles
-    double groundStateEnergy = eigenSolver.eigenvalues().segment(0,
-            m_numParticles).sum();
+    double groundStateEnergy = 2*eigenSolver.eigenvalues().segment(0,
+            m_numParticles/2).sum();
     for (unsigned int a = 0; a < m_numStates; ++a) {
         for (unsigned int b = 0; b < m_numStates; ++b) {
             for (unsigned int c = 0; c < m_numStates; ++c) {
