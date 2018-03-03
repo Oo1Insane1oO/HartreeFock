@@ -49,7 +49,7 @@ TEST_DIR = tests
 BASIS = GAUSSHERMITE
 
 ifeq ($(BASIS),GAUSSHERMITE)
-	OTHER_BASIS_SOURCE := $(SRC)/basisfunctions/cartesian.cpp $(SRC)/hermite/hexpander.cpp
+	OTHER_BASIS_SOURCE := $(SRC)/basisfunctions/cartesian.cpp $(SRC)/hermite/hexpander.cpp $(SRC)/gaussianquadrature.cpp
 	INTEGRALS := $(wildcard $(SRC)/integrals/gaussianintegrals.cpp)
 	BASISSRC = $(SRC)/basis/gaussianbasis.cpp
 endif

@@ -23,8 +23,6 @@ class Hexpander {
 
     public:
         Hexpander();
-        Hexpander(const size_t&, const size_t&, const double&, const double&,
-                const Eigen::VectorXd&, const Eigen::VectorXd&);
         virtual ~Hexpander ();
         
         double coeff(const int&, const int&, const int&, const double&, const
