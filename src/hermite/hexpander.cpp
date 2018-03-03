@@ -1,46 +1,49 @@
 #include "hexpander.h"
 
-#include <boost/numeric/odeint.hpp>
+#include "../gaussianquadrature.h"
 
 #include <cmath>
 #include <iostream>
+
+#include <boost/math/special_functions/gamma.hpp>
 
 Hexpander::Hexpander() {
     /* default constructor */
 } // end constructor
 
-Hexpander::Hexpander(const size_t& N, const size_t& dim, const double& a, const
-        double& b, const Eigen::VectorXd& A, const Eigen::VectorXd& B) {
-    /* grab maximum angular momentum N (aka number of states) and fill
-     * coefficients matrix */
-} // end constructor
-
 Hexpander::~Hexpander() {
 } // end deconstructor
 
-double Hexpander::boysIntegrand(double x, const unsigned int& n, const double&
+double Hexpander::boysIntegrand(double u, const unsigned int& n, const double&
         pRR) {
-    return 0.0;
+    /* Integrand assuming Gauss-Hermite method is used (exponential part is
+     * absorbed) */
+    return pow(u, 2*n) * exp(-u*u*pRR); // * exp(-u*u
 } // end function boysIntegrand
 
 double Hexpander::modifiedIntegrand(double u, const unsigned int& n, const
         double& pRR) {
-    return pow(u, 2*n) / sqrt(1-u*u) * exp(-u*u*pRR);
+    /* integrand assuming Gauss-Chebyshev method is used (the 1/sqrt(1-u^2)
+     * part is absorbed) */
+    return pow(u, 2*n) * exp(-u*u*pRR); // * 1/sqrt(1-u*u);
 } // end function modifiedIntegrand
 
 double Hexpander::boys(const unsigned int& n, const double& pRR) {
-    /* calcualate boys function */
-    return 0.0;
+    /* calculate boys function using boost library */
+//     return GaussianQuadrature::gaussHermiteQuad(n+1, this,
+//             &Hexpander::boysIntegrand, n, pRR*pRR);
+    if (fabs(pRR) <= 1e-15) {
+        return 1./n;
+    } else {
+        return 0.5/pow(pRR*pRR, n) * boost::math::tgamma_lower<double>(n+0.5,
+                pRR*pRR);
+    } // end ifelse
 } // end function boys
 
 double Hexpander::modified(const unsigned int& n, const double& pRR) {
     /* calculate modified function using Simpson's rule */
-    double sum = 0.0;
-    for (double i = 0.1; i < 1-1e-14; i+=0.1) {
-        sum += 2 * simpsons(i-0.1, i, this, &Hexpander::modifiedIntegrand, n,
-                pRR);
-    } // end fori
-    return sum;
+    return GaussianQuadrature::gaussChebyshevQuad(100, this,
+            &Hexpander::modifiedIntegrand, n, pRR*pRR);
 } // end function boys
 
 double Hexpander::auxiliary3D(const unsigned int& ix, const unsigned int& iy,

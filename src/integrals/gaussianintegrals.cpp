@@ -162,7 +162,7 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& i, const
         for (int py = 0; py < Iy+Ky+1; ++py) {
             for (int qx = 0; qx < Jx+Lx+1; ++qx) {
                 for (int qy = 0; qy < Jy+Ly+1; ++qy) {
-                    sum += GaussianBasis::Hexpander::coeff(Ix, Kx, px,
+                    double tmp = GaussianBasis::Hexpander::coeff(Ix, Kx, px,
                             expScaleFactor, expScaleFactor, 0.0) *
                         GaussianBasis::Hexpander::coeff(Iy, Ky, py,
                                 expScaleFactor, expScaleFactor, 0.0) *
@@ -170,10 +170,12 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& i, const
                                 expScaleFactor, expScaleFactor, 0.0) *
                         GaussianBasis::Hexpander::coeff(Jy, Ly, qy,
                                 expScaleFactor, expScaleFactor, 0.0) *
-                        pow(-1,qx+qy)
-                        * GaussianBasis::Hexpander::auxiliary2D(px+qx, py+qy,
-                                0, 0.5/expScaleFactor,
+                        GaussianBasis::Hexpander::auxiliary2D(px+qx, py+qy, 0,
+                                0.5/expScaleFactor,
                                 Eigen::VectorXd::Constant(m_dim, 0), 0);
+
+                    // fix sign in (-1)^(qx + qy) part
+                    sum += (((qx+qy)%2==0) ? tmp : -tmp);
                 } // end forqy
             } // end forqx
         } // end forpy
@@ -282,7 +284,7 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         return 0.0;
     } // end if
 
-    return normalizationFactor(i) * normalizationFactor(j) *
-        normalizationFactor(k) * normalizationFactor(l) *
+    return normalizationFactors(i) * normalizationFactors(j) *
+        normalizationFactors(k) * normalizationFactors(l) *
         (this->*coulombElementFunc)(i,j,k,l);
 } // end function coulombElement
