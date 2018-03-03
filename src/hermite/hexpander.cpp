@@ -16,9 +16,8 @@ Hexpander::~Hexpander() {
 
 double Hexpander::boysIntegrand(double u, const unsigned int& n, const double&
         pRR) {
-    /* Integrand assuming Gauss-Hermite method is used (exponential part is
-     * absorbed) */
-    return pow(u, 2*n) * exp(-u*u*pRR); // * exp(-u*u
+    /* Integrand of Boys function */
+    return pow(u, 2*n) * exp(-u*u*pRR);
 } // end function boysIntegrand
 
 double Hexpander::modifiedIntegrand(double u, const unsigned int& n, const
@@ -30,13 +29,13 @@ double Hexpander::modifiedIntegrand(double u, const unsigned int& n, const
 
 double Hexpander::boys(const unsigned int& n, const double& pRR) {
     /* calculate boys function using boost library */
-//     return GaussianQuadrature::gaussHermiteQuad(n+1, this,
-//             &Hexpander::boysIntegrand, n, pRR*pRR);
     if (fabs(pRR) <= 1e-15) {
+        /* case centering is in zero */
         return 1./n;
     } else {
-        return 0.5/pow(pRR*pRR, n) * boost::math::tgamma_lower<double>(n+0.5,
-                pRR*pRR);
+        /* calcualte full integral */
+        return 0.5/pow(pRR*pRR, n+0.5) *
+            boost::math::tgamma_lower<double>(n+0.5, pRR*pRR);
     } // end ifelse
 } // end function boys
 

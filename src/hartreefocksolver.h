@@ -21,6 +21,8 @@ class HartreeFockSolver : public Integrals {
     private:
         unsigned int m_dim, m_numStates, m_numParticles;
 
+        bool interaction;
+
         Eigen::ArrayXd twoBodyElements;
         Eigen::MatrixXd oneBodyElements, overlapElements;
 
@@ -42,6 +44,8 @@ class HartreeFockSolver : public Integrals {
         Integrals* getIntegralObj();
 
         double iterate(const unsigned int&, const double&);
+
+        void setInteraction(bool);
 };
 
 #endif /* HARTREEFOCKSOLVER_H */

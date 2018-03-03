@@ -8,6 +8,7 @@ HartreeFockSolver::HartreeFockSolver(const unsigned int dimension, unsigned int
      * integrals */
     m_dim = dimension;
     m_numParticles = numParticles;
+    interaction = true;
 } // end constructor
 
 HartreeFockSolver::~HartreeFockSolver() {
@@ -17,6 +18,11 @@ Integrals* HartreeFockSolver::getIntegralObj() {
     /* return a pointer to Integrals */
     return dynamic_cast<Integrals*>(this);
 } // end function getIntegralObj
+
+void HartreeFockSolver::setInteraction(bool a) {
+    /* set interaction on (if a=true) or false (if a=false) */
+    interaction = a;
+} // end function setInteraction
 
 inline unsigned int HartreeFockSolver::dIndex(const unsigned int& N, const
         unsigned int& i, const unsigned int& j, const unsigned int& k, const
@@ -42,14 +48,16 @@ inline void HartreeFockSolver::assemble() {
         for (unsigned int q = 0; q < m_numStates; ++q) {
             overlapElements(p,q) = Integrals::overlapElement(p,q);
             oneBodyElements(p,q) = Integrals::oneBodyElement(p,q);
-            for (unsigned int r = 0; r < m_numStates; ++r) {
-                for (unsigned int s = 0; s < m_numStates; ++s) {
-                    twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
-                        Integrals::coulombElement(p,q,r,s) -
-                        Integrals::coulombElement(p,q,s,r);
-                } // end fors
-            } // end forq
-        } // end forr
+            if (interaction) {
+                for (unsigned int r = 0; r < m_numStates; ++r) {
+                    for (unsigned int s = 0; s < m_numStates; ++s) {
+                        twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
+                            Integrals::coulombElement(p,q,r,s) -
+                            Integrals::coulombElement(p,q,s,r);
+                    } // end fors
+                } // end forr
+            } // end if
+        } // end forq
     } // end forp
 
 //     // set one-body (uncoupled) elements and overlap elements
@@ -168,8 +176,8 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
                         previousEnergies).mean()) > eps));
 
     // find estimate for ground state energy for m_numParticles
-    double groundStateEnergy = 2*eigenSolver.eigenvalues().segment(0,
-            m_numParticles/2).sum();
+    double groundStateEnergy = eigenSolver.eigenvalues().segment(0,
+            m_numParticles).sum();
     for (unsigned int a = 0; a < m_numStates; ++a) {
         for (unsigned int b = 0; b < m_numStates; ++b) {
             for (unsigned int c = 0; c < m_numStates; ++c) {
