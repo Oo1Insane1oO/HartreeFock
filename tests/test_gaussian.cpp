@@ -28,6 +28,7 @@ SUITE(HFGaussUnperturbed) {
         /* check energies in 2D for N=2 */
         HFS->~HartreeFockSolver();
         new (&*HFS) HartreeFockSolver(2,12,2);
+        HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
         CHECK_CLOSE(2, HFS->iterate(100, 1e-8), 1e-14);
@@ -43,6 +44,7 @@ SUITE(HFGaussUnperturbed) {
         /* check energies in 2D for N=6 */
         HFS->~HartreeFockSolver();
         new (&*HFS) HartreeFockSolver(2,20,6);
+        HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
         CHECK_CLOSE(10, HFS->iterate(100, 1e-8), 1e-14);
@@ -58,6 +60,7 @@ SUITE(HFGaussUnperturbed) {
         /* check energies in 2D for N=12 */
         HFS->~HartreeFockSolver();
         new (&*HFS) HartreeFockSolver(2,30,12);
+        HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
         CHECK_CLOSE(28, HFS->iterate(100, 1e-8), 1e-14);
@@ -73,6 +76,7 @@ SUITE(HFGaussUnperturbed) {
         /* check energies in 2D for N=12 */
         HFS->~HartreeFockSolver();
         new (&*HFS) HartreeFockSolver(2,20,20);
+        HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
         CHECK_CLOSE(60, HFS->iterate(100, 1e-8), 1e-14);
@@ -88,6 +92,7 @@ SUITE(HFGaussUnperturbed) {
         /* check energies in 3D for N=2 */
         HFS->~HartreeFockSolver();
         new (&*HFS) HartreeFockSolver(3,8,2);
+        HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
         CHECK_CLOSE(3, HFS->iterate(100, 1e-8), 1e-14);
@@ -103,6 +108,7 @@ SUITE(HFGaussUnperturbed) {
         /* check energies in 3D for N=8 */
         HFS->~HartreeFockSolver();
         new (&*HFS) HartreeFockSolver(3,20,8);
+        HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
         CHECK_CLOSE(18, HFS->iterate(100, 1e-8), 1e-14);
@@ -118,6 +124,7 @@ SUITE(HFGaussUnperturbed) {
         /* check energies in 3D for N=20 */
         HFS->~HartreeFockSolver();
         new (&*HFS) HartreeFockSolver(3,40,20);
+        HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
         CHECK_CLOSE(60, HFS->iterate(100, 1e-8), 1e-14);

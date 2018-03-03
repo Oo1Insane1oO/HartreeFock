@@ -280,7 +280,7 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
              *(GaussianBasis::Cartesian::getStates(k)(m_dim+1))) ||
             (*(GaussianBasis::Cartesian::getStates(j)(m_dim+1)) !=
              *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) {
-        /* make sure total angular momentum and total spin is conserved */
+        /* make sure total angular momentum and spin is conserved */
         return 0.0;
     } // end if
 
