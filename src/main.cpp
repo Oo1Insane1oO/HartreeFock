@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     // dimensions, cutoff, numParticles
     #ifdef GAUSSHERMITE
         double w = 1.0;
-        HartreeFockSolver* HFS = new HartreeFockSolver(2, 6, 2);
+        HartreeFockSolver* HFS = new HartreeFockSolver(2, 12, 2);
         HFS->getIntegralObj()->initializeParameters(w);
         double E = HFS->iterate(100, 1e-8);
     #endif

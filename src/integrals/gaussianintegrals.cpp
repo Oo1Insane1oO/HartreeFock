@@ -269,21 +269,22 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
-    if (((GaussianBasis::Cartesian::getSumn(i) +
-                    GaussianBasis::Cartesian::getSumn(j)) !=
-                (GaussianBasis::Cartesian::getSumn(k) +
-                 GaussianBasis::Cartesian::getSumn(l))) ||
-            ((*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) +
-              *(GaussianBasis::Cartesian::getStates(j)(m_dim+1))) !=
-             *((GaussianBasis::Cartesian::getStates(k)(m_dim+1)) +
-                 *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) ||
-            (*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) !=
-             *(GaussianBasis::Cartesian::getStates(k)(m_dim+1))) ||
-            (*(GaussianBasis::Cartesian::getStates(j)(m_dim+1)) !=
-             *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) {
-        /* make sure total angular momentum and spin is conserved */
-        return 0.0;
-    } // end if
+//     if (((GaussianBasis::Cartesian::getSumn(i) +
+//                     GaussianBasis::Cartesian::getSumn(j)) !=
+//                 (GaussianBasis::Cartesian::getSumn(k) +
+//                  GaussianBasis::Cartesian::getSumn(l))) ||
+//     if (
+//             ((*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) +
+//               *(GaussianBasis::Cartesian::getStates(j)(m_dim+1))) !=
+//              *((GaussianBasis::Cartesian::getStates(k)(m_dim+1)) +
+//                  *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) ||
+//             (*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) !=
+//              *(GaussianBasis::Cartesian::getStates(k)(m_dim+1))) ||
+//             (*(GaussianBasis::Cartesian::getStates(j)(m_dim+1)) !=
+//              *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) {
+//         /* make sure total angular momentum and spin is conserved */
+//         return 0.0;
+//     } // end if
     const int& Ix = *(GaussianBasis::Cartesian::getStates(i)(0));
     const int& Iy = *(GaussianBasis::Cartesian::getStates(i)(1));
     const int& Kx = *(GaussianBasis::Cartesian::getStates(k)(0));
