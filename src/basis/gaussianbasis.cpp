@@ -23,5 +23,5 @@ void GaussianBasis::setup(unsigned int numSingleParticleStates, unsigned int
     /* set number of dimensions */
     m_dim = dimension;
     Cartesian::setup(numSingleParticleStates, m_dim);
-//     Cartesian::restructureStates();
+    Cartesian::restructureStates();
 } // end function setup

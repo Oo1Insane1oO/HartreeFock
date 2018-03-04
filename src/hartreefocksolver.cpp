@@ -106,10 +106,10 @@ inline void HartreeFockSolver::assemble() {
 
 inline void HartreeFockSolver::setDensityMatrix() {
     /* set density matrix in HartreeFock */
-    densityMatrix.setZero();
     for (unsigned int c = 0; c < coefficients.rows(); ++c) {
         for (unsigned int d = 0; d < coefficients.cols(); ++d) {
-            for (unsigned int i = 0; i < m_numParticles/2; ++i) {
+            densityMatrix(c,d) = 0;
+            for (unsigned int i = 0; i < m_numParticles; ++i) {
                 densityMatrix(c,d) += coefficients(c,i) * coefficients(d,i);
             } // end fori
         } // end ford
@@ -120,7 +120,7 @@ inline void HartreeFockSolver::setFockMatrix() {
     /* set Hartree-Fock matrix */
     FockMatrix.setZero();
     for (unsigned int i = 0; i < m_numStates; ++i) {
-        for (unsigned int j = i; j < m_numStates; ++j) {
+        for (unsigned int j = 0; j < m_numStates; ++j) {
             FockMatrix(i,j) = oneBodyElements(i,j); 
             for (unsigned int k = 0; k < m_numStates; ++k) {
                 for (unsigned int l = 0; l < m_numStates; ++l) {
@@ -130,7 +130,7 @@ inline void HartreeFockSolver::setFockMatrix() {
             } // end fork
 
             // matrix is symmetric by definition
-            FockMatrix(j,i) = FockMatrix(i,j);
+//             FockMatrix(j,i) = FockMatrix(i,j);
         } // end forj
     } // end fori
 } // end function sethartreeFockMatrix
@@ -153,9 +153,14 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     // build to be hermitian)
     Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
 
+    for (unsigned int i = 0; i < twoBodyElements.size(); ++i) {
+        if (twoBodyElements(i) != 0) {
+            std::cout << twoBodyElements(i) << std::endl;
+        }
+    }
+
     // run Hartree-Fock algorithm
-    unsigned int count = 0;
-    do {
+    for (unsigned int count = 0; count < maxIterations; ++count) {
         /* run for maxIterations or until convergence is reached */
 
         // set HF-matrix with current coefficients
@@ -169,11 +174,17 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
         // set density matrix with new coefficients
         setDensityMatrix();
 
-        // update previous energies and increment count
+        // check for convergence with RMS of difference between previous and
+        // current energies 
+        double diff = sqrt((eigenSolver.eigenvalues() -
+                    previousEnergies).squaredNorm() / m_numStates);
+        if (diff < eps) {
+            break;
+        } // end if
+
+        // update previous energies
         previousEnergies = eigenSolver.eigenvalues();
-        count++;
-    } while ((count < maxIterations) && (fabs((eigenSolver.eigenvalues() -
-                        previousEnergies).mean()) > eps));
+    } // end forcount
 
     // find estimate for ground state energy for m_numParticles
     double groundStateEnergy = eigenSolver.eigenvalues().segment(0,
