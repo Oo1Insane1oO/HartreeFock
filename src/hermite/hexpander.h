@@ -28,10 +28,10 @@ class Hexpander {
         double coeff(const int&, const int&, const int&, const double&, const
                 double&, const double&);
         double auxiliary2D(const unsigned int&, const unsigned int&, const
-                unsigned int&, const unsigned int&, const Eigen::VectorXd&,
-                const double&);
+                unsigned int&, const double&, const Eigen::VectorXd&, const
+                double&);
         double auxiliary3D(const unsigned int&, const unsigned int&, const
-                unsigned int&, const unsigned int&, const unsigned int&, const
+                unsigned int&, const unsigned int&, const double&, const
                 Eigen::VectorXd&, const double&);
 };
 

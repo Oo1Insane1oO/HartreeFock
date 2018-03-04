@@ -163,16 +163,16 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& i, const
             for (int qx = 0; qx < Jx+Lx+1; ++qx) {
                 for (int qy = 0; qy < Jy+Ly+1; ++qy) {
                     double tmp = GaussianBasis::Hexpander::coeff(Ix, Kx, px,
-                            expScaleFactor/2, expScaleFactor/2, 0.0) *
-                        GaussianBasis::Hexpander::coeff(Iy, Ky, py,
-                                expScaleFactor/2, expScaleFactor/2, 0.0) *
-                        GaussianBasis::Hexpander::coeff(Jx, Lx, qx,
-                                expScaleFactor/2, expScaleFactor/2, 0.0) *
-                        GaussianBasis::Hexpander::coeff(Jy, Ly, qy,
-                                expScaleFactor/2, expScaleFactor/2, 0.0) *
+                            xScale/2, xScale/2, 0.0) *
+                        GaussianBasis::Hexpander::coeff(Iy, Ky, py, xScale/2,
+                                xScale/2, 0.0) *
+                        GaussianBasis::Hexpander::coeff(Jx, Lx, qx, xScale/2,
+                                xScale/2, 0.0) *
+                        GaussianBasis::Hexpander::coeff(Jy, Ly, qy, xScale/2,
+                                xScale/2, 0.0) *
                         GaussianBasis::Hexpander::auxiliary2D(px+qx, py+qy, 0,
-                                expScaleFactor/2,
-                                Eigen::VectorXd::Constant(m_dim, 0), 0);
+                                xScale/2, Eigen::VectorXd::Constant(m_dim,
+                                    0.0), 0.0);
 
                     // fix sign in (-1)^(qx + qy) part
                     sum += (((qx+qy)%2==0) ? tmp : -tmp);
@@ -180,7 +180,7 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& i, const
             } // end forqx
         } // end forpy
     } // end forpx
-    return sum * 2*pow(M_PI, 1.5) / (8*pow(expScaleFactor/2, 2.5));
+    return sum * 2*pow(M_PI, 1.5) / (4 * pow(xScale/2, 1.5));
 } // end function coulombElement2D
 
 inline double GaussianIntegrals::coulombElement3D(const unsigned int& i, const
@@ -208,29 +208,30 @@ inline double GaussianIntegrals::coulombElement3D(const unsigned int& i, const
                     for (int qy = 0; qy < Jy+Ly+1; ++qy) {
                         for (int qz = 0; qz < Jz+Lz+1; ++qz) {
                             sum += GaussianBasis::Hexpander::coeff(Ix, Kx, px,
-                                    expScaleFactor, expScaleFactor,0.0) *
+                                    xScale, xScale,0.0) *
                                 GaussianBasis::Hexpander::coeff(Iy, Ky, py,
-                                        0.0, expScaleFactor, expScaleFactor) *
+                                        0.0, xScale, xScale) *
                                 GaussianBasis::Hexpander::coeff(Iz, Kz, pz,
-                                        expScaleFactor, expScaleFactor, 0.0) *
+                                        xScale, xScale, 0.0) *
                                 GaussianBasis::Hexpander::coeff(Jx, Lx, qx,
-                                        expScaleFactor, expScaleFactor, 0.0) *
+                                        xScale, xScale, 0.0) *
                                 GaussianBasis::Hexpander::coeff(Jy, Ly, qy,
-                                        expScaleFactor, expScaleFactor, 0.0) *
+                                        xScale, xScale, 0.0) *
                                 GaussianBasis::Hexpander::coeff(Jz, Lz, qz,
-                                        expScaleFactor, expScaleFactor, 0.0) *
-                                pow(-1, qx+qy+qz) *
-                                GaussianBasis::Hexpander::auxiliary3D(px+qx,
-                                        py+qy, pz+qz, 0, 0.5/expScaleFactor,
-                                        Eigen::VectorXd::Constant(m_dim, 0),
-                                        0);
+                                        xScale, xScale, 0.0) * pow(-1,
+                                            qx+qy+qz) *
+                                            GaussianBasis::Hexpander::auxiliary3D(px+qx,
+                                                    py+qy, pz+qz, 0,
+                                                    0.5/xScale,
+                                                    Eigen::VectorXd::Constant(m_dim,
+                                                        0), 0);
                         } // end forqz
                     } // end forqy
                 } // end forqx
             } // end forpz
         } // end forpy
     } // end forpx
-    return sum * sqrt(2)*pow(M_PI, 2.5) * pow(expScaleFactor, 1.5);
+    return sum * sqrt(2)*pow(M_PI, 2.5) * pow(xScale, 1.5);
 } // end function coulombElement3D
 
 double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
@@ -275,7 +276,7 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
             ((*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) +
               *(GaussianBasis::Cartesian::getStates(j)(m_dim+1))) !=
              *((GaussianBasis::Cartesian::getStates(k)(m_dim+1)) +
-                 *(GaussianBasis::Cartesian::getStates(l)(m_dim)))) ||
+                 *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) ||
             (*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) !=
              *(GaussianBasis::Cartesian::getStates(k)(m_dim+1))) ||
             (*(GaussianBasis::Cartesian::getStates(j)(m_dim+1)) !=
@@ -283,8 +284,21 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         /* make sure total angular momentum and spin is conserved */
         return 0.0;
     } // end if
+    const int& Ix = *(GaussianBasis::Cartesian::getStates(i)(0));
+    const int& Iy = *(GaussianBasis::Cartesian::getStates(i)(1));
+    const int& Kx = *(GaussianBasis::Cartesian::getStates(k)(0));
+    const int& Ky = *(GaussianBasis::Cartesian::getStates(k)(1));
+    const int& Jx = *(GaussianBasis::Cartesian::getStates(j)(0));
+    const int& Jy = *(GaussianBasis::Cartesian::getStates(j)(1));
+    const int& Lx = *(GaussianBasis::Cartesian::getStates(l)(0));
+    const int& Ly = *(GaussianBasis::Cartesian::getStates(l)(1));
 
-    return normalizationFactors(i) * normalizationFactors(j) *
+    double bleh =  normalizationFactors(i) * normalizationFactors(j) *
         normalizationFactors(k) * normalizationFactors(l) *
         (this->*coulombElementFunc)(i,j,k,l);
+    if (bleh != 0) {
+        std::cout << Ix << Iy << " " << Jx << Jy << " " << Kx << Ky << " " <<
+            Lx << Ly << " " << bleh << std::endl;
+    }
+    return bleh;
 } // end function coulombElement

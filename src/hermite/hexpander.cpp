@@ -46,12 +46,12 @@ double Hexpander::modified(const unsigned int& n, const double& pRR) {
 } // end function boys
 
 double Hexpander::auxiliary3D(const unsigned int& ix, const unsigned int& iy,
-        const unsigned int& iz, const unsigned int& n, const unsigned int& p,
+        const unsigned int& iz, const unsigned int& n, const double& p,
         const Eigen::VectorXd& P, const double& R) {
     /* calculate auxiliary integral (Boys function) */
     double val = 0.0;
-    if ((ix==0) && (iy==iz) && (iz==ix)) {
-        val += pow(-2*p, n) * boys(n, p*R*R);
+    if ((ix==0) && (iy==0) && (iz==0)) {
+        val += pow(-2*p,n) * boys(n, p*R*R);
     } else if ((ix==iy) && (iy==0)) {
         if (iz > 1) {
             val += (iz-1) * auxiliary3D(ix,iy,iz-2,n+1,p,P,R);
@@ -73,12 +73,13 @@ double Hexpander::auxiliary3D(const unsigned int& ix, const unsigned int& iy,
 } // end function auxiliary3D
 
 double Hexpander::auxiliary2D(const unsigned int& ix, const unsigned int& iy,
-        const unsigned int& n, const unsigned int& p, const Eigen::VectorXd& P,
+        const unsigned int& n, const double& p, const Eigen::VectorXd& P,
         const double& R) {
     /* calculate auxiliary integral (Modified Bessel function) */
     double val = 0.0;
     if ((ix==0) && (iy==0)) {
-        val += pow(-2*p, n) * modified(n, p*R*R);
+//         val += pow(-2,n) * pow(p, n-0.5) * modified(n, p*R*R);
+        val += pow(-2,n) * modified(n, p*R*R);
     } else if (ix==0) {
         if (iy > 1) {
             val += (iy-1) * auxiliary2D(ix,iy-2,n+1,p,P,R);

@@ -152,12 +152,12 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     // initialize eigenvalue/vector solver for hermitian matrix (Fock matrix is
     // build to be hermitian)
     Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
-
-    for (unsigned int i = 0; i < twoBodyElements.size(); ++i) {
-        if (twoBodyElements(i) != 0) {
-            std::cout << twoBodyElements(i) << std::endl;
-        }
-    }
+// 
+//     for (unsigned int i = 0; i < twoBodyElements.size(); ++i) {
+//         if (twoBodyElements(i) != 0) {
+//             std::cout << twoBodyElements(i) << std::endl;
+//         }
+//     }
 
     // run Hartree-Fock algorithm
     for (unsigned int count = 0; count < maxIterations; ++count) {
