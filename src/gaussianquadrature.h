@@ -39,20 +39,17 @@ class GaussianQuadrature {
         } // end function gaussHermiteQuad
         
         template<typename U, typename F, typename... Args> static inline double
-            gaussChebyshevQuad(const size_t n, const U& obj, F f, Args... args) {
+            gaussChebyshevQuad(const unsigned int n, const U& obj, F f, Args...
+                    args) {
             /* calculate integral of f using Gauss-Chebyshev Quadrature */
-            Eigen::ArrayXd points(n), weights(n);
-            for (unsigned int i = 0; i < n; ++i) {
-                weights(i) = M_PI/n;
-                points(i) = cos(weights(i) * (i-0.5));
-            } // end fori
-
+            unsigned int s = (n<2 ? 2 : n); // n > 2 is assumed
+            double pis = M_PI/s; // all weights are pi/n
             double sum = 0.0;
-            for (unsigned int i = 0; i < points.size(); ++i) {
-                sum += weights(i) * (obj->*f)(points(i), args...);
+            for (unsigned int i = 0; i < s; ++i) {
+                sum += (obj->*f)(cos(pis * (i-0.5)), args...);
             } // end fori
 
-            return sum;
+            return sum * pis;
         } // end function gaussChebyshevQuad
 };
 

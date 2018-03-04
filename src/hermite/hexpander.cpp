@@ -33,7 +33,7 @@ double Hexpander::boys(const unsigned int& n, const double& pRR) {
         /* case centering is in zero */
         return 1./n;
     } else {
-        /* calcualte full integral */
+        /* calculate full integral */
         return 0.5/pow(pRR*pRR, n+0.5) *
             boost::math::tgamma_lower<double>(n+0.5, pRR*pRR);
     } // end ifelse
@@ -41,7 +41,7 @@ double Hexpander::boys(const unsigned int& n, const double& pRR) {
 
 double Hexpander::modified(const unsigned int& n, const double& pRR) {
     /* calculate modified function using Simpson's rule */
-    return GaussianQuadrature::gaussChebyshevQuad(100, this,
+    return GaussianQuadrature::gaussChebyshevQuad(10, this,
             &Hexpander::modifiedIntegrand, n, pRR*pRR);
 } // end function boys
 
@@ -77,7 +77,7 @@ double Hexpander::auxiliary2D(const unsigned int& ix, const unsigned int& iy,
         const double& R) {
     /* calculate auxiliary integral (Modified Bessel function) */
     double val = 0.0;
-    if ((ix==0) && (iy==ix)) {
+    if ((ix==0) && (iy==0)) {
         val += pow(-2*p, n) * modified(n, p*R*R);
     } else if (ix==0) {
         if (iy > 1) {
@@ -101,18 +101,16 @@ double Hexpander::coeff(const int& i, const int& j, const int& t, const double&
     if ((t<0) || (t>(i+j))) {
         /* bounds for t */
         return 0.0;
-    } else if (((i==0) || (j==0)) && (i==j) && (i==t)) {
+    } else if ((i==0) && (j==0) && (t==0)) {
         /* initial coefficient */
         return exp(-q*Qx*Qx);
     } else if (j==0) {
         /* decrement level i */
         return 0.5/p * coeff(i-1,j,t-1,a,b,Qx) - q*Qx/a * coeff(i-1,j,t,a,b,Qx)
-            + (t+1)
-            * coeff(i-1,j,t+1,a,b,Qx);
+            + (t+1) * coeff(i-1,j,t+1,a,b,Qx);
     } else {
         /* decrement level j */
         return 0.5/p * coeff(i,j-1,t-1,a,b,Qx) - q*Qx/b * coeff(i,j-1,t,a,b,Qx)
-            + (t+1)
-            * coeff(i,j-1,t+1,a,b,Qx);
+            + (t+1) * coeff(i,j-1,t+1,a,b,Qx);
     } // end ifeifeifelse
 } // end function coeff

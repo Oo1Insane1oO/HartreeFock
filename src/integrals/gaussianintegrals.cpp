@@ -163,15 +163,15 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& i, const
             for (int qx = 0; qx < Jx+Lx+1; ++qx) {
                 for (int qy = 0; qy < Jy+Ly+1; ++qy) {
                     double tmp = GaussianBasis::Hexpander::coeff(Ix, Kx, px,
-                            expScaleFactor, expScaleFactor, 0.0) *
+                            expScaleFactor/2, expScaleFactor/2, 0.0) *
                         GaussianBasis::Hexpander::coeff(Iy, Ky, py,
-                                expScaleFactor, expScaleFactor, 0.0) *
+                                expScaleFactor/2, expScaleFactor/2, 0.0) *
                         GaussianBasis::Hexpander::coeff(Jx, Lx, qx,
-                                expScaleFactor, expScaleFactor, 0.0) *
+                                expScaleFactor/2, expScaleFactor/2, 0.0) *
                         GaussianBasis::Hexpander::coeff(Jy, Ly, qy,
-                                expScaleFactor, expScaleFactor, 0.0) *
+                                expScaleFactor/2, expScaleFactor/2, 0.0) *
                         GaussianBasis::Hexpander::auxiliary2D(px+qx, py+qy, 0,
-                                0.5/expScaleFactor,
+                                expScaleFactor/2,
                                 Eigen::VectorXd::Constant(m_dim, 0), 0);
 
                     // fix sign in (-1)^(qx + qy) part
@@ -180,7 +180,7 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& i, const
             } // end forqx
         } // end forpy
     } // end forpx
-    return sum * 2*pow(M_PI, 1.5) * pow(expScaleFactor, 1.5);
+    return sum * 2*pow(M_PI, 1.5) / (8*pow(expScaleFactor/2, 2.5));
 } // end function coulombElement2D
 
 inline double GaussianIntegrals::coulombElement3D(const unsigned int& i, const
