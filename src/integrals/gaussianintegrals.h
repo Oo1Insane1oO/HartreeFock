@@ -28,12 +28,18 @@ class GaussianIntegrals : public GaussianBasis  {
 
         const double& normalizationFactor(const unsigned int&) const;
 
-        double (GaussianIntegrals::*coulombElementFunc)(const unsigned int&,
+        double (GaussianIntegrals::*coulombFunc)(const unsigned int&,
                 const unsigned int&, const unsigned int&, const unsigned int&);
         inline double coulombElement2D(const unsigned int&, const unsigned
-                int&, const unsigned int&, const unsigned int&);
-        inline double coulombElement3D(const unsigned int&, const unsigned
-                int&, const unsigned int&, const unsigned int&);
+                int&, const unsigned int&, const unsigned int&, const unsigned
+                int&, const unsigned int&, const unsigned int&, const unsigned
+                int&);
+        inline double coulombElement3D(const unsigned int*&, const unsigned
+                int*&, const unsigned int*&, const unsigned int*&);
+        inline double coulomb2D(const unsigned int&, const unsigned int&, const
+                unsigned int&, const unsigned int&);
+        inline double coulomb3D(const unsigned int&, const unsigned int&, const
+                unsigned int&, const unsigned int&);
         
         void setNormalizations();
 

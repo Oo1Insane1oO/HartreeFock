@@ -6,7 +6,6 @@
 class Hexpander {
     private:
         double boys(const unsigned int&, const double&);
-        double modified(const unsigned int&, const double&);
 
         double boysIntegrand(double, const unsigned int&, const double&);
         double modifiedIntegrand(double, const unsigned int&, const double&);

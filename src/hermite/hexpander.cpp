@@ -39,12 +39,6 @@ double Hexpander::boys(const unsigned int& n, const double& pRR) {
     } // end ifelse
 } // end function boys
 
-double Hexpander::modified(const unsigned int& n, const double& pRR) {
-    /* calculate modified function using Simpson's rule */
-    return GaussianQuadrature::gaussChebyshevQuad(10, this,
-            &Hexpander::modifiedIntegrand, n, pRR*pRR);
-} // end function boys
-
 double Hexpander::auxiliary3D(const unsigned int& ix, const unsigned int& iy,
         const unsigned int& iz, const unsigned int& n, const double& p,
         const Eigen::VectorXd& P, const double& R) {
@@ -78,8 +72,11 @@ double Hexpander::auxiliary2D(const unsigned int& ix, const unsigned int& iy,
     /* calculate auxiliary integral (Modified Bessel function) */
     double val = 0.0;
     if ((ix==0) && (iy==0)) {
-//         val += pow(-2,n) * pow(p, n-0.5) * modified(n, p*R*R);
-        val += pow(-2,n) * modified(n, p*R*R);
+        val += pow(-2*p,n) * GaussianQuadrature::gaussChebyshevQuad(50, this,
+                &Hexpander::modifiedIntegrand, n, p*p*R*R);
+//         std::cout <<  GaussianQuadrature::gaussChebyshevQuad(50, this,
+//                 &Hexpander::modifiedIntegrand, n, p*p*R*R) << std::endl;
+//         exit(1);
     } else if (ix==0) {
         if (iy > 1) {
             val += (iy-1) * auxiliary2D(ix,iy-2,n+1,p,P,R);
@@ -92,7 +89,7 @@ double Hexpander::auxiliary2D(const unsigned int& ix, const unsigned int& iy,
         val += P(0) * auxiliary2D(ix-1,iy,n+1,p,P,R);
     } // end ifeifeifelse
     return val;
-} // end function auxiliary3D
+} // end function auxiliary2D
 
 double Hexpander::coeff(const int& i, const int& j, const int& t, const double&
         a, const double& b, const double& Qx) {

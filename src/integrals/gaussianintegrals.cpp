@@ -27,9 +27,9 @@ void GaussianIntegrals::initializeParameters(double omega) {
 
     // choose coulombElement function for 2D or 3D
     if (m_dim == 2) {
-        coulombElementFunc = &GaussianIntegrals::coulombElement2D;
+        coulombFunc = &GaussianIntegrals::coulomb2D;
     } else {
-        coulombElementFunc = &GaussianIntegrals::coulombElement3D;
+        coulombFunc = &GaussianIntegrals::coulomb3D;
     } // end if
 
     // calculate and set normalization factors to array
@@ -144,35 +144,30 @@ inline double GaussianIntegrals::potentialElement(const unsigned int& i, const
     return 0.5*xScale*sums * normalizationFactor(i) * normalizationFactor(j);
 } // end function potentialElement
 
-inline double GaussianIntegrals::coulombElement2D(const unsigned int& i, const
-        unsigned int& j, const unsigned int& k, const unsigned int& l) {
+inline double GaussianIntegrals::coulombElement2D(const unsigned int& ix, const
+        unsigned int& iy, const unsigned int& jx, const unsigned int& jy, const
+        unsigned int& kx, const unsigned int& ky, const unsigned int& lx, const
+        unsigned int& ly) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> in 2D for level (i,k,j,l) (calculate 1D integral
      * numerically) */
     double sum = 0.0;
-    const int& Ix = *(GaussianBasis::Cartesian::getStates(i)(0));
-    const int& Iy = *(GaussianBasis::Cartesian::getStates(i)(1));
-    const int& Kx = *(GaussianBasis::Cartesian::getStates(k)(0));
-    const int& Ky = *(GaussianBasis::Cartesian::getStates(k)(1));
-    const int& Jx = *(GaussianBasis::Cartesian::getStates(j)(0));
-    const int& Jy = *(GaussianBasis::Cartesian::getStates(j)(1));
-    const int& Lx = *(GaussianBasis::Cartesian::getStates(l)(0));
-    const int& Ly = *(GaussianBasis::Cartesian::getStates(l)(1));
-    for (int px = 0; px < Ix+Kx+1; ++px) {
-        for (int py = 0; py < Iy+Ky+1; ++py) {
-            for (int qx = 0; qx < Jx+Lx+1; ++qx) {
-                for (int qy = 0; qy < Jy+Ly+1; ++qy) {
-                    double tmp = GaussianBasis::Hexpander::coeff(Ix, Kx, px,
-                            xScale/2, xScale/2, 0.0) *
-                        GaussianBasis::Hexpander::coeff(Iy, Ky, py, xScale/2,
+    static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
+    for (unsigned int px = 0; px <= ix+kx; ++px) {
+        for (unsigned int py = 0; py <= iy+ky; ++py) {
+            for (unsigned int qx = 0; qx <= jx+lx; ++qx) {
+                for (unsigned int qy = 0; qy <= jy+ly; ++qy) {
+                    double tmp =
+                        GaussianBasis::Hexpander::coeff(ix, kx, px, xScale/2,
                                 xScale/2, 0.0) *
-                        GaussianBasis::Hexpander::coeff(Jx, Lx, qx, xScale/2,
+                        GaussianBasis::Hexpander::coeff(iy, ky, py, xScale/2,
                                 xScale/2, 0.0) *
-                        GaussianBasis::Hexpander::coeff(Jy, Ly, qy, xScale/2,
+                        GaussianBasis::Hexpander::coeff(jx, lx, qx, xScale/2,
+                                xScale/2, 0.0) *
+                        GaussianBasis::Hexpander::coeff(jy, ly, qy, xScale/2,
                                 xScale/2, 0.0) *
                         GaussianBasis::Hexpander::auxiliary2D(px+qx, py+qy, 0,
-                                xScale/2, Eigen::VectorXd::Constant(m_dim,
-                                    0.0), 0.0);
+                                xScale/2, centerVec, 0.0);
 
                     // fix sign in (-1)^(qx + qy) part
                     sum += (((qx+qy)%2==0) ? tmp : -tmp);
@@ -180,58 +175,46 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& i, const
             } // end forqx
         } // end forpy
     } // end forpx
-    return sum * 2*pow(M_PI, 1.5) / (4 * pow(xScale/2, 1.5));
+    return sum;
 } // end function coulombElement2D
 
-inline double GaussianIntegrals::coulombElement3D(const unsigned int& i, const
-        unsigned int& j, const unsigned int& k, const unsigned int& l) {
+inline double GaussianIntegrals::coulombElement3D(const unsigned int*& i, const
+        unsigned int*& j, const unsigned int*& k, const unsigned int*& l) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> in 3D for level (i,k,j,l) (calculate 1D integral
      * numerically) */
-    double sum = 0.0;
-    const int& Ix = *(GaussianBasis::Cartesian::getStates(i)(0));
-    const int& Iy = *(GaussianBasis::Cartesian::getStates(i)(1));
-    const int& Iz = *(GaussianBasis::Cartesian::getStates(i)(2));
-    const int& Kx = *(GaussianBasis::Cartesian::getStates(k)(0));
-    const int& Ky = *(GaussianBasis::Cartesian::getStates(k)(1));
-    const int& Kz = *(GaussianBasis::Cartesian::getStates(k)(2));
-    const int& Jx = *(GaussianBasis::Cartesian::getStates(j)(0));
-    const int& Jy = *(GaussianBasis::Cartesian::getStates(j)(1));
-    const int& Jz = *(GaussianBasis::Cartesian::getStates(j)(2));
-    const int& Lx = *(GaussianBasis::Cartesian::getStates(l)(0));
-    const int& Ly = *(GaussianBasis::Cartesian::getStates(l)(1));
-    const int& Lz = *(GaussianBasis::Cartesian::getStates(l)(2));
-    for (int px = 0; px < Ix+Kx+1; ++px) {
-        for (int py = 0; py < Iy+Ky+1; ++py) {
-            for (int pz = 0; pz < Iz+Kz+1; ++pz) {
-                for (int qx = 0; qx < Jx+Lx+1; ++qx) {
-                    for (int qy = 0; qy < Jy+Ly+1; ++qy) {
-                        for (int qz = 0; qz < Jz+Lz+1; ++qz) {
-                            sum += GaussianBasis::Hexpander::coeff(Ix, Kx, px,
-                                    xScale, xScale,0.0) *
-                                GaussianBasis::Hexpander::coeff(Iy, Ky, py,
-                                        0.0, xScale, xScale) *
-                                GaussianBasis::Hexpander::coeff(Iz, Kz, pz,
-                                        xScale, xScale, 0.0) *
-                                GaussianBasis::Hexpander::coeff(Jx, Lx, qx,
-                                        xScale, xScale, 0.0) *
-                                GaussianBasis::Hexpander::coeff(Jy, Ly, qy,
-                                        xScale, xScale, 0.0) *
-                                GaussianBasis::Hexpander::coeff(Jz, Lz, qz,
-                                        xScale, xScale, 0.0) * pow(-1,
-                                            qx+qy+qz) *
-                                            GaussianBasis::Hexpander::auxiliary3D(px+qx,
-                                                    py+qy, pz+qz, 0,
-                                                    0.5/xScale,
-                                                    Eigen::VectorXd::Constant(m_dim,
-                                                        0), 0);
-                        } // end forqz
-                    } // end forqy
-                } // end forqx
-            } // end forpz
-        } // end forpy
-    } // end forpx
-    return sum * sqrt(2)*pow(M_PI, 2.5) * pow(xScale, 1.5);
+//     double sum = 0.0;
+//     for (int px = 0; px < Ix+Kx+1; ++px) {
+//         for (int py = 0; py < Iy+Ky+1; ++py) {
+//             for (int pz = 0; pz < Iz+Kz+1; ++pz) {
+//                 for (int qx = 0; qx < Jx+Lx+1; ++qx) {
+//                     for (int qy = 0; qy < Jy+Ly+1; ++qy) {
+//                         for (int qz = 0; qz < Jz+Lz+1; ++qz) {
+//                             sum += GaussianBasis::Hexpander::coeff(Ix, Kx, px,
+//                                     xScale, xScale,0.0) *
+//                                 GaussianBasis::Hexpander::coeff(Iy, Ky, py,
+//                                         0.0, xScale, xScale) *
+//                                 GaussianBasis::Hexpander::coeff(Iz, Kz, pz,
+//                                         xScale, xScale, 0.0) *
+//                                 GaussianBasis::Hexpander::coeff(Jx, Lx, qx,
+//                                         xScale, xScale, 0.0) *
+//                                 GaussianBasis::Hexpander::coeff(Jy, Ly, qy,
+//                                         xScale, xScale, 0.0) *
+//                                 GaussianBasis::Hexpander::coeff(Jz, Lz, qz,
+//                                         xScale, xScale, 0.0) * pow(-1,
+//                                             qx+qy+qz) *
+//                                             GaussianBasis::Hexpander::auxiliary3D(px+qx,
+//                                                     py+qy, pz+qz, 0,
+//                                                     0.5/xScale,
+//                                                     Eigen::VectorXd::Constant(m_dim,
+//                                                         0), 0);
+//                         } // end forqz
+//                     } // end forqy
+//                 } // end forqx
+//             } // end forpz
+//         } // end forpy
+//     } // end forpx
+//     return sum * sqrt(2)*pow(M_PI, 2.5) * pow(xScale, 1.5);
 } // end function coulombElement3D
 
 double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
@@ -265,6 +248,114 @@ double GaussianIntegrals::oneBodyElement(const unsigned int& i, const unsigned
     return -0.5*laplacianElement(i,j) + potentialElement(i,j);
 } // end function oneBodyElements
 
+inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
+        int& j, const unsigned int& k, const unsigned int& l) {
+    /* calculate full coulomb integral in 2D case */
+
+    // grab hermite coefficients
+    const std::vector<int>& HCIx =
+        HC(*(GaussianBasis::Cartesian::getStates(i)(0)));
+    const std::vector<int>& HCIy =
+        HC(*(GaussianBasis::Cartesian::getStates(i)(1)));
+    const std::vector<int>& HCJx =
+        HC(*(GaussianBasis::Cartesian::getStates(j)(0)));
+    const std::vector<int>& HCJy =
+        HC(*(GaussianBasis::Cartesian::getStates(j)(1)));
+    const std::vector<int>& HCKx =
+        HC(*(GaussianBasis::Cartesian::getStates(k)(0)));
+    const std::vector<int>& HCKy =
+        HC(*(GaussianBasis::Cartesian::getStates(k)(1)));
+    const std::vector<int>& HCLx =
+        HC(*(GaussianBasis::Cartesian::getStates(l)(0)));
+    const std::vector<int>& HCLy =
+        HC(*(GaussianBasis::Cartesian::getStates(l)(1)));
+
+    double sum = 0.0;
+    for (unsigned int ix = 0; ix < HCIx.size(); ++ix) {
+        for (unsigned int iy = 0; iy < HCIy.size(); ++iy) {
+            for (unsigned int jx = 0; jx < HCJx.size(); ++jx) {
+                for (unsigned int jy = 0; jy < HCJy.size(); ++jy) {
+                    for (unsigned int kx = 0; kx < HCKx.size(); ++kx) {
+                        for (unsigned int ky = 0; ky < HCKy.size(); ++ky) {
+                            for (unsigned int lx = 0; lx < HCLx.size(); ++lx) {
+                                for (unsigned int ly = 0; ly < HCLy.size();
+                                        ++ly) {
+                                    sum += HCIx[ix] * HCIy[iy] * HCKx[kx] *
+                                        HCKy[ky] * HCJx[jx] * HCJy[jy] *
+                                        HCLx[lx] * HCLy[ly] *
+                                        coulombElement2D(ix,iy, jx,jy, kx,ky,
+                                                lx,ly);
+                                } // end forly
+                            } // end forlx
+                        } // end forky
+                    } // end forkx
+                } // end forjy
+            } // end forjx
+        } // end foriy
+    } // end forix
+
+    return sum * 2 * pow(M_PI, 1.5) / (4 * sqrt(xScale/2));
+} // end function coulomb2D
+
+inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
+        int& j, const unsigned int& k, const unsigned int& l) {
+    const int& Ix = *(GaussianBasis::Cartesian::getStates(i)(0));
+    const int& Iy = *(GaussianBasis::Cartesian::getStates(i)(1));
+    const int& Iz = *(GaussianBasis::Cartesian::getStates(i)(2));
+    const int& Kx = *(GaussianBasis::Cartesian::getStates(k)(0));
+    const int& Ky = *(GaussianBasis::Cartesian::getStates(k)(1));
+    const int& Kz = *(GaussianBasis::Cartesian::getStates(k)(2));
+    const int& Jx = *(GaussianBasis::Cartesian::getStates(j)(0));
+    const int& Jy = *(GaussianBasis::Cartesian::getStates(j)(1));
+    const int& Jz = *(GaussianBasis::Cartesian::getStates(j)(2));
+    const int& Lx = *(GaussianBasis::Cartesian::getStates(l)(0));
+    const int& Ly = *(GaussianBasis::Cartesian::getStates(l)(1));
+    const int& Lz = *(GaussianBasis::Cartesian::getStates(l)(2));
+
+    const std::vector<int>& HCIx = HC(Ix);
+    const std::vector<int>& HCIy = HC(Iy);
+    const std::vector<int>& HCIz = HC(Iz);
+    const std::vector<int>& HCKx = HC(Kx);
+    const std::vector<int>& HCKy = HC(Ky);
+    const std::vector<int>& HCKz = HC(Kz);
+    const std::vector<int>& HCJx = HC(Jx);
+    const std::vector<int>& HCJy = HC(Jy);
+    const std::vector<int>& HCJz = HC(Jz);
+    const std::vector<int>& HCLx = HC(Lx);
+    const std::vector<int>& HCLy = HC(Ly);
+    const std::vector<int>& HCLz = HC(Lz);
+
+    for (unsigned int ix = 0; ix < HCIx.size(); ++ix) {
+        for (unsigned int iy = 0; iy < HCIy.size(); ++iy) {
+            for (unsigned int iz = 0; iy < HCIz.size(); ++iz) {
+                for (unsigned int kx = 0; kx < HCKx.size(); ++kx) {
+                    for (unsigned int ky = 0; ky < HCKy.size(); ++ky) {
+                        for (unsigned int kz = 0; iz < HCKz.size(); ++kz) {
+                            for (unsigned int jx = 0; jx < HCJx.size(); ++jx) {
+                                for (unsigned int jy = 0; jy < HCJy.size();
+                                        ++jy) {
+                                    for (unsigned int jz = 0; jz < HCJz.size();
+                                            ++jz) {
+                                        for (unsigned int lx = 0; lx <
+                                                HCLx.size(); ++lx) {
+                                            for (unsigned int ly = 0; ly <
+                                                    HCLy.size(); ++ly) {
+                                                for (unsigned int lz = 0; lz <
+                                                        HCLz.size(); ++lz) {
+                                                } // end forlz
+                                            } // end forly
+                                        } // end forlx
+                                    } // end forjz
+                                } // end forjy
+                            } // end forjx
+                        } // end forkz
+                    } // end forky
+                } // end forkx
+            } // end for iz
+        } // end foriy
+    } // end forix
+} // end function coulomb3D
+
 double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
@@ -278,28 +369,21 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
 //               *(GaussianBasis::Cartesian::getStates(j)(m_dim+1))) !=
 //              *((GaussianBasis::Cartesian::getStates(k)(m_dim+1)) +
 //                  *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) ||
-//             (*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) !=
-//              *(GaussianBasis::Cartesian::getStates(k)(m_dim+1))) ||
-//             (*(GaussianBasis::Cartesian::getStates(j)(m_dim+1)) !=
-//              *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) {
-//         /* make sure total angular momentum and spin is conserved */
-//         return 0.0;
-//     } // end if
-    const int& Ix = *(GaussianBasis::Cartesian::getStates(i)(0));
-    const int& Iy = *(GaussianBasis::Cartesian::getStates(i)(1));
-    const int& Kx = *(GaussianBasis::Cartesian::getStates(k)(0));
-    const int& Ky = *(GaussianBasis::Cartesian::getStates(k)(1));
-    const int& Jx = *(GaussianBasis::Cartesian::getStates(j)(0));
-    const int& Jy = *(GaussianBasis::Cartesian::getStates(j)(1));
-    const int& Lx = *(GaussianBasis::Cartesian::getStates(l)(0));
-    const int& Ly = *(GaussianBasis::Cartesian::getStates(l)(1));
+    if(
+            (*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) !=
+             *(GaussianBasis::Cartesian::getStates(k)(m_dim+1))) ||
+            (*(GaussianBasis::Cartesian::getStates(j)(m_dim+1)) !=
+             *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) {
+        /* make sure total angular momentum and spin is conserved */
+        return 0.0;
+    } // end if
 
     double bleh =  normalizationFactors(i) * normalizationFactors(j) *
         normalizationFactors(k) * normalizationFactors(l) *
-        (this->*coulombElementFunc)(i,j,k,l);
-    if (bleh != 0) {
-        std::cout << Ix << Iy << " " << Jx << Jy << " " << Kx << Ky << " " <<
-            Lx << Ly << " " << bleh << std::endl;
-    }
+        (this->*coulombFunc)(i,j,k,l);
+//     if (bleh != 0) {
+//         std::cout << bleh << std::endl;
+//     }
+//         std::cout << bleh << std::endl;
     return bleh;
 } // end function coulombElement

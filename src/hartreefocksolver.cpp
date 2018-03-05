@@ -121,7 +121,7 @@ inline void HartreeFockSolver::setFockMatrix() {
     FockMatrix.setZero();
     for (unsigned int i = 0; i < m_numStates; ++i) {
         for (unsigned int j = 0; j < m_numStates; ++j) {
-            FockMatrix(i,j) = oneBodyElements(i,j); 
+            FockMatrix(i,j) = oneBodyElements(i,j);
             for (unsigned int k = 0; k < m_numStates; ++k) {
                 for (unsigned int l = 0; l < m_numStates; ++l) {
                     FockMatrix(i,j) += densityMatrix(k,l) *
@@ -185,6 +185,9 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
         // update previous energies
         previousEnergies = eigenSolver.eigenvalues();
     } // end forcount
+
+    std::cout << FockMatrix << std::endl;
+    std::cout << eigenSolver.eigenvalues() << std::endl;
 
     // find estimate for ground state energy for m_numParticles
     double groundStateEnergy = eigenSolver.eigenvalues().segment(0,
