@@ -31,13 +31,13 @@ SUITE(HFGaussUnperturbed) {
         HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
-        CHECK_CLOSE(2, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(2, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.5);
-        CHECK_CLOSE(1, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(1, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.25);
-        CHECK_CLOSE(0.5, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(0.5, HFS->iterate(100, 1e-8), eps);
     } // end TEST_FIXTURE check2Dw1N2
     
     TEST_FIXTURE(HFGaussUnperturbedFix, check2DN6) {
@@ -47,13 +47,13 @@ SUITE(HFGaussUnperturbed) {
         HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
-        CHECK_CLOSE(10, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(10, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.5);
-        CHECK_CLOSE(5, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(5, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.25);
-        CHECK_CLOSE(2.5, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(2.5, HFS->iterate(100, 1e-8), eps);
     } // end TEST_FIXTURE check2Dw1N6
     
     TEST_FIXTURE(HFGaussUnperturbedFix, check2DN12) {
@@ -63,13 +63,13 @@ SUITE(HFGaussUnperturbed) {
         HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
-        CHECK_CLOSE(28, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(28, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.5);
-        CHECK_CLOSE(14, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(14, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.25);
-        CHECK_CLOSE(7, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(7, HFS->iterate(100, 1e-8), eps);
     } // end TEST_FIXTURE check2Dw1N12
     
     TEST_FIXTURE(HFGaussUnperturbedFix, check2DN20) {
@@ -79,13 +79,13 @@ SUITE(HFGaussUnperturbed) {
         HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
-        CHECK_CLOSE(60, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(60, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.5);
-        CHECK_CLOSE(30, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(30, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.25);
-        CHECK_CLOSE(15, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(15, HFS->iterate(100, 1e-8), eps);
     } // end TEST_FIXTURE check2Dw1N20
     
     TEST_FIXTURE(HFGaussUnperturbedFix, check3DN2) {
@@ -95,13 +95,13 @@ SUITE(HFGaussUnperturbed) {
         HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
-        CHECK_CLOSE(3, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(3, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.5);
-        CHECK_CLOSE(1.5, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(1.5, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.25);
-        CHECK_CLOSE(0.75, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(0.75, HFS->iterate(100, 1e-8), eps);
     } // end TEST_FIXTURE check3Dw1N2
     
     TEST_FIXTURE(HFGaussUnperturbedFix, check3DN8) {
@@ -111,13 +111,13 @@ SUITE(HFGaussUnperturbed) {
         HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
-        CHECK_CLOSE(18, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(18, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.5);
-        CHECK_CLOSE(9, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(9, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.25);
-        CHECK_CLOSE(4.5, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(4.5, HFS->iterate(100, 1e-8), eps);
     } // end TEST_FIXTURE check3Dw1N8
     
     TEST_FIXTURE(HFGaussUnperturbedFix, check3DN20) {
@@ -127,13 +127,13 @@ SUITE(HFGaussUnperturbed) {
         HFS->setInteraction(false);
 
         HFS->getIntegralObj()->initializeParameters(1.0);
-        CHECK_CLOSE(60, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(60, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.5);
-        CHECK_CLOSE(30, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(30, HFS->iterate(100, 1e-8), eps);
         
         HFS->getIntegralObj()->initializeParameters(0.25);
-        CHECK_CLOSE(15, HFS->iterate(100, 1e-8), 1e-14);
+        CHECK_CLOSE(15, HFS->iterate(100, 1e-8), eps);
     } // end TEST_FIXTURE check3Dw1N20
 } // end SUITE HFGauss
 #endif
