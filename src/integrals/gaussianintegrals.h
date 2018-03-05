@@ -9,7 +9,7 @@ class GaussianIntegrals : public GaussianBasis  {
     private:
         unsigned int m_dim;
         double expScaleFactor, sqrtFactor, F0, F1, xScale, sqrtScale, powScale,
-               sqrtScale1;
+               sqrtScale1, xScaleHalf;
 
         Eigen::ArrayXd normalizationFactors;
         
@@ -34,8 +34,11 @@ class GaussianIntegrals : public GaussianBasis  {
                 int&, const unsigned int&, const unsigned int&, const unsigned
                 int&, const unsigned int&, const unsigned int&, const unsigned
                 int&);
-        inline double coulombElement3D(const unsigned int*&, const unsigned
-                int*&, const unsigned int*&, const unsigned int*&);
+        inline double coulombElement3D(const unsigned int&, const unsigned
+                int&, const unsigned int&, const unsigned int&, const unsigned
+                int&, const unsigned int&, const unsigned int&, const unsigned
+                int&, const unsigned int&, const unsigned int&, const unsigned
+                int&, const unsigned int&);
         inline double coulomb2D(const unsigned int&, const unsigned int&, const
                 unsigned int&, const unsigned int&);
         inline double coulomb3D(const unsigned int&, const unsigned int&, const
