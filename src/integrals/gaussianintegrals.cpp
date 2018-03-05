@@ -360,30 +360,7 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
-//     if (((GaussianBasis::Cartesian::getSumn(i) +
-//                     GaussianBasis::Cartesian::getSumn(j)) !=
-//                 (GaussianBasis::Cartesian::getSumn(k) +
-//                  GaussianBasis::Cartesian::getSumn(l))) ||
-//     if (
-//             ((*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) +
-//               *(GaussianBasis::Cartesian::getStates(j)(m_dim+1))) !=
-//              *((GaussianBasis::Cartesian::getStates(k)(m_dim+1)) +
-//                  *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) ||
-    if(
-            (*(GaussianBasis::Cartesian::getStates(i)(m_dim+1)) !=
-             *(GaussianBasis::Cartesian::getStates(k)(m_dim+1))) ||
-            (*(GaussianBasis::Cartesian::getStates(j)(m_dim+1)) !=
-             *(GaussianBasis::Cartesian::getStates(l)(m_dim+1)))) {
-        /* make sure total angular momentum and spin is conserved */
-        return 0.0;
-    } // end if
-
-    double bleh =  normalizationFactors(i) * normalizationFactors(j) *
+    return normalizationFactors(i) * normalizationFactors(j) *
         normalizationFactors(k) * normalizationFactors(l) *
         (this->*coulombFunc)(i,j,k,l);
-//     if (bleh != 0) {
-//         std::cout << bleh << std::endl;
-//     }
-//         std::cout << bleh << std::endl;
-    return bleh;
 } // end function coulombElement
