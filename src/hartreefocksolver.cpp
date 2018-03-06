@@ -61,32 +61,22 @@ inline void HartreeFockSolver::assemble() {
         // set two-body coupled (Coulomb) integral elements
         for (unsigned int p = 0; p < m_numStates; ++p) {
             for (unsigned int q = p; q < m_numStates; ++q) {
+//             for (unsigned int q = 0; q < m_numStates; ++q) {
                 for (unsigned int r = 0; r < m_numStates; ++r) {
                     for (unsigned int s = r; s < m_numStates; ++s) {
-                        twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
-                            Integrals::coulombElement(p,q,r,s);
+//                     for (unsigned int s = 0; s < m_numStates; ++s) {
+                        double value = Integrals::coulombElement(p,q,r,s);
+                        twoBodyElements(dIndex(m_numStates, p,q,r,s)) = value;
+                        twoBodyElements(dIndex(m_numStates, r,q,p,s)) = value;
+                        twoBodyElements(dIndex(m_numStates, p,s,r,q)) = value;
+                        twoBodyElements(dIndex(m_numStates, r,s,p,q)) = value;
+                        twoBodyElements(dIndex(m_numStates, q,p,s,r)) = value;
+                        twoBodyElements(dIndex(m_numStates, s,p,q,r)) = value;
+                        twoBodyElements(dIndex(m_numStates, q,r,s,p)) = value;
+                        twoBodyElements(dIndex(m_numStates, s,r,q,p)) = value;
                     } // end fors
-                } // end forq
-            } // end forr
-        } // end forp
-
-        // set remaning symmetric elements
-        for (unsigned int p = 0; p < m_numStates; ++p) {
-            for (unsigned int r = 0; r < m_numStates; ++r) {
-                for (unsigned int q = p; q < m_numStates; ++q) {
-                    for (unsigned int s = r; s < m_numStates; ++s) {
-                        double value = twoBodyElements(dIndex(m_numStates,
-                                    p,r,q,s));
-                        twoBodyElements(dIndex(m_numStates, q,s,p,r)) = value;
-                        twoBodyElements(dIndex(m_numStates, q,r,p,s)) = value;
-                        twoBodyElements(dIndex(m_numStates, p,s,q,r)) = value;
-                        twoBodyElements(dIndex(m_numStates, r,p,s,q)) = value;
-                        twoBodyElements(dIndex(m_numStates, s,p,r,q)) = value;
-                        twoBodyElements(dIndex(m_numStates, r,q,s,p)) = value;
-                        twoBodyElements(dIndex(m_numStates, s,q,r,p)) = value;
-                    } // end fors
-                } // end forq
-            } // end forr
+                } // end forr
+            } // end forq
         } // end forp
     } // end if
 } // end function assemble
@@ -167,6 +157,8 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
         // update previous energies
         previousEnergies = eigenSolver.eigenvalues();
     } // end forcount
+
+    std::cout << FockMatrix << std::endl;
 
     // find estimate for ground state energy for m_numParticles
     double groundStateEnergy = 2*eigenSolver.eigenvalues().segment(0,
