@@ -192,7 +192,7 @@ void Cartesian::restructureStates() {
 } // end function restructureStates
 
 void Cartesian::sumn() {
-    /* calcualte angular momenta for each state */
+    /* calculate angular momenta for each state */
     for (unsigned int i = 0; i < states.rows(); ++i) {
         angularMomenta(i) =
             Methods::refSum<int>(states.row(i).segment(0,m_dim));

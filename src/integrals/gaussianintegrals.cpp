@@ -370,7 +370,15 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
-    return normalizationFactors(i) * normalizationFactors(j) *
-        normalizationFactors(k) * normalizationFactors(l) *
-        (this->*coulombFunc)(i,j,k,l);
+//     if ((GaussianBasis::Cartesian::getSumn(i) ==
+//                 GaussianBasis::Cartesian::getSumn(k)) &&
+//             (GaussianBasis::Cartesian::getSumn(j) ==
+//              GaussianBasis::Cartesian::getSumn(l))) {
+//         /* make use of angular momentum conservation */
+        return normalizationFactors(i) * normalizationFactors(j) *
+            normalizationFactors(k) * normalizationFactors(l) *
+            (this->*coulombFunc)(i,j,k,l);
+//     } else {
+//         return 0.0;
+//     } // end ifselse
 } // end function coulombElement
