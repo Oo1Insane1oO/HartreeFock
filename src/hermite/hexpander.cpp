@@ -1,6 +1,7 @@
 #include "hexpander.h"
 
 #include "../gaussianquadrature.h"
+#include "../methods.h"
 
 #include <cmath>
 #include <iostream>
@@ -13,6 +14,128 @@ Hexpander::Hexpander() {
 
 Hexpander::~Hexpander() {
 } // end deconstructor
+
+void Hexpander::setCoefficients(unsigned int iMax, unsigned int jMax, double a,
+        double b, double Qx) {
+    /* find coefficients */
+    double p = a + b;
+    double q = a*b/p;
+
+    unsigned int tMax = iMax+jMax+1;
+    coefficients = EigenMatArrXd::Constant(iMax+1, jMax+1,
+            Eigen::ArrayXd::Zero(tMax));
+    coefficients(0,0)(0) = exp(-q*Qx*Qx);
+    for (unsigned int i = 0; i < coefficients.cols(); ++i) {
+        for (unsigned int t = 0; t < tMax; t++) {
+            if ((i==0) && (t==0)) {
+                continue;
+            } // end if
+            int im = i - 1;
+            int tm = t - 1;
+            int tp = t + 1;
+
+            double Em = 0;
+            if(checkIndices(0, im, tm)) {
+                Em = coefficients(0,im)(tm);
+            } // end if
+            double Ed = 0;
+            if(checkIndices(0, im, t)) {
+                Ed = coefficients(0,im)(t);
+            } // end if
+            double Ep = 0;
+            if(checkIndices(0, im, tp)) {
+                Ep = coefficients(0,im)(tp);
+            } // end if
+            coefficients(0,i)(t) = 0.5/p*Em + q*Qx/b*Ed + tp*Ep;
+        } // end fort
+    } // end fori
+    for (unsigned int i = 1; i < coefficients.rows(); ++i) {
+        for (unsigned int j = 0; j < coefficients.cols(); ++j) {
+            for (unsigned int t = 0; t < tMax; ++t) {
+                int im = i - 1;
+                int tm = t - 1;
+                int tp = t + 1;
+
+                double Em = 0;
+                if(checkIndices(im, j, tm)) {
+                    Em = coefficients(im,j)(tm);
+                } // end if
+                double Ed = 0;
+                if(checkIndices(im, j, t)) {
+                    Ed = coefficients(im,j)(t);
+                } // end if
+                double Ep = 0;
+                if(checkIndices(im, j, tp)) {
+                    Ep = coefficients(im,j)(tp);
+                } // end if
+                coefficients(i,j)(t) = 0.5/p*Em + q*Qx/a*Ed + tp*Ep;
+            } // end fort
+        } // end forj
+    } // end fori
+} // end function setCoefficients
+
+void Hexpander::setAuxiliary2D(unsigned int xMax, unsigned int yMax, double a,
+        double b, double c, double d, const Eigen::VectorXd& PQ) {
+    /* setup integral elements in 2D */
+    unsigned int nMax = xMax + yMax;
+    double p = (a+c)*(b+d) / (a+c+b+d);
+    integrals = EigenArrMatXd::Constant(nMax+1, Eigen::MatrixXd::Zero(xMax+1,
+                yMax+1));
+    double powVal = 1;
+    for (unsigned int n = 0; n <= nMax; ++n) {
+        /* calculate initial integrals */
+        integrals(n)(0,0) = powVal * GaussianQuadrature::gaussChebyshevQuad(50,
+                this, &Hexpander::modifiedIntegrand, n, p*PQ.squaredNorm());
+        powVal *= -2*p;
+    } // end forn
+
+    for (unsigned int ts = 1; ts <= nMax; ++ts) {
+        for (unsigned int n = 0; n <= nMax-ts; ++n) {
+            for (unsigned int i = 0; i <= xMax; ++i) {
+                for (unsigned int j = 0; j <= yMax; ++j) {
+                    if (i+j != ts || i+j == 0) {
+                        /* out of bounds */
+                        continue;
+                    } // end if
+                    unsigned int ijMax = Methods::max(i,j);
+                    int i2 = i;
+                    int j2 = j;
+                    int i3 = i;
+                    int j3 = j;
+                    int factor = i;
+                    double XPQ = PQ(0);
+                    if (ijMax == i) {
+                        i2 = i-2;
+                        i3 = i-1;
+                        factor = i3;
+                        XPQ = PQ(0);
+                    } else {
+                        j2 = j-2;
+                        j3 = j-1;
+                        factor = j3;
+                        XPQ = PQ(1);
+                    } // end ifelse
+                    double currValue = 0;
+                    if (i2 >= 0 && j2 >= 0) {
+                        currValue += factor * integrals(n+1)(i2,j2);
+                    } // end if
+                    if (i3 >= 0 && j3 >= 0) {
+                        currValue += XPQ * integrals(n+1)(i3,j3);
+                    } // end if
+                    integrals(n)(i,j) = currValue;
+                } // end forj
+            } // end fori
+        } // end forn
+    } // end forts
+} // end function setIntegrals
+
+bool Hexpander::checkIndices(const int& ia, const int& ib, const int& t) {
+    if (t < 0 || t > (ia+ib) || ia < 0 || ib < 0) {
+        return false;
+    } else {
+        return true;
+    } // end if
+} // end function checkIndices
 
 double Hexpander::boysIntegrand(double u, const unsigned int& n, const double&
         pRR) {
@@ -74,9 +197,6 @@ double Hexpander::auxiliary2D(const unsigned int& ix, const unsigned int& iy,
     if ((ix==0) && (iy==0)) {
         val += pow(-2*p,n) * GaussianQuadrature::gaussChebyshevQuad(50, this,
                 &Hexpander::modifiedIntegrand, n, p*p*R*R);
-//         std::cout <<  GaussianQuadrature::gaussChebyshevQuad(50, this,
-//                 &Hexpander::modifiedIntegrand, n, p*p*R*R) << std::endl;
-//         exit(1);
     } else if (ix==0) {
         if (iy > 1) {
             val += (iy-1) * auxiliary2D(ix,iy-2,n+1,p,P,R);
@@ -91,24 +211,14 @@ double Hexpander::auxiliary2D(const unsigned int& ix, const unsigned int& iy,
     return val;
 } // end function auxiliary2D
 
-double Hexpander::coeff(const int& i, const int& j, const int& t, const double&
-        a, const double& b, const double& Qx) {
-    /* calculate Hermite coefficient */
-    double p = a+b;
-    double q = a*b/p;
-    if ((t<0) || (t>(i+j))) {
-        /* bounds for t */
-        return 0.0;
-    } else if ((i==0) && (j==0) && (t==0)) {
-        /* initial coefficient */
-        return exp(-q*Qx*Qx);
-    } else if (j==0) {
-        /* decrement level i */
-        return 0.5/p * coeff(i-1,j,t-1,a,b,Qx) - q*Qx/a * coeff(i-1,j,t,a,b,Qx)
-            + (t+1) * coeff(i-1,j,t+1,a,b,Qx);
-    } else {
-        /* decrement level j */
-        return 0.5/p * coeff(i,j-1,t-1,a,b,Qx) - q*Qx/b * coeff(i,j-1,t,a,b,Qx)
-            + (t+1) * coeff(i,j-1,t+1,a,b,Qx);
-    } // end ifeifeifelse
-} // end function coeff
+const double& Hexpander::coeff(const unsigned int& i, const unsigned int& j,
+        const unsigned int& t) const {
+    /* return coefficient E^{ij}_t */
+    return coefficients(i,j)(t);
+} // end coeff
+
+const double& Hexpander::auxiliary2D(const unsigned int& n, const unsigned int&
+        i, const unsigned int& j) {
+    /* return integral R^{ij}_n */
+    return integrals(n)(i,j);
+} // end function integral2D

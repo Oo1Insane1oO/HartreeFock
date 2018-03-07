@@ -8,6 +8,7 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
     m_dim = dim;
     expScaleFactor = scaling;
     sqrtFactor = sqrt(scaling);
+    coeffs = std::make_unique<Hexpander>();
 } // end constructor
 
 GaussianIntegrals::~GaussianIntegrals() {
@@ -153,25 +154,20 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& ix, const
      * <ij|1/r_12|kl> in 2D for level (i,k,j,l) (calculate 1D integral
      * numerically) */
     double sum = 0.0;
-    static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
+//     static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
     for (unsigned int px = 0; px <= ix+kx; ++px) {
         for (unsigned int py = 0; py <= iy+ky; ++py) {
             for (unsigned int qx = 0; qx <= jx+lx; ++qx) {
                 for (unsigned int qy = 0; qy <= jy+ly; ++qy) {
-                    double tmp =
-                        GaussianBasis::Hexpander::coeff(ix, kx, px, xScaleHalf,
-                                xScaleHalf, 0.0) *
-                        GaussianBasis::Hexpander::coeff(iy, ky, py, xScaleHalf,
-                                xScaleHalf, 0.0) *
-                        GaussianBasis::Hexpander::coeff(jx, lx, qx, xScaleHalf,
-                                xScaleHalf, 0.0) *
-                        GaussianBasis::Hexpander::coeff(jy, ly, qy, xScaleHalf,
-                                xScaleHalf, 0.0) *
-                        GaussianBasis::Hexpander::auxiliary2D(px+qx, py+qy, 0,
-                                xScaleHalf, centerVec, 0.0);
-
+                    double tmp = coeffs->coeff(ix, kx, px) * coeffs->coeff(iy,
+                            ky, py) * coeffs->coeff(jx, lx, qx) *
+                        coeffs->coeff(jy, ly, qy) *
+//                         GaussianBasis::Hexpander::auxiliary2D(px+qx, py+qy, 0,
+//                                 xScaleHalf, centerVec, 0.0);
+                        coeffs->auxiliary2D(0, px+qx, py+qy);
                     // fix sign in (-1)^(qx + qy) part
                     sum += (((qx+qy)%2==0) ? tmp : -tmp);
+//                     Methods::sepPrint(px, py, qx, qy);
                 } // end forqy
             } // end forqx
         } // end forpy
@@ -195,24 +191,16 @@ inline double GaussianIntegrals::coulombElement3D(const unsigned int& ix, const
                 for (unsigned int qx = 0; qx <= jx+lx; ++qx) {
                     for (unsigned int qy = 0; qy <= jy+ly; ++qy) {
                         for (unsigned int qz = 0; qz <= jz+lz; ++qz) {
-                            double tmp = 
-                                GaussianBasis::Hexpander::coeff(ix, kx, px,
-                                        xScaleHalf, xScaleHalf, 0.0) *
-                                GaussianBasis::Hexpander::coeff(iy, ky, py,
-                                        xScaleHalf, xScaleHalf, 0.0) *
-                                GaussianBasis::Hexpander::coeff(iz, kz, pz,
-                                        xScaleHalf, xScaleHalf, 0.0) *
-                                GaussianBasis::Hexpander::coeff(jx, lx, qx,
-                                        xScaleHalf, xScaleHalf, 0.0) *
-                                GaussianBasis::Hexpander::coeff(jy, ly, qy,
-                                        xScaleHalf, xScaleHalf, 0.0) *
-                                GaussianBasis::Hexpander::coeff(jz, lz, qz,
-                                        xScaleHalf, xScaleHalf, 0.0) *
+                            double tmp = coeffs->coeff(ix, kx, px) *
+                                coeffs->coeff(iy, ky, py) * coeffs->coeff(iz,
+                                        kz, pz) * coeffs->coeff(jx, lx, qx) *
+                                coeffs->coeff(jy, ly, qy) * coeffs->coeff(jz,
+                                        lz, qz) *
                                 GaussianBasis::Hexpander::auxiliary3D(px+qx,
                                         py+qy, pz+qz, 0, xScaleHalf, centerVec,
                                         0.0);
-                        // fix sign in (-1)^(qx + qy) part
-                        sum += (((qx+qy+qz)%2==0) ? tmp : -tmp);
+                            // fix sign in (-1)^(qx + qy + qz) part
+                            sum += (((qx+qy+qz)%2==0) ? tmp : -tmp);
                         } // end forqz
                     } // end forqy
                 } // end forqx
@@ -221,27 +209,6 @@ inline double GaussianIntegrals::coulombElement3D(const unsigned int& ix, const
     } // end forpx
     return sum * 2*pow(M_PI, 2.5) * pow(xScaleHalf, 1.5);
 } // end function coulombElement3D
-
-double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
-        int& j) {
-    /* calculate and return the overlap integral element <i|j> */
-    double prod = 1.0;
-    for (unsigned int d = 0; d < m_dim; ++d) {
-        prod *= ddexpr(*(GaussianBasis::Cartesian::getStates(i)(d)),
-                *(GaussianBasis::Cartesian::getStates(j)(d)),
-                &GaussianIntegrals::ddexprOverlap);
-    } // end ford
-
-    return prod * normalizationFactor(i) * normalizationFactor(j);
-} // end function overlapElement
-
-double GaussianIntegrals::oneBodyElement(const unsigned int& i, const unsigned
-        int& j) {
-    /* calculate and return oneBodyElement <i|h|k> = <i|K|j> + <i|P|j>, where K
-     * is the kinetic part and P is the potential part */
-
-    return -0.5*laplacianElement(i,j) + potentialElement(i,j);
-} // end function oneBodyElements
 
 inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {
@@ -264,6 +231,19 @@ inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
         HC(*(GaussianBasis::Cartesian::getStates(l)(0)));
     const std::vector<int>& HCLy =
         HC(*(GaussianBasis::Cartesian::getStates(l)(1)));
+
+    // find the maximum index (upper limit for coeffs and integrals needed)
+    unsigned int pmax = Methods::max(HCIx.size(), HCKx.size(), HCJx.size(),
+            HCLx.size(), HCIy.size(), HCKy.size(), HCJy.size(), HCLy.size());
+    unsigned int auxMax = Methods::max(HCIx.size()+HCKx.size(),
+            HCJx.size()+HCLx.size(), HCIy.size()+HCKy.size(),
+            HCJy.size()+HCLy.size());
+    static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
+
+    // set all coefficients and integrals needed
+    coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
+    coeffs->setAuxiliary2D(2*auxMax, 2*auxMax, xScaleHalf, xScaleHalf, xScaleHalf,
+        xScaleHalf, centerVec);
 
     double sum = 0.0;
     for (unsigned int ix = 0; ix < HCIx.size(); ++ix) {
@@ -319,6 +299,11 @@ inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
         HC(*(GaussianBasis::Cartesian::getStates(l)(1)));
     const std::vector<int>& HCLz =
         HC(*(GaussianBasis::Cartesian::getStates(l)(2)));
+    
+    unsigned int pmax = Methods::max(HCIx.size(), HCKx.size(), HCJx.size(),
+            HCLx.size(), HCIy.size(), HCKy.size(), HCJy.size(), HCLy.size(),
+            HCIz.size(), HCKz.size(), HCJz.size(), HCLz.size());
+    coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
 
     double sum = 0.0;
     for (unsigned int ix = 0; ix < HCIx.size(); ++ix) {
@@ -365,6 +350,27 @@ inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
 
     return sum;
 } // end function coulomb3D
+
+double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
+        int& j) {
+    /* calculate and return the overlap integral element <i|j> */
+    double prod = 1.0;
+    for (unsigned int d = 0; d < m_dim; ++d) {
+        prod *= ddexpr(*(GaussianBasis::Cartesian::getStates(i)(d)),
+                *(GaussianBasis::Cartesian::getStates(j)(d)),
+                &GaussianIntegrals::ddexprOverlap);
+    } // end ford
+
+    return prod * normalizationFactor(i) * normalizationFactor(j);
+} // end function overlapElement
+
+double GaussianIntegrals::oneBodyElement(const unsigned int& i, const unsigned
+        int& j) {
+    /* calculate and return oneBodyElement <i|h|k> = <i|K|j> + <i|P|j>, where K
+     * is the kinetic part and P is the potential part */
+
+    return -0.5*laplacianElement(i,j) + potentialElement(i,j);
+} // end function oneBodyElements
 
 double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {

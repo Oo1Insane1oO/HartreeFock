@@ -28,6 +28,53 @@ class Methods {
             } // end fori
             return sum;
         } // end function refSum
+
+        template<typename T> static void setMax(T& a, T b) {
+            /* set a to max of a and b */
+            if (b > a) {
+                a = b;
+            } // end if
+        } // end function setMax
+        
+        template<typename T> static void setMin(T& a, T b) {
+            /* set a to min of a and b */
+            if (b < a) {
+                a = b;
+            } // end if
+        } // end function setMax
+        
+        struct expand {
+            /* struct for expanding function pack */
+            template<typename... T> expand(T&&...) {}
+        };
+
+        template<typename T, typename... Args> static inline T max(T arg0,
+                Args...  args) {
+            /* return maximum of args */
+            T prev = arg0;
+
+            expand{0, (setMax(prev, args), 0)...};
+            return prev;
+        } // end function max
+        
+        template<typename T, typename... Args> static inline T min(T arg0,
+                Args...  args) {
+            /* return minimum of args */
+            T prev = arg0;
+
+            expand{0, (setMin(prev, args), 0)...};
+            return prev;
+        } // end function max
+
+        template<typename T> static inline void print1(T arg) {
+            std::cout << arg << " ";
+        } // end function print1
+
+        template<typename... Args> static inline void sepPrint(Args... args) {
+            /* print args with spaces */
+            expand{0, (print1(args), 0)...};
+            std::cout << "\n";
+        } // end function sepPrint
 };
 
 #endif /* METHODS_H */
