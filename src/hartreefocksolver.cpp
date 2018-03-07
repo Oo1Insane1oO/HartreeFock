@@ -60,20 +60,18 @@ inline void HartreeFockSolver::assemble() {
     if (interaction) {
         // set two-body coupled (Coulomb) integral elements
         for (unsigned int p = 0; p < m_numStates; ++p) {
-//             for (unsigned int q = p; q < m_numStates; ++q) {
             for (unsigned int q = 0; q < m_numStates; ++q) {
                 for (unsigned int r = 0; r < m_numStates; ++r) {
-//                     for (unsigned int s = r; s < m_numStates; ++s) {
                     for (unsigned int s = 0; s < m_numStates; ++s) {
                         double value = Integrals::coulombElement(p,q,r,s);
                         twoBodyElements(dIndex(m_numStates, p,q,r,s)) = value;
-                        twoBodyElements(dIndex(m_numStates, r,q,p,s)) = value;
-                        twoBodyElements(dIndex(m_numStates, p,s,r,q)) = value;
-                        twoBodyElements(dIndex(m_numStates, r,s,p,q)) = value;
-                        twoBodyElements(dIndex(m_numStates, q,p,s,r)) = value;
-                        twoBodyElements(dIndex(m_numStates, s,p,q,r)) = value;
-                        twoBodyElements(dIndex(m_numStates, q,r,s,p)) = value;
-                        twoBodyElements(dIndex(m_numStates, s,r,q,p)) = value;
+//                         twoBodyElements(dIndex(m_numStates, r,q,p,s)) = value;
+//                         twoBodyElements(dIndex(m_numStates, p,s,r,q)) = value;
+//                         twoBodyElements(dIndex(m_numStates, r,s,p,q)) = value;
+//                         twoBodyElements(dIndex(m_numStates, q,p,s,r)) = value;
+//                         twoBodyElements(dIndex(m_numStates, s,p,q,r)) = value;
+//                         twoBodyElements(dIndex(m_numStates, q,r,s,p)) = value;
+//                         twoBodyElements(dIndex(m_numStates, s,r,q,p)) = value;
                     } // end fors
                 } // end forr
             } // end forq
@@ -157,8 +155,6 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
         // update previous energies
         previousEnergies = eigenSolver.eigenvalues();
     } // end forcount
-
-    std::cout << FockMatrix << std::endl;
 
     // find estimate for ground state energy for m_numParticles
     double groundStateEnergy = 2*eigenSolver.eigenvalues().segment(0,
