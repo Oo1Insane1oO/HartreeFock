@@ -60,11 +60,11 @@ inline void HartreeFockSolver::assemble() {
     if (interaction) {
         // set two-body coupled (Coulomb) integral elements
         for (unsigned int p = 0; p < m_numStates; ++p) {
-            for (unsigned int q = p; q < m_numStates; ++q) {
-//             for (unsigned int q = 0; q < m_numStates; ++q) {
+//             for (unsigned int q = p; q < m_numStates; ++q) {
+            for (unsigned int q = 0; q < m_numStates; ++q) {
                 for (unsigned int r = 0; r < m_numStates; ++r) {
-                    for (unsigned int s = r; s < m_numStates; ++s) {
-//                     for (unsigned int s = 0; s < m_numStates; ++s) {
+//                     for (unsigned int s = r; s < m_numStates; ++s) {
+                    for (unsigned int s = 0; s < m_numStates; ++s) {
                         double value = Integrals::coulombElement(p,q,r,s);
                         twoBodyElements(dIndex(m_numStates, p,q,r,s)) = value;
                         twoBodyElements(dIndex(m_numStates, r,q,p,s)) = value;

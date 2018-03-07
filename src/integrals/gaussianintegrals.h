@@ -12,6 +12,8 @@ class GaussianIntegrals : public GaussianBasis  {
                sqrtScale1, xScaleHalf;
 
         Eigen::ArrayXd normalizationFactors;
+
+        std::unique_ptr<Hexpander> coeffs;
         
         inline double laplacianElement(const unsigned int&, const unsigned
                 int&);
