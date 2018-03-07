@@ -84,7 +84,7 @@ void Hexpander::setAuxiliary2D(unsigned int xMax, unsigned int yMax, double a,
     double powVal = 1;
     for (unsigned int n = 0; n <= nMax; ++n) {
         /* calculate initial integrals */
-        integrals(n)(0,0) = powVal * GaussianQuadrature::gaussChebyshevQuad(50,
+        integrals(n)(0,0) = powVal * GaussianQuadrature::gaussChebyshevQuad(10,
                 this, &Hexpander::modifiedIntegrand, n, p*PQ.squaredNorm());
         powVal *= -2*p;
     } // end forn
@@ -188,28 +188,6 @@ double Hexpander::auxiliary3D(const unsigned int& ix, const unsigned int& iy,
 
     return val;
 } // end function auxiliary3D
-
-double Hexpander::auxiliary2D(const unsigned int& ix, const unsigned int& iy,
-        const unsigned int& n, const double& p, const Eigen::VectorXd& P,
-        const double& R) {
-    /* calculate auxiliary integral (Modified Bessel function) */
-    double val = 0.0;
-    if ((ix==0) && (iy==0)) {
-        val += pow(-2*p,n) * GaussianQuadrature::gaussChebyshevQuad(50, this,
-                &Hexpander::modifiedIntegrand, n, p*p*R*R);
-    } else if (ix==0) {
-        if (iy > 1) {
-            val += (iy-1) * auxiliary2D(ix,iy-2,n+1,p,P,R);
-        } // end if
-        val += P(1) * auxiliary2D(ix,iy-1,n+1,p,P,R);
-    } else {
-        if (ix > 1) {
-            val += (ix-1) * auxiliary2D(ix-2,iy,n+1,p,P,R);
-        } // end if
-        val += P(0) * auxiliary2D(ix-1,iy,n+1,p,P,R);
-    } // end ifeifeifelse
-    return val;
-} // end function auxiliary2D
 
 const double& Hexpander::coeff(const unsigned int& i, const unsigned int& j,
         const unsigned int& t) const {

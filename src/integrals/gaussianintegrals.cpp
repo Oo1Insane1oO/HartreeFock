@@ -159,12 +159,10 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& ix, const
         for (unsigned int py = 0; py <= iy+ky; ++py) {
             for (unsigned int qx = 0; qx <= jx+lx; ++qx) {
                 for (unsigned int qy = 0; qy <= jy+ly; ++qy) {
-                    double tmp = coeffs->coeff(ix, kx, px) * coeffs->coeff(iy,
-                            ky, py) * coeffs->coeff(jx, lx, qx) *
-                        coeffs->coeff(jy, ly, qy) *
-//                         GaussianBasis::Hexpander::auxiliary2D(px+qx, py+qy, 0,
-//                                 xScaleHalf, centerVec, 0.0);
-                        coeffs->auxiliary2D(0, px+qx, py+qy);
+                    double tmp = coeffs->coeff(ix,kx,px) *
+                        coeffs->coeff(iy,ky,py) * coeffs->coeff(jx,lx,qx) *
+                        coeffs->coeff(jy,ly,qy) *
+                        coeffs->auxiliary2D(0,px+qx,py+qy);
                     // fix sign in (-1)^(qx + qy) part
                     sum += (((qx+qy)%2==0) ? tmp : -tmp);
 //                     Methods::sepPrint(px, py, qx, qy);
@@ -235,15 +233,15 @@ inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
     // find the maximum index (upper limit for coeffs and integrals needed)
     unsigned int pmax = Methods::max(HCIx.size(), HCKx.size(), HCJx.size(),
             HCLx.size(), HCIy.size(), HCKy.size(), HCJy.size(), HCLy.size());
-    unsigned int auxMax = Methods::max(HCIx.size()+HCKx.size(),
+    unsigned int auxMax = 2*Methods::max(HCIx.size()+HCKx.size(),
             HCJx.size()+HCLx.size(), HCIy.size()+HCKy.size(),
             HCJy.size()+HCLy.size());
     static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
 
     // set all coefficients and integrals needed
     coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
-    coeffs->setAuxiliary2D(2*auxMax, 2*auxMax, xScaleHalf, xScaleHalf, xScaleHalf,
-        xScaleHalf, centerVec);
+    coeffs->setAuxiliary2D(auxMax, auxMax, xScaleHalf, xScaleHalf, xScaleHalf,
+            xScaleHalf, centerVec);
 
     double sum = 0.0;
     for (unsigned int ix = 0; ix < HCIx.size(); ++ix) {
