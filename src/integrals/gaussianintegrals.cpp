@@ -418,15 +418,22 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
-//     if ((GaussianBasis::Cartesian::getSumn(i) ==
-//                 GaussianBasis::Cartesian::getSumn(k)) &&
-//             (GaussianBasis::Cartesian::getSumn(j) ==
-//              GaussianBasis::Cartesian::getSumn(l))) {
-//         /* make use of angular momentum conservation */
+    int nixMod = (*(GaussianBasis::Cartesian::getStates(i)(0)))%2;
+    int niyMod = (*(GaussianBasis::Cartesian::getStates(i)(1)))%2;
+    int nkxMod = (*(GaussianBasis::Cartesian::getStates(k)(0)))%2;
+    int nkyMod = (*(GaussianBasis::Cartesian::getStates(k)(1)))%2;
+    int njxMod = (*(GaussianBasis::Cartesian::getStates(j)(0)))%2;
+    int njyMod = (*(GaussianBasis::Cartesian::getStates(j)(1)))%2;
+    int nlxMod = (*(GaussianBasis::Cartesian::getStates(l)(0)))%2;
+    int nlyMod = (*(GaussianBasis::Cartesian::getStates(l)(1)))%2;
+    bool integrandIsEven = ((nixMod == nkxMod) && (niyMod == nkyMod)) ==
+        ((njxMod == nlxMod) && (njyMod == nlyMod));
+    if (integrandIsEven) { 
+        /* make sure integrand is even (odd integrand yields zero) */
         return normalizationFactors(i) * normalizationFactors(j) *
             normalizationFactors(k) * normalizationFactors(l) *
             (this->*coulombFunc)(i,j,k,l);
-//     } else {
-//         return 0.0;
-//     } // end ifselse
+    } else {
+        return 0.0;
+    } // end ifselse
 } // end function coulombElement

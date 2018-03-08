@@ -57,8 +57,8 @@ inline void HartreeFockSolver::assemble() {
         } // end forq
     } // end forp
 
+    // set two-body coupled (Coulomb) integral elements
     if (interaction) {
-        // set two-body coupled (Coulomb) integral elements
         for (unsigned int p = 0; p < m_numStates; ++p) {
             for (unsigned int q = 0; q < m_numStates; ++q) {
                 for (unsigned int r = 0; r < m_numStates; ++r) {
