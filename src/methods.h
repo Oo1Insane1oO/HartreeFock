@@ -75,6 +75,22 @@ class Methods {
             expand{0, (print1(args), 0)...};
             std::cout << "\n";
         } // end function sepPrint
+
+        template<typename T> static inline void refSum(Eigen::Array<T,
+                Eigen::Dynamic, 1>& buffer, const Eigen::Array<T*,
+                Eigen::Dynamic, 1>& refArray) {
+            /* override for expansion with more than 1 array */
+            for (unsigned int i = 0; i < buffer.size(); ++i) {
+                buffer(i) += *(refArray(i));
+            } // end fori
+        } // end function refSum
+
+        template<typename T, typename ...Args> static inline void
+            refSum(Eigen::Array<T, Eigen::Dynamic, 1>& buffer, const Args&...
+                    arrays) {
+            /* sum arrays Elementwise */
+            expand{0, (refSum(buffer, arrays), 0)...};
+        } // end function refSum
 };
 
 #endif /* METHODS_H */

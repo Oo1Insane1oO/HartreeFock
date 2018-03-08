@@ -43,10 +43,10 @@ int main(int argc, char *argv[]) {
     // dimensions, cutoff, numParticles
     #ifdef GAUSSHERMITE
         double w = 1.0;
-        HartreeFockSolver* HFS = new HartreeFockSolver(2, 42, 20);
+        HartreeFockSolver* HFS = new HartreeFockSolver(2, 30, 20);
 //         HartreeFockSolver* HFS = new HartreeFockSolver(3, 2, 2);
         HFS->getIntegralObj()->initializeParameters(w);
-        double E = HFS->iterate(100, 1e-10);
+        double E = HFS->iterate(110, 1e-10);
     #endif
     
     #ifdef STYPEGAUSSIAN
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
         double E = HFS->iterate(100, 1e-10);
     #endif
 
-    std::cout << "E0 = " << E << std::endl;
+    std::cout << std::setprecision(15) << "E0 = " << E << std::endl;
 
     delete HFS;
 } // end main
