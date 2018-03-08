@@ -415,20 +415,46 @@ double GaussianIntegrals::oneBodyElement(const unsigned int& i, const unsigned
 } // end function oneBodyElements
 
 double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
-        int& j, const unsigned int& k, const unsigned int& l) {
+    int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
-    int nixMod = (*(GaussianBasis::Cartesian::getStates(i)(0)))%2;
-    int niyMod = (*(GaussianBasis::Cartesian::getStates(i)(1)))%2;
-    int nkxMod = (*(GaussianBasis::Cartesian::getStates(k)(0)))%2;
-    int nkyMod = (*(GaussianBasis::Cartesian::getStates(k)(1)))%2;
-    int njxMod = (*(GaussianBasis::Cartesian::getStates(j)(0)))%2;
-    int njyMod = (*(GaussianBasis::Cartesian::getStates(j)(1)))%2;
-    int nlxMod = (*(GaussianBasis::Cartesian::getStates(l)(0)))%2;
-    int nlyMod = (*(GaussianBasis::Cartesian::getStates(l)(1)))%2;
-    bool integrandIsEven = ((nixMod == nkxMod) && (niyMod == nkyMod)) ==
-        ((njxMod == nlxMod) && (njyMod == nlyMod));
-    if (integrandIsEven) { 
+//     int nixMod = (*(GaussianBasis::Cartesian::getStates(i)(0)))%2;
+//     int niyMod = (*(GaussianBasis::Cartesian::getStates(i)(1)))%2;
+//     int nkxMod = (*(GaussianBasis::Cartesian::getStates(k)(0)))%2;
+//     int nkyMod = (*(GaussianBasis::Cartesian::getStates(k)(1)))%2;
+//     int njxMod = (*(GaussianBasis::Cartesian::getStates(j)(0)))%2;
+//     int njyMod = (*(GaussianBasis::Cartesian::getStates(j)(1)))%2;
+//     int nlxMod = (*(GaussianBasis::Cartesian::getStates(l)(0)))%2;
+//     int nlyMod = (*(GaussianBasis::Cartesian::getStates(l)(1)))%2;
+//     bool integrandIsEven = ((nixMod == nkxMod) && (niyMod == nkyMod)) ==
+//         ((njxMod == nlxMod) && (njyMod == nlyMod));
+
+    const Eigen::Array<int*, Eigen::Dynamic, 1>& ni =
+        GaussianBasis::Cartesian::getStates(i).segment(0, m_dim);
+    const Eigen::Array<int*, Eigen::Dynamic, 1>& nj =
+        GaussianBasis::Cartesian::getStates(j).segment(0, m_dim);
+    const Eigen::Array<int*, Eigen::Dynamic, 1>& nk =
+        GaussianBasis::Cartesian::getStates(k).segment(0, m_dim);
+    const Eigen::Array<int*, Eigen::Dynamic, 1>& nl =
+        GaussianBasis::Cartesian::getStates(l).segment(0, m_dim);
+
+    Eigen::ArrayXi nSum = Eigen::ArrayXi::Zero(m_dim);
+    Methods::refSum(nSum, ni, nj, nk, nl);
+    nSum = nSum.unaryExpr([](const int m) {return m%2;});
+
+    bool integrandIsEven = false;
+    for (unsigned int i = 0; i < nSum.size(); ++i) {
+        for (unsigned int j = 0; j < nSum.size(); ++j) {
+            if (nSum(i) == nSum(j)) {
+                integrandIsEven = true;
+            } else { 
+                integrandIsEven = false;
+                break;
+            } // end if
+        } // end forj
+    } // end fori
+
+    if (integrandIsEven) {
         /* make sure integrand is even (odd integrand yields zero) */
         return normalizationFactors(i) * normalizationFactors(j) *
             normalizationFactors(k) * normalizationFactors(l) *
