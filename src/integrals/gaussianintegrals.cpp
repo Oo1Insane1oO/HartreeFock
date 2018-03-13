@@ -154,18 +154,14 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& ix, const
      * <ij|1/r_12|kl> in 2D for level (i,k,j,l) (calculate 1D integral
      * numerically) */
     double sum = 0.0;
-//     static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
     for (unsigned int px = 0; px <= ix+kx; ++px) {
         for (unsigned int py = 0; py <= iy+ky; ++py) {
+            int pSign = (((px+py)%2==0) ? 1 : -1);
             for (unsigned int qx = 0; qx <= jx+lx; ++qx) {
                 for (unsigned int qy = 0; qy <= jy+ly; ++qy) {
-                    double tmp = coeffs->coeff(ix,kx,px) *
-                        coeffs->coeff(iy,ky,py) * coeffs->coeff(jx,lx,qx) *
-                        coeffs->coeff(jy,ly,qy) *
-                        coeffs->auxiliary2D(0,px+qx,py+qy);
-                    // fix sign in (-1)^(qx + qy) part
-                    sum += (((qx+qy)%2==0) ? tmp : -tmp);
-//                     Methods::sepPrint(px, py, qx, qy);
+                    sum += coeffs->coeff(ix,kx,px) * coeffs->coeff(iy,ky,py) *
+                        coeffs->coeff(jx,lx,qx) * coeffs->coeff(jy,ly,qy) *
+                        coeffs->auxiliary2D(0,px+qx,py+qy) * pSign;
                 } // end forqy
             } // end forqx
         } // end forpy
@@ -239,7 +235,7 @@ inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
     static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
 
     // set all coefficients and integrals needed
-    coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
+    coeffs->setCoefficients(pmax, pmax, xScale, xScale, 0.0);
     coeffs->setAuxiliary2D(auxMax, auxMax, xScaleHalf, xScaleHalf, xScaleHalf,
             xScaleHalf, centerVec);
 
@@ -311,7 +307,7 @@ inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
         } // end foriy
     } // end forix
 
-    return sum * 2 * pow(M_PI, 1.5) / (4 * sqrt(xScaleHalf));
+    return sum * pow(M_PI/xScale, 1.5) / sqrt(2);
 } // end function coulomb2D
 
 inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
