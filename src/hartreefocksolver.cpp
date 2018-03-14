@@ -36,10 +36,6 @@ inline void HartreeFockSolver::assemble() {
     m_numStates = Integrals::getBasis()->getSize()/2;
 //     m_numStates = (m_numStates%2==0 ? m_numStates/2 : (m_numStates+1)/2);
 
-    // array containing elements <ij|1/r_12|ij>_AS 
-    twoBodyElements = Eigen::ArrayXd::Zero(m_numStates * m_numStates *
-            m_numStates * m_numStates);
-
     // matrix containing elements <i|h|j>
     overlapElements = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
     oneBodyElements = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
@@ -59,19 +55,38 @@ inline void HartreeFockSolver::assemble() {
 
     // set two-body coupled (Coulomb) integral elements
     if (interaction) {
+        // array containing two-body elements <ij|1/r_12|kl>
+        Eigen::ArrayXd tmpTwoBody = Eigen::ArrayXd::Zero(m_numStates *
+                m_numStates * m_numStates * m_numStates);
+        for (unsigned int p = 0; p < m_numStates; ++p) {
+            for (unsigned int q = p; q < m_numStates; ++q) {
+                for (unsigned int r = 0; r < m_numStates; ++r) {
+                    for (unsigned int s = r; s < m_numStates; ++s) {
+                        double value = Integrals::coulombElement(p,q,r,s);
+                        tmpTwoBody(dIndex(m_numStates, p,q,r,s)) = value;
+                        tmpTwoBody(dIndex(m_numStates, r,q,p,s)) = value;
+                        tmpTwoBody(dIndex(m_numStates, p,s,r,q)) = value;
+                        tmpTwoBody(dIndex(m_numStates, r,s,p,q)) = value;
+                        tmpTwoBody(dIndex(m_numStates, q,p,s,r)) = value;
+                        tmpTwoBody(dIndex(m_numStates, s,p,q,r)) = value;
+                        tmpTwoBody(dIndex(m_numStates, q,r,s,p)) = value;
+                        tmpTwoBody(dIndex(m_numStates, s,r,q,p)) = value;
+                    } // end fors
+                } // end forr
+            } // end forq
+        } // end forp
+    
+        // array containing antisymmetric elements <ij|1/r_12|kl>_AS =
+        // 2<ij|1/r_12|kl>_- <ij|1/r_12|lk>
+        twoBodyElements = Eigen::ArrayXd::Zero(m_numStates * m_numStates *
+                m_numStates * m_numStates);
         for (unsigned int p = 0; p < m_numStates; ++p) {
             for (unsigned int q = 0; q < m_numStates; ++q) {
                 for (unsigned int r = 0; r < m_numStates; ++r) {
                     for (unsigned int s = 0; s < m_numStates; ++s) {
-                        double value = Integrals::coulombElement(p,q,r,s);
-                        twoBodyElements(dIndex(m_numStates, p,q,r,s)) = value;
-//                         twoBodyElements(dIndex(m_numStates, r,q,p,s)) = value;
-//                         twoBodyElements(dIndex(m_numStates, p,s,r,q)) = value;
-//                         twoBodyElements(dIndex(m_numStates, r,s,p,q)) = value;
-//                         twoBodyElements(dIndex(m_numStates, q,p,s,r)) = value;
-//                         twoBodyElements(dIndex(m_numStates, s,p,q,r)) = value;
-//                         twoBodyElements(dIndex(m_numStates, q,r,s,p)) = value;
-//                         twoBodyElements(dIndex(m_numStates, s,r,q,p)) = value;
+                        twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
+                            2*tmpTwoBodyElements(dIndex(m_numStates, p,r,q,s))
+                            - tmpTwoBodyElements(dIndex(m_numStates, p,r,s,q));
                     } // end fors
                 } // end forr
             } // end forq
@@ -100,8 +115,7 @@ inline void HartreeFockSolver::setFockMatrix() {
             for (unsigned int k = 0; k < m_numStates; ++k) {
                 for (unsigned int l = 0; l < m_numStates; ++l) {
                     FockMatrix(i,j) += densityMatrix(k,l) *
-                        (2*twoBodyElements(dIndex(m_numStates, i,k,j,l)) -
-                         twoBodyElements(dIndex(m_numStates, i,k,l,j)));
+                        twoBodyElements(dIndex(m_numStates, i,j,k,l));
                 } // end forl
             } // end fork
 
@@ -165,8 +179,7 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
                 for (unsigned int d = 0; d < m_numStates; ++d) {
                     groundStateEnergy -= densityMatrix(a,c) *
                         densityMatrix(b,d) *
-                        (2*twoBodyElements(dIndex(m_numStates, a,b,c,d)) -
-                         twoBodyElements(dIndex(m_numStates, a,b,d,c)));
+                        twoBodyElements(dIndex(m_numStates, a,c,b,d));
                 } // end ford
             } // end forc
         } // end forb
