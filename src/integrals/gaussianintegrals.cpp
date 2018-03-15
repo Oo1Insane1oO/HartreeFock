@@ -26,6 +26,7 @@ void GaussianIntegrals::initializeParameters(double omega) {
     sqrtScale1 = sqrt(pow(xScale, m_dim));
     sqrtScale = 1./sqrtScale1;
     powScale = pow(xScale, 2*m_dim);
+    coulomb2DFactor = pow(M_PI/xScale, 1.5) / sqrt(2);
 
     // choose coulombElement function for 2D or 3D
     if (m_dim == 2) {
@@ -273,7 +274,7 @@ inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
         } // end foriy
     } // end forix
 
-    return sum * pow(M_PI/xScale, 1.5) / sqrt(2);
+    return sum * coulomb2DFactor;
 } // end function coulomb2D
 
 inline double GaussianIntegrals::coulombElement3D(const unsigned int& ix, const
