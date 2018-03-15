@@ -6,11 +6,14 @@
 using EigenMatArrXd = Eigen::Matrix<Eigen::ArrayXd, Eigen::Dynamic,
       Eigen::Dynamic>;
 using EigenArrMatXd = Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic, 1>;
+using EigenArrCubeXd = Eigen::Array<Eigen::Array<Eigen::MatrixXd,
+      Eigen::Dynamic, 1>, Eigen::Dynamic, 1>;
 
 class Hexpander {
     private:
         EigenMatArrXd coefficients;
-        EigenArrMatXd integrals;
+        EigenArrMatXd integrals2D;
+        EigenArrCubeXd integrals3D;
 
         double boys(const unsigned int&, const double&);
 
@@ -26,18 +29,15 @@ class Hexpander {
         void setCoefficients(unsigned int, unsigned int, double, double, double);
         void setAuxiliary2D(unsigned int, unsigned int, double, double, double,
                 double, const Eigen::VectorXd&);
+        void setAuxiliary3D(unsigned int, unsigned int, unsigned int, double,
+                double, double, double, const Eigen::VectorXd&);
 
         const double& coeff(const unsigned int&, const unsigned int&, const
                 unsigned int&) const;
-        const double& auxiliary2D(const unsigned int&, const unsigned int&,
-                const unsigned int&);
-        
         double auxiliary2D(const unsigned int&, const unsigned int&, const
-                unsigned int&, const double&, const Eigen::VectorXd&, const
-                double&);
+                unsigned int&);
         double auxiliary3D(const unsigned int&, const unsigned int&, const
-                unsigned int&, const unsigned int&, const double&, const
-                Eigen::VectorXd&, const double&);
+                unsigned int&, const unsigned int&);
 };
 
 #endif /* HEXPANDER_H */

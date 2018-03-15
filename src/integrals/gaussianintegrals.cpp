@@ -27,6 +27,7 @@ void GaussianIntegrals::initializeParameters(double omega) {
     sqrtScale = 1./sqrtScale1;
     powScale = pow(xScale, 2*m_dim);
     coulomb2DFactor = pow(M_PI/xScale, 1.5) / sqrt(2);
+    coulomb3DFactor = pow(M_PI/xScale, 2.5) / sqrt(2);
 
     // choose coulombElement function for 2D or 3D
     if (m_dim == 2) {
@@ -162,7 +163,7 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& ix, const
                 for (unsigned int qy = 0; qy <= jy+ly; ++qy) {
                     sum += coeffs->coeff(ix,kx,px) * coeffs->coeff(iy,ky,py) *
                         coeffs->coeff(jx,lx,qx) * coeffs->coeff(jy,ly,qy) *
-                        coeffs->auxiliary2D(0,px+qx,py+qy) * pSign;
+                        coeffs->auxiliary2D(0, px+qx, py+qy) * pSign;
                 } // end forqy
             } // end forqx
         } // end forpy
@@ -286,30 +287,28 @@ inline double GaussianIntegrals::coulombElement3D(const unsigned int& ix, const
      * <ij|1/r_12|kl> in 3D for level (i,k,j,l) (calculate 1D integral
      * numerically) */
     double sum = 0.0;
-    static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
     for (unsigned int px = 0; px <= ix+kx; ++px) {
         for (unsigned int py = 0; py <= iy+ky; ++py) {
             for (unsigned int pz = 0; pz <= iz+kz; ++pz) {
+                int pSign = (((px+py+pz)%2==0) ? 1 : -1);
                 for (unsigned int qx = 0; qx <= jx+lx; ++qx) {
                     for (unsigned int qy = 0; qy <= jy+ly; ++qy) {
                         for (unsigned int qz = 0; qz <= jz+lz; ++qz) {
-                            double tmp = coeffs->coeff(ix, kx, px) *
-                                coeffs->coeff(iy, ky, py) * coeffs->coeff(iz,
-                                        kz, pz) * coeffs->coeff(jx, lx, qx) *
-                                coeffs->coeff(jy, ly, qy) * coeffs->coeff(jz,
-                                        lz, qz) *
-                                GaussianBasis::Hexpander::auxiliary3D(px+qx,
-                                        py+qy, pz+qz, 0, xScaleHalf, centerVec,
-                                        0.0);
-                            // fix sign in (-1)^(qx + qy + qz) part
-                            sum += (((qx+qy+qz)%2==0) ? tmp : -tmp);
+                            sum += coeffs->coeff(ix,kx,px) *
+                                coeffs->coeff(iy,ky,py) *
+                                coeffs->coeff(iz,kz,pz) *
+                                coeffs->coeff(jx,lx,qx) *
+                                coeffs->coeff(jy,ly,qy) *
+                                coeffs->coeff(jz,lz,qz) *
+                                coeffs->auxiliary3D(0, px+qx, py+qy, pz+qz) *
+                                pSign;
                         } // end forqz
                     } // end forqy
                 } // end forqx
             } // end forpz
         } // end forpy
     } // end forpx
-    return sum * 2*pow(M_PI, 2.5) * pow(xScaleHalf, 1.5);
+    return sum;
 } // end function coulombElement3D
 
 inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
@@ -343,27 +342,40 @@ inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
     unsigned int pmax = Methods::max(HCIx.size(), HCKx.size(), HCJx.size(),
             HCLx.size(), HCIy.size(), HCKy.size(), HCJy.size(), HCLy.size(),
             HCIz.size(), HCKz.size(), HCJz.size(), HCLz.size());
+    unsigned int auxMax = 2*Methods::max(HCIx.size()+HCKx.size(),
+            HCJx.size()+HCLx.size(), HCIy.size()+HCKy.size(),
+            HCJy.size()+HCLy.size(), HCIz.size()+HCKz.size(),
+            HCJz.size()+HCLz.size());
+    static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
+
+    // set coefficients and integralElements
     coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
+    coeffs->setAuxiliary3D(auxMax, auxMax, auxMax, xScaleHalf, xScaleHalf,
+            xScaleHalf, xScaleHalf, centerVec);
 
     double sum = 0.0;
     for (unsigned int ix = 0; ix < HCIx.size(); ++ix) {
         for (unsigned int iy = 0; iy < HCIy.size(); ++iy) {
-            for (unsigned int iz = 0; iy < HCIz.size(); ++iz) {
-                for (unsigned int kx = 0; kx < HCKx.size(); ++kx) {
-                    for (unsigned int ky = 0; ky < HCKy.size(); ++ky) {
-                        for (unsigned int kz = 0; iz < HCKz.size(); ++kz) {
-                            for (unsigned int jx = 0; jx < HCJx.size(); ++jx) {
-                                for (unsigned int jy = 0; jy < HCJy.size();
-                                        ++jy) {
-                                    for (unsigned int jz = 0; jz < HCJz.size();
-                                            ++jz) {
+            for (unsigned int iz = 0; iz < HCIz.size(); ++iz) {
+                for (unsigned int jx = 0; jx < HCJx.size(); ++jx) {
+                    for (unsigned int jy = 0; jy < HCJy.size(); ++jy) {
+                        for (unsigned int jz = 0; jz < HCJz.size(); ++jz) {
+                            for (unsigned int kx = 0; kx < HCKx.size(); ++kx) {
+                                for (unsigned int ky = 0; ky < HCKy.size();
+                                        ++ky) {
+                                    for (unsigned int kz = 0; kz < HCKz.size();
+                                            ++kz) {
                                         for (unsigned int lx = 0; lx <
                                                 HCLx.size(); ++lx) {
                                             for (unsigned int ly = 0; ly <
                                                     HCLy.size(); ++ly) {
                                                 for (unsigned int lz = 0; lz <
                                                         HCLz.size(); ++lz) {
-                                                    sum += 
+                                                    sum += pow(xScale,
+                                                            (ix+iy+iz +
+                                                             kx+ky+kz +
+                                                             jx+jy+jz +
+                                                             lx+ly+lz)/2.) *
                                                         HCIx[ix] * HCIy[iy] *
                                                         HCIz[iz] * HCKx[kx] *
                                                         HCKy[ky] * HCKz[kz] *
@@ -378,17 +390,17 @@ inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
                                                 } // end forlz
                                             } // end forly
                                         } // end forlx
-                                    } // end forjz
-                                } // end forjy
-                            } // end forjx
-                        } // end forkz
-                    } // end forky
-                } // end forkx
+                                    } // end forkz
+                                } // end forky
+                            } // end forkx
+                        } // end forjz
+                    } // end forjy
+                } // end forjx
             } // end for iz
         } // end foriy
     } // end forix
 
-    return sum;
+    return sum * coulomb3DFactor;
 } // end function coulomb3D
 
 double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
