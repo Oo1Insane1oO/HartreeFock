@@ -2,10 +2,9 @@
 #define GAUSSIANBASIS_H
 
 #include "../basisfunctions/cartesian.h"
-#include "../hermite/hexpander.h"
 #include "../methods.h"
 
-class GaussianBasis : public Cartesian, public Hexpander {
+class GaussianBasis : public Cartesian{
     private:
         unsigned int m_dim;
         double scaling;

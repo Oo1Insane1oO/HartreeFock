@@ -2,6 +2,7 @@
 #define GAUSSIANINTEGRALS_H
 
 #include "../basis/gaussianbasis.h"
+#include "../hermite/hexpander.h"
 
 class GaussianBasis;
 
@@ -9,7 +10,7 @@ class GaussianIntegrals : public GaussianBasis  {
     private:
         unsigned int m_dim;
         double expScaleFactor, sqrtFactor, F0, F1, xScale, sqrtScale, powScale,
-               sqrtScale1, xScaleHalf, coulomb2DFactor;
+               sqrtScale1, xScaleHalf, coulomb2DFactor, coulomb3DFactor;
 
         Eigen::ArrayXd normalizationFactors;
 
