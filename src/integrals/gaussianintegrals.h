@@ -9,7 +9,7 @@ class GaussianIntegrals : public GaussianBasis  {
     private:
         unsigned int m_dim;
         double expScaleFactor, sqrtFactor, F0, F1, xScale, sqrtScale, powScale,
-               sqrtScale1, xScaleHalf;
+               sqrtScale1, xScaleHalf, coulomb2DFactor;
 
         Eigen::ArrayXd normalizationFactors;
 

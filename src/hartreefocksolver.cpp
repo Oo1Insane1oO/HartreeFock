@@ -85,8 +85,8 @@ inline void HartreeFockSolver::assemble() {
                 for (unsigned int r = 0; r < m_numStates; ++r) {
                     for (unsigned int s = 0; s < m_numStates; ++s) {
                         twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
-                            2*tmpTwoBodyElements(dIndex(m_numStates, p,r,q,s))
-                            - tmpTwoBodyElements(dIndex(m_numStates, p,r,s,q));
+                            2*tmpTwoBody(dIndex(m_numStates, p,r,q,s)) -
+                            tmpTwoBody(dIndex(m_numStates, p,r,s,q));
                     } // end fors
                 } // end forr
             } // end forq
@@ -109,20 +109,20 @@ inline void HartreeFockSolver::setDensityMatrix() {
 inline void HartreeFockSolver::setFockMatrix() {
     /* set Hartree-Fock matrix */
     FockMatrix.setZero();
-    for (unsigned int i = 0; i < m_numStates; ++i) {
-        for (unsigned int j = i; j < m_numStates; ++j) {
-            FockMatrix(i,j) = oneBodyElements(i,j);
-            for (unsigned int k = 0; k < m_numStates; ++k) {
-                for (unsigned int l = 0; l < m_numStates; ++l) {
-                    FockMatrix(i,j) += densityMatrix(k,l) *
-                        twoBodyElements(dIndex(m_numStates, i,j,k,l));
-                } // end forl
-            } // end fork
+    for (unsigned int p = 0; p < m_numStates; ++p) {
+        for (unsigned int q = p; q < m_numStates; ++q) {
+            FockMatrix(p,q) = oneBodyElements(p,q);
+            for (unsigned int r = 0; r < m_numStates; ++r) {
+                for (unsigned int s = 0; s < m_numStates; ++s) {
+                    FockMatrix(p,q) += densityMatrix(r,s) *
+                        twoBodyElements(dIndex(m_numStates, p,q,r,s));
+                } // end fors
+            } // end forr
 
             // matrix is symmetric by definition
-            FockMatrix(j,i) = FockMatrix(i,j);
-        } // end forj
-    } // end fori
+            FockMatrix(q,p) = FockMatrix(p,q);
+        } // end forq
+    } // end forp
 } // end function sethartreeFockMatrix
 
 double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
