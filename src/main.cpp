@@ -42,9 +42,9 @@ int main(int argc, char *argv[]) {
 
     // dimensions, cutoff, numParticles
     #ifdef GAUSSHERMITE
-        double w = 0.5;
+        double w = 0.28;
 //         HartreeFockSolver* HFS = new HartreeFockSolver(2, 30, 20);
-        HartreeFockSolver* HFS = new HartreeFockSolver(3, 20, 8);
+        HartreeFockSolver* HFS = new HartreeFockSolver(3, 30, 8);
         HFS->getIntegralObj()->initializeParameters(w);
         double E = HFS->iterate(510, 1e-10);
     #endif
