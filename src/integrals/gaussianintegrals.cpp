@@ -202,6 +202,7 @@ inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
     static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
 
     // set all coefficients and integrals needed
+//     coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
     coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
     coeffs->setAuxiliary2D(auxMax, auxMax, xScaleHalf, xScaleHalf, xScaleHalf,
             xScaleHalf, centerVec);
@@ -506,17 +507,6 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
     int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
-//     int nixMod = (*(GaussianBasis::Cartesian::getStates(i)(0)))%2;
-//     int niyMod = (*(GaussianBasis::Cartesian::getStates(i)(1)))%2;
-//     int nkxMod = (*(GaussianBasis::Cartesian::getStates(k)(0)))%2;
-//     int nkyMod = (*(GaussianBasis::Cartesian::getStates(k)(1)))%2;
-//     int njxMod = (*(GaussianBasis::Cartesian::getStates(j)(0)))%2;
-//     int njyMod = (*(GaussianBasis::Cartesian::getStates(j)(1)))%2;
-//     int nlxMod = (*(GaussianBasis::Cartesian::getStates(l)(0)))%2;
-//     int nlyMod = (*(GaussianBasis::Cartesian::getStates(l)(1)))%2;
-//     bool integrandIsEven = ((nixMod == nkxMod) && (niyMod == nkyMod)) ==
-//         ((njxMod == nlxMod) && (njyMod == nlyMod));
-
     const Eigen::Array<int*, Eigen::Dynamic, 1>& ni =
         GaussianBasis::Cartesian::getStates(i).segment(0, m_dim);
     const Eigen::Array<int*, Eigen::Dynamic, 1>& nj =

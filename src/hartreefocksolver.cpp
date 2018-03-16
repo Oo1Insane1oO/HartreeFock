@@ -65,12 +65,16 @@ inline void HartreeFockSolver::assemble() {
                         double value = Integrals::coulombElement(p,q,r,s);
                         tmpTwoBody(dIndex(m_numStates, p,q,r,s)) = value;
                         tmpTwoBody(dIndex(m_numStates, r,q,p,s)) = value;
-                        tmpTwoBody(dIndex(m_numStates, p,s,r,q)) = value;
                         tmpTwoBody(dIndex(m_numStates, r,s,p,q)) = value;
+                        tmpTwoBody(dIndex(m_numStates, p,s,r,q)) = value;
                         tmpTwoBody(dIndex(m_numStates, q,p,s,r)) = value;
                         tmpTwoBody(dIndex(m_numStates, s,p,q,r)) = value;
-                        tmpTwoBody(dIndex(m_numStates, q,r,s,p)) = value;
                         tmpTwoBody(dIndex(m_numStates, s,r,q,p)) = value;
+                        tmpTwoBody(dIndex(m_numStates, q,r,s,p)) = value;
+
+                        double avalue = Integrals::coulombElement(p,q,s,r);
+                        tmpTwoBody(dIndex(m_numStates, p,q,s,r)) = avalue;
+                        tmpTwoBody(dIndex(m_numStates, q,p,r,s)) = avalue;
                     } // end fors
                 } // end forr
             } // end forq
