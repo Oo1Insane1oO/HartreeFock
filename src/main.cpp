@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <chrono>
 
 #include <Eigen/Dense>
 #include <mpi.h>
@@ -42,11 +43,18 @@ int main(int argc, char *argv[]) {
 
     // dimensions, cutoff, numParticles
     #ifdef GAUSSHERMITE
-        double w = 0.28;
-//         HartreeFockSolver* HFS = new HartreeFockSolver(2, 30, 20);
-        HartreeFockSolver* HFS = new HartreeFockSolver(3, 30, 8);
+        double w = 1.0;
+        HartreeFockSolver* HFS = new HartreeFockSolver(2, 30, 12);
+//         HartreeFockSolver* HFS = new HartreeFockSolver(3, 30, 8);
         HFS->getIntegralObj()->initializeParameters(w);
-        double E = HFS->iterate(510, 1e-10);
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+        double E = HFS->iterate(510, 1e-8);
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> time = end - start;
+        std::cout << "Time: " << time.count() << "s" << std::endl;
     #endif
     
     #ifdef STYPEGAUSSIAN

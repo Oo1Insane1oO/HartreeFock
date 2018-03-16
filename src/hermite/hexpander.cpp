@@ -82,13 +82,13 @@ void Hexpander::setAuxiliary2D(unsigned int xMax, unsigned int yMax, double a,
     integrals2D = EigenArrMatXd::Constant(nMax+1, Eigen::MatrixXd::Zero(xMax+1,
                 yMax+1));
     double powVal = 1;
-    integrals2D(0)(0,0) = GaussianQuadrature::gaussChebyshevQuad(50, this,
+    integrals2D(0)(0,0) = GaussianQuadrature::gaussChebyshevQuad(10, this,
             &Hexpander::modifiedIntegrand, 0, p*PQ.squaredNorm());
     for (unsigned int n = 1; n <= nMax; ++n) {
         /* calculate initial integrals */
         powVal *= -2*p;
         integrals2D(n)(0,0) = powVal *
-            GaussianQuadrature::gaussChebyshevQuad(50, this,
+            GaussianQuadrature::gaussChebyshevQuad(10, this,
                     &Hexpander::modifiedIntegrand, n, p*PQ.squaredNorm());
     } // end forn
 
