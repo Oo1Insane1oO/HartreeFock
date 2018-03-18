@@ -66,7 +66,7 @@ inline void HartreeFockSolver::assemble() {
 
     // set two-body coupled (Coulomb) integral elements
     if (interaction) {
-        // matrix containing pairs (p,q)
+        // create matrix containing pairs (p,q)
         int subSize = m_numStates * (m_numStates+1);
         subSize /= 2;
         Eigen::ArrayXXi pqMap(subSize,2);
@@ -83,7 +83,7 @@ inline void HartreeFockSolver::assemble() {
         unsigned int myNumStates;
         Eigen::ArrayXi sizes(numProcs);
         for (int p = 0; p < numProcs; ++p) {
-            sizes(p) = Methods::divider(p, numProcs, subSize);
+            sizes(p) = Methods::divider(p, subSize, numProcs);
             if (p == myRank) {
                 myNumStates = sizes(p);
             } // end if
@@ -111,9 +111,9 @@ inline void HartreeFockSolver::assemble() {
         } // end if
         Eigen::ArrayXi displ(numProcs);
         for (int p = 0; p < numProcs; ++p) {
-            sizes(p) *= subSize;
             displ(p) = sizes(p)*p;
         } // end forp
+        sizes *= subSize;
         MPI_Gatherv(myTmpTwoBody.data(), subSize*myNumStates, MPI_DOUBLE,
                 pqrsElements.data(), sizes.data(), displ.data(), MPI_DOUBLE, 0,
                 MPI_COMM_WORLD);
