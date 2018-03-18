@@ -2,6 +2,7 @@
 #define HARTREEFOCKSOLVER_H
 
 #include <Eigen/Dense>
+#include <mpi.h>
 
 #ifdef GAUSSHERMITE
     #include "integrals/gaussianintegrals.h"
@@ -20,6 +21,7 @@
 class HartreeFockSolver : public Integrals {
     private:
         unsigned int m_dim, m_numStates, m_numParticles;
+        int myRank, numProcs;
 
         bool interaction;
 

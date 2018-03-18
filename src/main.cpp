@@ -14,6 +14,13 @@
 
 int main(int argc, char *argv[]) {
     /* main function */
+
+    // initialize MPI
+    int myRank, numProcs;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
     // let eigen use threads
     Eigen::initParallel();
 // 
@@ -44,17 +51,18 @@ int main(int argc, char *argv[]) {
     // dimensions, cutoff, numParticles
     #ifdef GAUSSHERMITE
         double w = 1.0;
-        HartreeFockSolver* HFS = new HartreeFockSolver(2, 6, 6);
+        HartreeFockSolver* HFS = new HartreeFockSolver(2, 30, 6);
 //         HartreeFockSolver* HFS = new HartreeFockSolver(3, 30, 8);
         HFS->getIntegralObj()->initializeParameters(w);
 
         auto start = std::chrono::high_resolution_clock::now();
-
         double E = HFS->iterate(510, 1e-8);
-
         auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> time = end - start;
-        std::cout << "Time: " << time.count() << "s" << std::endl;
+        if (myRank == 0) {
+            std::chrono::duration<double> time = end - start;
+            std::cout << "Time: " << time.count() << "s" << std::endl;
+            std::cout << std::setprecision(15) << "E0 = " << E << std::endl;
+        }
     #endif
     
     #ifdef STYPEGAUSSIAN
@@ -71,7 +79,7 @@ int main(int argc, char *argv[]) {
         double E = HFS->iterate(100, 1e-10);
     #endif
 
-    std::cout << std::setprecision(15) << "E0 = " << E << std::endl;
-
+    // free HFS object and end MPI
     delete HFS;
+    MPI_Finalize();
 } // end main

@@ -9,6 +9,10 @@ HartreeFockSolver::HartreeFockSolver(const unsigned int dimension, unsigned int
     m_dim = dimension;
     m_numParticles = numParticles;
     interaction = true;
+
+    // grab info from default communicator 
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 } // end constructor
 
 HartreeFockSolver::~HartreeFockSolver() {
@@ -33,68 +37,134 @@ inline unsigned int HartreeFockSolver::dIndex(const unsigned int& N, const
 
 inline void HartreeFockSolver::assemble() {
     /* assemble integral elements (with symmetries) */
+
+    // class Cartesian (in derived basis) creates full-shell with both
+    // spins(each one-body function is created for both spin up and down),
+    // divide by two to take the restricted form of the Hartree-Fock equation.
     m_numStates = Integrals::getBasis()->getSize()/2;
-//     m_numStates = (m_numStates%2==0 ? m_numStates/2 : (m_numStates+1)/2);
 
-    // matrix containing elements <i|h|j>
-    overlapElements = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
-    oneBodyElements = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
+    // matrix containing elements <i|h|j> (one-body elements) and elements
+    // <i|j> (overlap elements)
+    if (myRank == 0) {
+        /* only calculate oneBody and overlap elements in root */
+        oneBodyElements = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
+        overlapElements = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
 
-    // set one-body (uncoupled) elements and overlap elements
-    for (unsigned int p = 0; p < m_numStates; ++p) {
-        for (unsigned int q = p; q < m_numStates; ++q) {
-            overlapElements(p,q) = Integrals::overlapElement(p,q);
-            oneBodyElements(p,q) = Integrals::oneBodyElement(p,q);
-            if (p != q) {
-                /* only off-diagonal symmetric elements need to be set */
-                overlapElements(q,p) = overlapElements(p,q);
-                oneBodyElements(q,p) = oneBodyElements(p,q);
-            } // end if
-        } // end forq
-    } // end forp
+        // set one-body (uncoupled) elements and overlap elements
+        for (unsigned int p = 0; p < m_numStates; ++p) {
+            for (unsigned int q = p; q < m_numStates; ++q) {
+                overlapElements(p,q) = Integrals::overlapElement(p,q);
+                oneBodyElements(p,q) = Integrals::oneBodyElement(p,q);
+                if (p != q) {
+                    /* only off-diagonal symmetric elements need to be set */
+                    overlapElements(q,p) = overlapElements(p,q);
+                    oneBodyElements(q,p) = oneBodyElements(p,q);
+                } // end if
+            } // end forq
+        } // end forp
+    } // end if
 
     // set two-body coupled (Coulomb) integral elements
     if (interaction) {
-        // array containing two-body elements <ij|1/r_12|kl>
-        Eigen::ArrayXd tmpTwoBody = Eigen::ArrayXd::Zero(m_numStates *
-                m_numStates * m_numStates * m_numStates);
+        // matrix containing pairs (p,q)
+        int subSize = m_numStates * (m_numStates+1);
+        subSize /= 2;
+        Eigen::ArrayXXi pqMap(subSize,2);
+        int pq = 0;
         for (unsigned int p = 0; p < m_numStates; ++p) {
             for (unsigned int q = p; q < m_numStates; ++q) {
-                for (unsigned int r = 0; r < m_numStates; ++r) {
-                    for (unsigned int s = r; s < m_numStates; ++s) {
-                        double value = Integrals::coulombElement(p,q,r,s);
-                        tmpTwoBody(dIndex(m_numStates, p,q,r,s)) = value;
-                        tmpTwoBody(dIndex(m_numStates, r,q,p,s)) = value;
-                        tmpTwoBody(dIndex(m_numStates, r,s,p,q)) = value;
-                        tmpTwoBody(dIndex(m_numStates, p,s,r,q)) = value;
-                        tmpTwoBody(dIndex(m_numStates, q,p,s,r)) = value;
-                        tmpTwoBody(dIndex(m_numStates, s,p,q,r)) = value;
-                        tmpTwoBody(dIndex(m_numStates, s,r,q,p)) = value;
-                        tmpTwoBody(dIndex(m_numStates, q,r,s,p)) = value;
+                pqMap(pq,0) = p;
+                pqMap(pq,1) = q;
+                pq++;
+            } // end forq
+        } // end forp
+        
+        // distribute sizes
+        unsigned int myNumStates;
+        Eigen::ArrayXi sizes(numProcs);
+        for (int p = 0; p < numProcs; ++p) {
+            sizes(p) = Methods::divider(p, numProcs, subSize);
+            if (p == myRank) {
+                myNumStates = sizes(p);
+            } // end if
+        } // end forp
 
-                        double avalue = Integrals::coulombElement(p,q,s,r);
-                        tmpTwoBody(dIndex(m_numStates, p,q,s,r)) = avalue;
-                        tmpTwoBody(dIndex(m_numStates, q,p,r,s)) = avalue;
-                    } // end fors
-                } // end forr
-            } // end forq
+        // array containing two-body elements <ij|1/r_12|kl> for subset (r,s)
+        // of specific (p,q) in each process
+        Eigen::ArrayXd myTmpTwoBody(myNumStates * subSize);
+        int pqstart = (myRank==0 ? 0 : sizes.segment(0,myRank).sum());
+        int rs = 0;
+        for (unsigned int pq = pqstart; pq < pqstart+myNumStates; ++pq) {
+            for (unsigned int r = 0; r < m_numStates; ++r) {
+                for (unsigned int s = r; s < m_numStates; ++s) {
+                    myTmpTwoBody(rs) =
+                        Integrals::coulombElement(pqMap(pq,0),pqMap(pq,1),r,s);
+                    rs++;
+                } // end fors
+            } // end forr
+        } // end forpq
+
+        // gather subresults from slaves into complete matrix in root
+        Eigen::ArrayXd pqrsElements;
+        if (myRank == 0) {
+            pqrsElements = Eigen::ArrayXd::Zero(subSize*subSize);
+        } // end if
+        Eigen::ArrayXi displ(numProcs);
+        for (int p = 0; p < numProcs; ++p) {
+            sizes(p) *= subSize;
+            displ(p) = sizes(p)*p;
         } // end forp
+        MPI_Gatherv(myTmpTwoBody.data(), subSize*myNumStates, MPI_DOUBLE,
+                pqrsElements.data(), sizes.data(), displ.data(), MPI_DOUBLE, 0,
+                MPI_COMM_WORLD);
+
+        Eigen::ArrayXd tmpTwoBody;
+        if (myRank == 0) {
+            /* allocate complete matrix for root only */
+            tmpTwoBody = Eigen::ArrayXd::Zero(m_numStates * m_numStates *
+                    m_numStates * m_numStates);
+
+            int pqrs = 0;
+            for (unsigned int p = 0; p < m_numStates; ++p) {
+                for (unsigned int q = p; q < m_numStates; ++q) {
+                    for (unsigned int r = 0; r < m_numStates; ++r) {
+                        for (unsigned int s = r; s < m_numStates; ++s) {
+                            double value = pqrsElements(pqrs);
+                            tmpTwoBody(dIndex(m_numStates, p,q,r,s)) = value;
+                            tmpTwoBody(dIndex(m_numStates, r,q,p,s)) = value;
+                            tmpTwoBody(dIndex(m_numStates, r,s,p,q)) = value;
+                            tmpTwoBody(dIndex(m_numStates, p,s,r,q)) = value;
+                            tmpTwoBody(dIndex(m_numStates, q,p,s,r)) = value;
+                            tmpTwoBody(dIndex(m_numStates, s,p,q,r)) = value;
+                            tmpTwoBody(dIndex(m_numStates, s,r,q,p)) = value;
+                            tmpTwoBody(dIndex(m_numStates, q,r,s,p)) = value;
+
+                            double asvalue = Integrals::coulombElement(p,q,s,r);
+                            tmpTwoBody(dIndex(m_numStates, p,q,s,r)) = asvalue;
+                            tmpTwoBody(dIndex(m_numStates, q,p,r,s)) = asvalue;
+
+                            pqrs++;
+                        } // end fors
+                    } // end forr
+                } // end forq
+            } // end forp
     
-        // array containing antisymmetric elements <ij|1/r_12|kl>_AS =
-        // 2<ij|1/r_12|kl>_- <ij|1/r_12|lk>
-        twoBodyElements = Eigen::ArrayXd::Zero(m_numStates * m_numStates *
-                m_numStates * m_numStates);
-        for (unsigned int p = 0; p < m_numStates; ++p) {
-            for (unsigned int q = 0; q < m_numStates; ++q) {
-                for (unsigned int r = 0; r < m_numStates; ++r) {
-                    for (unsigned int s = 0; s < m_numStates; ++s) {
-                        twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
-                            2*tmpTwoBody(dIndex(m_numStates, p,r,q,s)) -
-                            tmpTwoBody(dIndex(m_numStates, p,r,s,q));
-                    } // end fors
-                } // end forr
-            } // end forq
-        } // end forp
+            // array containing antisymmetric elements <ij|1/r_12|kl>_AS =
+            // 2<ij|1/r_12|kl>_- <ij|1/r_12|lk>
+            twoBodyElements = Eigen::ArrayXd::Zero(m_numStates * m_numStates *
+                    m_numStates * m_numStates);
+            for (unsigned int p = 0; p < m_numStates; ++p) {
+                for (unsigned int q = 0; q < m_numStates; ++q) {
+                    for (unsigned int r = 0; r < m_numStates; ++r) {
+                        for (unsigned int s = 0; s < m_numStates; ++s) {
+                            twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
+                                2*tmpTwoBody(dIndex(m_numStates, p,r,q,s)) -
+                                tmpTwoBody(dIndex(m_numStates, p,r,s,q));
+                        } // end fors
+                    } // end forr
+                } // end forq
+            } // end forp
+        } // end if
     } // end if
 } // end function assemble
 
@@ -137,6 +207,8 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     // pre-calculate one- and two-body matrix-elements and set initial density
     // matrix with coefficient matrix set to identity
     assemble();
+    if (myRank == 0) {
+        /* TODO: make this parallell */
     coefficients = Eigen::MatrixXd::Identity(m_numStates, m_numStates);
     densityMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
     setDensityMatrix();
@@ -188,6 +260,7 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
             } // end forc
         } // end forb
     } // end fora
-
     return groundStateEnergy;
+    }
+    return 0;
 } // end function iterate
