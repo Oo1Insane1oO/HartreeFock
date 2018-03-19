@@ -1,6 +1,7 @@
 #include "hartreefocksolver.h"
 
 #include <iostream>
+#include <string>
 
 HartreeFockSolver::HartreeFockSolver(const unsigned int dimension, unsigned int
         cut, const unsigned int numParticles) : Integrals(dimension, cut) {
@@ -86,11 +87,12 @@ inline void HartreeFockSolver::assemble() {
         } // end forp
         
         // distribute sizes
-        Eigen::ArrayXd pqrsElements;
+        Eigen::ArrayXd pqrsElements, pqsrElements;
         Eigen::ArrayXi displ(numProcs);
         Eigen::ArrayXi sizes(numProcs);
         if (myRank == 0) {
             pqrsElements = Eigen::ArrayXd::Zero(subSize*subSize);
+            pqsrElements = Eigen::ArrayXd::Zero(subSize*subSize);
             for (int p = 0; p < numProcs; ++p) {
                 sizes(p) = Methods::divider(p, subSize*subSize, numProcs);
                 displ(p) = sizes.head(p).sum();
@@ -101,18 +103,45 @@ inline void HartreeFockSolver::assemble() {
 
         // array containing two-body elements <ij|1/r_12|kl> for subset (r,s)
         // of set of range of (p,q) in each process
-        Eigen::ArrayXd myTmpTwoBody(sizes(myRank));
+        Eigen::ArrayXd myTmpTwoBody(sizes(myRank)),
+            myTmpTwoBodyAS(sizes(myRank));
         int pqstart = displ(myRank);
+        int pqEnd = pqstart+sizes(myRank);
+        int progressDivider = (int)exp(fmod(4.5, pqEnd));
         int rs = 0;
-        for (unsigned int pq = pqstart; pq < pqstart+sizes(myRank); ++pq) {
+        // save first part of progress bar
+        std::string progressPosition, progressBuffer;
+        if (progressDivider) {
+            progressPosition = Methods::stringPos(myRank, 3) + "Progress: [";
+        } // end if
+        for (unsigned int pq = pqstart; pq < pqEnd; ++pq) {
             myTmpTwoBody(rs) = Integrals::coulombElement(pqMap(pq,0),
                     pqMap(pq,1), pqMap(pq,2), pqMap(pq,3));
+            myTmpTwoBodyAS(rs) = Integrals::coulombElement(pqMap(pq,0),
+                    pqMap(pq,1), pqMap(pq,3), pqMap(pq,2));
+            
+            // print progress
+            if (progressDivider) {
+                /* show progress if given */
+                if (!(static_cast<int>(fmod(pq, Methods::divider(pq, pqEnd,
+                                        progressDivider))))) {
+                    /* print only a few times */
+                    progressBuffer = progressPosition;
+                    Methods::printProgressBar(progressBuffer,
+                            (float)((pq==pqEnd-1) ? pq : (pq+1)) / pqEnd, 55,
+                            "Two-Body");
+                } // end if
+            } // end if
+
             rs++;
         } // end forpq
 
         // gather subresults from slaves into complete matrix in root
         MPI_Gatherv(myTmpTwoBody.data(), sizes(myRank), MPI_DOUBLE,
                 pqrsElements.data(), sizes.data(), displ.data(), MPI_DOUBLE, 0,
+                MPI_COMM_WORLD);
+        MPI_Gatherv(myTmpTwoBodyAS.data(), sizes(myRank), MPI_DOUBLE,
+                pqsrElements.data(), sizes.data(), displ.data(), MPI_DOUBLE, 0,
                 MPI_COMM_WORLD);
 
         // set symmetric values in full two-body matrix used in Hartree-Fock
@@ -138,7 +167,7 @@ inline void HartreeFockSolver::assemble() {
                             tmpTwoBody(dIndex(m_numStates, s,r,q,p)) = value;
                             tmpTwoBody(dIndex(m_numStates, q,r,s,p)) = value;
 
-                            double asvalue = Integrals::coulombElement(p,q,s,r);
+                            double asvalue = pqsrElements(pqrs);
                             tmpTwoBody(dIndex(m_numStates, p,q,s,r)) = asvalue;
                             tmpTwoBody(dIndex(m_numStates, q,p,r,s)) = asvalue;
 
@@ -219,6 +248,9 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
 
     // run Hartree-Fock algorithm
+    int progressDivider = (int)exp(fmod(4.5, maxIterations));
+    std::string progressPosition, progressBuffer;
+    progressPosition = Methods::stringPos(myRank, 3) + "Progress: [";
     for (unsigned int count = 0; count < maxIterations; ++count) {
         /* run for maxIterations or until convergence is reached */
 
@@ -243,6 +275,19 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
 
         // update previous energies
         previousEnergies = eigenSolver.eigenvalues();
+
+        // print progress
+        if (progressDivider) {
+            /* show progress if given */
+            if (!(static_cast<int>(fmod(count, Methods::divider(count,
+                                    maxIterations, progressDivider))))) {
+                /* print only a few times */
+                progressBuffer = progressPosition;
+                Methods::printProgressBar(progressBuffer,
+                        (float)((count==maxIterations-1) ? count : (count+1)) /
+                        maxIterations, 55, "HF");
+            } // end if
+        } // end if
     } // end forcount
 
     // find estimate for ground state energy for m_numParticles
