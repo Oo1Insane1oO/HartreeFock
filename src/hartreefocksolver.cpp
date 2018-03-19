@@ -69,13 +69,19 @@ inline void HartreeFockSolver::assemble() {
         // create matrix containing pairs (p,q)
         int subSize = m_numStates * (m_numStates+1);
         subSize /= 2;
-        Eigen::ArrayXXi pqMap(subSize,2);
+        Eigen::ArrayXXi pqMap(subSize*subSize,4);
         int j = 0;
         for (unsigned int p = 0; p < m_numStates; ++p) {
             for (unsigned int q = p; q < m_numStates; ++q) {
-                pqMap(j,0) = p;
-                pqMap(j,1) = q;
-                j++;
+                for (unsigned int r = 0; r < m_numStates; ++r) {
+                    for (unsigned int s = r; s < m_numStates; ++s) {
+                        pqMap(j,0) = p;
+                        pqMap(j,1) = q;
+                        pqMap(j,2) = r;
+                        pqMap(j,3) = s;
+                        j++;
+                    } // end fors
+                } // end forr
             } // end forq
         } // end forp
         
@@ -86,7 +92,7 @@ inline void HartreeFockSolver::assemble() {
         if (myRank == 0) {
             pqrsElements = Eigen::ArrayXd::Zero(subSize*subSize);
             for (int p = 0; p < numProcs; ++p) {
-                sizes(p) = Methods::divider(p, subSize, numProcs);
+                sizes(p) = Methods::divider(p, subSize*subSize, numProcs);
                 displ(p) = sizes.head(p).sum();
             } // end forp
         } // end if
@@ -95,33 +101,19 @@ inline void HartreeFockSolver::assemble() {
 
         // array containing two-body elements <ij|1/r_12|kl> for subset (r,s)
         // of set of range of (p,q) in each process
-        Eigen::ArrayXd myTmpTwoBody(sizes(myRank) * subSize);
+        Eigen::ArrayXd myTmpTwoBody(sizes(myRank));
         int pqstart = displ(myRank);
         int rs = 0;
         for (unsigned int pq = pqstart; pq < pqstart+sizes(myRank); ++pq) {
-            for (unsigned int r = 0; r < m_numStates; ++r) {
-                for (unsigned int s = r; s < m_numStates; ++s) {
-                    myTmpTwoBody(rs) =
-                        Integrals::coulombElement(pqMap(pq,0),pqMap(pq,1),r,s);
-                    rs++;
-                } // end fors
-            } // end forr
+            myTmpTwoBody(rs) = Integrals::coulombElement(pqMap(pq,0),
+                    pqMap(pq,1), pqMap(pq,2), pqMap(pq,3));
+            rs++;
         } // end forpq
 
         // gather subresults from slaves into complete matrix in root
-        sizes *= subSize;
         MPI_Gatherv(myTmpTwoBody.data(), sizes(myRank), MPI_DOUBLE,
                 pqrsElements.data(), sizes.data(), displ.data(), MPI_DOUBLE, 0,
                 MPI_COMM_WORLD);
-        int rank = 0;
-        while(rank < numProcs) {
-            if (myRank == rank) {
-                Methods::sepPrint("\nRANK: ", myRank, "\n",
-                        myTmpTwoBody.transpose(), "\n");
-            }
-            rank++;
-            MPI_Barrier(MPI_COMM_WORLD);
-        }
 
         // set symmetric values in full two-body matrix used in Hartree-Fock
         // algorithm
