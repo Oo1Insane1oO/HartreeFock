@@ -70,31 +70,35 @@ inline void HartreeFockSolver::assemble() {
         int subSize = m_numStates * (m_numStates+1);
         subSize /= 2;
         Eigen::ArrayXXi pqMap(subSize,2);
-        int pq = 0;
+        int j = 0;
         for (unsigned int p = 0; p < m_numStates; ++p) {
             for (unsigned int q = p; q < m_numStates; ++q) {
-                pqMap(pq,0) = p;
-                pqMap(pq,1) = q;
-                pq++;
+                pqMap(j,0) = p;
+                pqMap(j,1) = q;
+                j++;
             } // end forq
         } // end forp
         
         // distribute sizes
-        unsigned int myNumStates;
+        Eigen::ArrayXd pqrsElements;
+        Eigen::ArrayXi displ(numProcs);
         Eigen::ArrayXi sizes(numProcs);
-        for (int p = 0; p < numProcs; ++p) {
-            sizes(p) = Methods::divider(p, subSize, numProcs);
-            if (p == myRank) {
-                myNumStates = sizes(p);
-            } // end if
-        } // end forp
+        if (myRank == 0) {
+            pqrsElements = Eigen::ArrayXd::Zero(subSize*subSize);
+            for (int p = 0; p < numProcs; ++p) {
+                sizes(p) = Methods::divider(p, subSize, numProcs);
+                displ(p) = sizes.head(p).sum();
+            } // end forp
+        } // end if
+        MPI_Bcast(sizes.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(displ.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
 
         // array containing two-body elements <ij|1/r_12|kl> for subset (r,s)
-        // of specific (p,q) in each process
-        Eigen::ArrayXd myTmpTwoBody(myNumStates * subSize);
-        int pqstart = (myRank==0 ? 0 : sizes.segment(0,myRank).sum());
+        // of set of range of (p,q) in each process
+        Eigen::ArrayXd myTmpTwoBody(sizes(myRank) * subSize);
+        int pqstart = displ(myRank);
         int rs = 0;
-        for (unsigned int pq = pqstart; pq < pqstart+myNumStates; ++pq) {
+        for (unsigned int pq = pqstart; pq < pqstart+sizes(myRank); ++pq) {
             for (unsigned int r = 0; r < m_numStates; ++r) {
                 for (unsigned int s = r; s < m_numStates; ++s) {
                     myTmpTwoBody(rs) =
@@ -105,19 +109,22 @@ inline void HartreeFockSolver::assemble() {
         } // end forpq
 
         // gather subresults from slaves into complete matrix in root
-        Eigen::ArrayXd pqrsElements;
-        if (myRank == 0) {
-            pqrsElements = Eigen::ArrayXd::Zero(subSize*subSize);
-        } // end if
-        Eigen::ArrayXi displ(numProcs);
-        for (int p = 0; p < numProcs; ++p) {
-            displ(p) = sizes(p)*p;
-        } // end forp
         sizes *= subSize;
-        MPI_Gatherv(myTmpTwoBody.data(), subSize*myNumStates, MPI_DOUBLE,
+        MPI_Gatherv(myTmpTwoBody.data(), sizes(myRank), MPI_DOUBLE,
                 pqrsElements.data(), sizes.data(), displ.data(), MPI_DOUBLE, 0,
                 MPI_COMM_WORLD);
+        int rank = 0;
+        while(rank < numProcs) {
+            if (myRank == rank) {
+                Methods::sepPrint("\nRANK: ", myRank, "\n",
+                        myTmpTwoBody.transpose(), "\n");
+            }
+            rank++;
+            MPI_Barrier(MPI_COMM_WORLD);
+        }
 
+        // set symmetric values in full two-body matrix used in Hartree-Fock
+        // algorithm
         Eigen::ArrayXd tmpTwoBody;
         if (myRank == 0) {
             /* allocate complete matrix for root only */
