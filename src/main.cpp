@@ -50,15 +50,16 @@ int main(int argc, char *argv[]) {
 
     // dimensions, cutoff, numParticles
     #ifdef GAUSSHERMITE
-        double w = 0.5;
-        HartreeFockSolver* HFS = new HartreeFockSolver(2, 42, 12);
-//         HartreeFockSolver* HFS = new HartreeFockSolver(3, 30, 8);
+        double w = 1.0;
+//         HartreeFockSolver* HFS = new HartreeFockSolver(2, 110, 20);
+        HartreeFockSolver* HFS = new HartreeFockSolver(3, 42, 8);
         HFS->getIntegralObj()->initializeParameters(w);
 
         auto start = std::chrono::high_resolution_clock::now();
         double E = HFS->iterate(510, 1e-8);
         auto end = std::chrono::high_resolution_clock::now();
         if (myRank == 0) {
+            std::cout << Methods::stringPos(numProcs, 3) << std::endl;
             std::chrono::duration<double> time = end - start;
             std::cout << "Time: " << time.count() << "s" << std::endl;
             std::cout << std::setprecision(15) << "E0 = " << E << std::endl;
