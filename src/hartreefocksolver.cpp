@@ -123,13 +123,16 @@ inline void HartreeFockSolver::assemble() {
             // print progress
             if (progressDivider) {
                 /* show progress if given */
-                if (!(static_cast<int>(fmod(pq, Methods::divider(pq, pqEnd,
+                int progressStart = pq - pqstart;
+                if (!(static_cast<int>(fmod(progressStart,
+                                    Methods::divider(progressStart, sizes(myRank),
                                         progressDivider))))) {
                     /* print only a few times */
                     progressBuffer = progressPosition;
                     Methods::printProgressBar(progressBuffer,
-                            (float)((pq==pqEnd-1) ? pq : (pq+1)) / pqEnd, 55,
-                            "Two-Body");
+                            (float)((progressStart==sizes(myRank)-1) ?
+                                progressStart : (progressStart+1)) /
+                            sizes(myRank), 55, "Two-Body");
                 } // end if
             } // end if
 
