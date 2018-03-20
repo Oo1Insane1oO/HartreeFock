@@ -80,14 +80,12 @@ void Hexpander::setAuxiliary2D(unsigned int xMax, unsigned int yMax, double a,
     integrals2D = EigenArrMatXd::Constant(nMax+1, Eigen::MatrixXd::Zero(xMax+1,
                 yMax+1));
     double powVal = 1;
-    integrals2D(0)(0,0) = GaussianQuadrature::gaussChebyshevQuad(10, this,
-            &Hexpander::modifiedIntegrand, 0, p*PQ.squaredNorm());
-    for (unsigned int n = 1; n <= nMax; ++n) {
+    for (unsigned int n = 0; n <= nMax; ++n) {
         /* calculate initial integrals */
-        powVal *= -2*p;
         integrals2D(n)(0,0) = powVal *
             GaussianQuadrature::gaussChebyshevQuad(10, this,
                     &Hexpander::modifiedIntegrand, n, p*PQ.squaredNorm());
+        powVal *= -2*p;
     } // end forn
 
     for (unsigned int ts = 1; ts <= nMax; ++ts) {
@@ -140,13 +138,11 @@ void Hexpander::setAuxiliary3D(unsigned int xMax, unsigned int yMax, unsigned
             Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic, 1>::Constant(xMax+1,
                 Eigen::MatrixXd::Zero(yMax+1, zMax+1)));
     double powVal = 1;
-    integrals3D(0)(0)(0,0) = GaussianQuadrature::gaussChebyshevQuad(50, this,
-            &Hexpander::boysIntegrand, 0, p*PQ.squaredNorm());
-    for (unsigned int n = 1; n < nMax; ++n) {
-        powVal *= -2*p;
+    for (unsigned int n = 0; n < nMax; ++n) {
         integrals3D(n)(0)(0,0) = powVal *
             GaussianQuadrature::gaussChebyshevQuad(50, this,
                     &Hexpander::boysIntegrand, n, p*PQ.squaredNorm());
+        powVal *= -2*p;
     } // end forn
 
     for (unsigned int ts = 1; ts <= nMax; ++ts) {
