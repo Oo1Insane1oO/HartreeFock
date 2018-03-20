@@ -1,6 +1,7 @@
 #include "hartreefocksolver.h"
 
 #include <iostream>
+#include <fstream>
 #include <string>
 
 HartreeFockSolver::HartreeFockSolver(const unsigned int dimension, unsigned int
@@ -36,7 +37,7 @@ inline unsigned int HartreeFockSolver::dIndex(const unsigned int& N, const
     return i + N * (j + N * (k + N*l));
 } // end function dIndex
 
-inline void HartreeFockSolver::assemble() {
+inline void HartreeFockSolver::assemble(unsigned int progressDivider) {
     /* assemble integral elements (with symmetries) */
 
     // class Cartesian (in derived basis) creates full-shell with both
@@ -107,7 +108,7 @@ inline void HartreeFockSolver::assemble() {
             myTmpTwoBodyAS(sizes(myRank));
         int pqstart = displ(myRank);
         int pqEnd = pqstart+sizes(myRank);
-        int progressDivider = (int)exp(fmod(4.5, pqEnd));
+        progressDivider = (int)exp(fmod(4.5, pqEnd));
         int rs = 0;
         // save first part of progress bar
         std::string progressPosition, progressBuffer;
@@ -231,15 +232,14 @@ inline void HartreeFockSolver::setFockMatrix() {
 } // end function sethartreeFockMatrix
 
 double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
-        double& eps) {
+        double& eps, const unsigned int progressDivider) {
     /* run Hartree-Fock algorithm for finding coefficients and energy until
      * threshold convergence or until maxIterations is reached */
 
     // pre-calculate one- and two-body matrix-elements and set initial density
     // matrix with coefficient matrix set to identity
-    assemble();
+    assemble(progressDivider);
     if (myRank == 0) {
-        /* TODO: make this parallell */
     coefficients = Eigen::MatrixXd::Identity(m_numStates, m_numStates);
     densityMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
     setDensityMatrix();
@@ -251,7 +251,6 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
 
     // run Hartree-Fock algorithm
-    int progressDivider = (int)exp(fmod(4.5, maxIterations));
     std::string progressPosition, progressBuffer;
     progressPosition = Methods::stringPos(myRank, 3) + "Progress: [";
     for (unsigned int count = 0; count < maxIterations; ++count) {
@@ -311,3 +310,15 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     }
     return 0;
 } // end function iterate
+
+void HartreeFockSolver::writeCoefficientsToFile(const std::string& filename) {
+    /* write coefficients (in order basis functions were given in integral
+     * object) to file */
+    std::ofstream outFile(filename);
+    if (outFile.is_open()) {
+        outFile << "Number of Basis Functions: " << m_numStates << "\n\n";
+        outFile << coefficients;
+    } else {
+        std::cout << "File : " + filename + "could not be opened." << std::endl;
+    } // end ifelse
+} // end function writeCoefficientsToFile

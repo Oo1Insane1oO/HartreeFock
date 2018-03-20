@@ -4,11 +4,13 @@
 #include "../basis/gaussianbasis.h"
 #include "../hermite/hexpander.h"
 
+#include <string>
+
 class GaussianBasis;
 
 class GaussianIntegrals : public GaussianBasis  {
     private:
-        unsigned int m_dim;
+        unsigned int m_dim, m_cutOff;
         double expScaleFactor, sqrtFactor, F0, F1, xScale, sqrtScale, powScale,
                sqrtScale1, xScaleHalf, coulomb2DFactor, coulomb3DFactor;
 
@@ -55,7 +57,7 @@ class GaussianIntegrals : public GaussianBasis  {
 
         GaussianBasis* getBasis();
 
-        void initializeParameters(double);
+        std::string initializeParameters(double);
 
         double overlapElement(const unsigned int&, const unsigned int&);
         double oneBodyElement(const unsigned int&, const unsigned int&);

@@ -18,6 +18,8 @@
     using Integrals = GaussianStypeIntegrals;
 #endif
 
+#include <string>
+
 class HartreeFockSolver : public Integrals {
     private:
         unsigned int m_dim, m_numStates, m_numParticles;
@@ -30,7 +32,7 @@ class HartreeFockSolver : public Integrals {
 
         Eigen::MatrixXd FockMatrix, densityMatrix, coefficients;
 
-        inline void assemble();
+        inline void assemble(unsigned int=0);
         
         inline void setDensityMatrix();
         inline void setFockMatrix();
@@ -45,9 +47,11 @@ class HartreeFockSolver : public Integrals {
 
         Integrals* getIntegralObj();
 
-        double iterate(const unsigned int&, const double&);
+        double iterate(const unsigned int&, const double&, const unsigned int=0);
 
         void setInteraction(bool);
+
+        void writeCoefficientsToFile(const std::string&);
 };
 
 #endif /* HARTREEFOCKSOLVER_H */
