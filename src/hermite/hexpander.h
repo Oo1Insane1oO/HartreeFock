@@ -34,10 +34,10 @@ class Hexpander {
 
         const double& coeff(const unsigned int&, const unsigned int&, const
                 unsigned int&) const;
-        double auxiliary2D(const unsigned int&, const unsigned int&, const
-                unsigned int&);
-        double auxiliary3D(const unsigned int&, const unsigned int&, const
-                unsigned int&, const unsigned int&);
+        const double& auxiliary2D(const unsigned int&, const unsigned int&,
+                const unsigned int&) const;
+        const double& auxiliary3D(const unsigned int&, const unsigned int&,
+                const unsigned int&, const unsigned int&) const;
 };
 
 #endif /* HEXPANDER_H */
