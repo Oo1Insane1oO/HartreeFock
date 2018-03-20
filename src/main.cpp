@@ -1,9 +1,11 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
+#include <string>
 
 #include <Eigen/Dense>
 #include <mpi.h>
+#include <yaml-cpp/yaml.h>
 
 #ifdef TESTS
     #include "../tests/test_main.cpp"
@@ -11,6 +13,30 @@
 
 #include "hartreefocksolver.h"
 #include "hermite/hexpander.h"
+
+YAML::Node argsParser(const char* inputFile) {
+    /* parse arguments and set non-optional parameters. return a YAML node with
+     * the parsed arguments */
+
+    // create YAML node map
+    YAML::Node inputs = YAML::LoadFile(inputFile);
+
+    // check file
+    if (!inputs["omega"] || !inputs["numParticles"] || !inputs["numBasis"]
+            || !inputs["dim"] || !inputs["maxIter"]) {
+        /* check that non-optional parameters are given in input file */
+        std::cout <<  "Input file incorrectly setup" << std::endl;
+    } // end if
+
+    if (!inputs["progress"]) {
+        inputs["progress"] = true;
+    } // end if
+    if (!inputs["filename"]) {
+        inputs["filename"] = "";
+    } // end if
+
+    return inputs;
+} // end function argsParser
 
 int main(int argc, char *argv[]) {
     /* main function */
@@ -23,23 +49,11 @@ int main(int argc, char *argv[]) {
 
     // let eigen use threads
     Eigen::initParallel();
-// 
-//     unsigned int dim = 3;
-//     Hexpander* h = new Hexpander(6, dim, 1, 1, Eigen::VectorXd::Zero(dim),
-//             Eigen::VectorXd::Zero(dim));
-//     std::cout << h->coeff(0,1,0,0) << std::endl;
-//     delete h;
-//     exit(1);
-
-    // write basis to file and exit
-    #ifdef GENERATEBASIS
-        Cartesian* basis = new Cartesian();
-        basis->setup(std::atoi(argv[1]), std::atoi(argv[2]));
-        basis->restructureStates();
-        basis->writeToFile(argv[3]);
-        delete basis;
-        exit(0);
-    #endif
+    
+    // set inputs
+    YAML::Node inputs = argsParser(argv[1]);
+    unsigned int progress = (inputs["progress"].as<bool>() ? exp(fmod(4.5,
+                    inputs["maxIter"].as<unsigned int>())) : 0);
 
     #ifdef TESTS
         test_main();
@@ -50,15 +64,31 @@ int main(int argc, char *argv[]) {
 
     // dimensions, cutoff, numParticles
     #ifdef GAUSSHERMITE
-        double w = 1.0;
-        HartreeFockSolver* HFS = new HartreeFockSolver(2, 20, 6);
-//         HartreeFockSolver* HFS = new HartreeFockSolver(3, 42, 8);
-        HFS->getIntegralObj()->initializeParameters(w);
+        HartreeFockSolver* HFS = new
+            HartreeFockSolver(inputs["dim"].as<unsigned int>(),
+                    inputs["numBasis"].as<unsigned int>(),
+                    inputs["numParticles"].as<unsigned int>());
+        std::string message =
+            HFS->getIntegralObj()->initializeParameters(inputs["omega"] .
+                    as<double>());
+        if (message.compare("")) {
+            if (myRank == 0) {
+                std::cout << message << std::endl;
+            } // end if
+            delete HFS;
+            MPI_Finalize();
+            return 0;
+        } // end if
 
         auto start = std::chrono::high_resolution_clock::now();
-        double E = HFS->iterate(510, 1e-8);
+        double E = HFS->iterate(inputs["maxIter"].as<unsigned int>(), 1e-8,
+                progress);
         auto end = std::chrono::high_resolution_clock::now();
         if (myRank == 0) {
+            if (inputs["filename"].as<std::string>().compare("")) {
+                HFS->writeCoefficientsToFile(inputs["filename"] .
+                        as<std::string>());
+            } // end if
             std::cout << Methods::stringPos(numProcs, 3) << std::endl;
             std::chrono::duration<double> time = end - start;
             std::cout << "Time: " << time.count() << "s" << std::endl;
@@ -83,4 +113,6 @@ int main(int argc, char *argv[]) {
     // free HFS object and end MPI
     delete HFS;
     MPI_Finalize();
+
+    return 0;
 } // end main

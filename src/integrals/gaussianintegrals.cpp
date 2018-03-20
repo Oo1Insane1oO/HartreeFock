@@ -1,10 +1,12 @@
 #include "gaussianintegrals.h"
 #include "../hermite/hermite.h"
+
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/math/special_functions/gamma.hpp>
 
 GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
         cutOff, double scaling) : GaussianBasis(cutOff, dim) {
+    m_cutOff = cutOff;
     m_dim = dim;
     expScaleFactor = scaling;
     sqrtFactor = sqrt(scaling);
@@ -19,7 +21,7 @@ GaussianBasis* GaussianIntegrals::getBasis() {
     return dynamic_cast<GaussianBasis*>(this);
 } // end function getBasis
 
-void GaussianIntegrals::initializeParameters(double omega) {
+std::string GaussianIntegrals::initializeParameters(double omega) {
     /* set value of oscillator frequency */
     xScale = omega;
     xScaleHalf = 0.5*xScale;
@@ -38,7 +40,26 @@ void GaussianIntegrals::initializeParameters(double omega) {
 
     // calculate and set normalization factors to array
     setNormalizations();
-} // end function setPositionScaling
+    
+    bool isFull = false;
+    for (unsigned int i = 0; i < GaussianBasis::getMagic().size(); ++i) {
+        if (m_cutOff==GaussianBasis::getMagic(i)) {
+            isFull = true;
+            break;
+        } // end if
+    } // end fori
+
+    if (!isFull) {
+        /* print message if setup is unsuccessfull */
+        std::string possibleN = " ";
+        for (unsigned int i = 0; i < GaussianBasis::getMagic().size(); ++i) {
+            possibleN += std::to_string(GaussianBasis::getMagic(i)) + " ";
+        } // end fori
+        return "Slater not full, possible N:" + possibleN;
+    } else {
+        return "";
+    } // end if
+} // end function initializeParameter 
 
 void GaussianIntegrals::setNormalizations() {
     /* calculate and set normalization factors for all basis functions */
