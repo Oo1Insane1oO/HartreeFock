@@ -3,6 +3,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
+
+#include <yaml-cpp/yaml.h>
 
 HartreeFockSolver::HartreeFockSolver(const unsigned int dimension, unsigned int
         cut, const unsigned int numParticles) : Integrals(dimension, cut) {
@@ -108,7 +111,9 @@ inline void HartreeFockSolver::assemble(unsigned int progressDivider) {
             myTmpTwoBodyAS(sizes(myRank));
         int pqstart = displ(myRank);
         int pqEnd = pqstart+sizes(myRank);
-        progressDivider = (int)exp(fmod(4.5, pqEnd));
+        if (progressDivider) {
+            progressDivider = (int)exp(fmod(4.5, pqEnd));
+        } // end if
         int rs = 0;
         // save first part of progress bar
         std::string progressPosition, progressBuffer;
@@ -314,13 +319,21 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
 void HartreeFockSolver::writeCoefficientsToFile(const std::string& filename,
         const std::string& additional) {
     /* write coefficients (in order basis functions were given in integral
-     * object) to file */
+     * object) to YAML file */
     std::ofstream outFile(filename);
+    YAML::Node info;
+    info["omega"] = additional;
+    info["numbasis"] = m_numStates;
+    info["numparticles"] = m_numParticles;
+    std::vector<double> tmpCol(m_numStates);
+    for (unsigned int p = 0; p < m_numParticles/2; ++p) {
+        for (unsigned int i = 0; i < m_numStates; ++i) {
+            tmpCol[i] = coefficients(p,i);
+        } // end fori
+        info["coeffs"].push_back(tmpCol);
+    } // end forp
     if (outFile.is_open()) {
-        outFile << additional << "\n\n";
-        outFile << "Number of Basis Functions: " << m_numStates << "\n\n";
-        outFile << "Number of Particles: " << m_numParticles << "\n\n";
-        outFile << coefficients.leftCols(m_numParticles/2);
+        outFile << info;
     } else {
         std::cout << "File : " + filename + "could not be opened." << std::endl;
     } // end ifelse

@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
         if (myRank == 0) {
             if (inputs["filename"].as<std::string>().compare("")) {
                 HFS->writeCoefficientsToFile(inputs["filename"] .
-                        as<std::string>(), "Omega: " +
+                        as<std::string>(),
                         std::to_string(inputs["omega"].as<double>()));
             } // end if
             std::cout << Methods::stringPos(numProcs, 3) << std::endl;
