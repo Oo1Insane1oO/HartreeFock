@@ -378,8 +378,7 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
             normalizationFactors(k) * normalizationFactors(l) *
             (this->*coulombFunc)(i,j,k,l);
     } else {
-        /* return 0 in case integrand is odd (in which case integral is zero)
-         * */
+        /* return 0 if integrand is odd (in which case integral is zero) */
         return 0.0;
     } // end ifselse
 } // end function coulombElement

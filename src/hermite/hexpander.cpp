@@ -205,14 +205,22 @@ bool Hexpander::checkIndices(const int& ia, const int& ib, const int& t) {
 double Hexpander::boysIntegrand(double u, const unsigned int& n, const double&
         pRR) {
     /* Integrand of Boys function (using Gauss-Chebyshev method) */
-    return pow(u, 2*n) * sqrt(1 - u*u) * exp(-u*u*pRR);
+    double powu = 1;
+    for (unsigned int i = 0; i < 2*n; ++i) {
+        powu *= u;
+    } // end fori
+    return powu * sqrt(1 - u*u) * exp(-u*u*pRR);
 } // end function boysIntegrand
 
 double Hexpander::modifiedIntegrand(double u, const unsigned int& n, const
         double& pRR) {
     /* integrand assuming Gauss-Chebyshev method is used (the 1/sqrt(1-u^2)
      * part is absorbed) */
-    return pow(u, 2*n) * exp(-u*u*pRR); // * 1/sqrt(1-u*u);
+    double powu = 1;
+    for (unsigned int i = 0; i < 2*n; ++i) {
+        powu *= u;
+    } // end fori
+    return powu * exp(-u*u*pRR); // * 1/sqrt(1-u*u);
 } // end function modifiedIntegrand
 
 const double& Hexpander::coeff(const unsigned int& i, const unsigned int& j,
