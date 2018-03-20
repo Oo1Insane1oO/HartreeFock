@@ -320,9 +320,10 @@ void HartreeFockSolver::writeCoefficientsToFile(const std::string& filename,
         const std::string& additional) {
     /* write coefficients (in order basis functions were given in integral
      * object) to YAML file */
-    std::ofstream outFile(filename);
+    std::ofstream outFile(filename + ".yaml");
     YAML::Node info;
     info["omega"] = additional;
+    info["dim"] = m_dim;
     info["numbasis"] = m_numStates;
     info["numparticles"] = m_numParticles;
     std::vector<double> tmpCol(m_numStates);
