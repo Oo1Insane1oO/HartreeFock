@@ -6,8 +6,6 @@
 #include <cmath>
 #include <iostream>
 
-#include <boost/math/special_functions/gamma.hpp>
-
 Hexpander::Hexpander() {
     /* default constructor */
 } // end constructor
@@ -221,32 +219,20 @@ double Hexpander::modifiedIntegrand(double u, const unsigned int& n, const
     return pow(u, 2*n) * exp(-u*u*pRR); // * 1/sqrt(1-u*u);
 } // end function modifiedIntegrand
 
-double Hexpander::boys(const unsigned int& n, const double& pRR) {
-    /* calculate boys function using boost library */
-    if (fabs(pRR) <= 1e-15) {
-        /* case centering is in zero */
-        return 1./n;
-    } else {
-        /* calculate full integral */
-        return 0.5/pow(pRR*pRR, n+0.5) *
-            boost::math::tgamma_lower<double>(n+0.5, pRR*pRR);
-    } // end ifelse
-} // end function boys
-
 const double& Hexpander::coeff(const unsigned int& i, const unsigned int& j,
         const unsigned int& t) const {
     /* return coefficient E^{ij}_t */
     return coefficients(i,j)(t);
 } // end coeff
 
-double Hexpander::auxiliary2D(const unsigned int& n, const unsigned int& i,
-        const unsigned int& j) {
+const double& Hexpander::auxiliary2D(const unsigned int& n, const unsigned int&
+        i, const unsigned int& j) const {
     /* return integral R^{ij}_n */
     return integrals2D(n)(i,j);
 } // end function integral2D
 
-double Hexpander::auxiliary3D(const unsigned int& n, const unsigned int& i,
-        const unsigned int& j, const unsigned int& k) {
+const double& Hexpander::auxiliary3D(const unsigned int& n, const unsigned int&
+        i, const unsigned int& j, const unsigned int& k) const {
     /* return integral R^{ij}_n */
     return integrals3D(n)(i)(j,k);
 } // end function integral2D
