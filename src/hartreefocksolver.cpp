@@ -319,7 +319,8 @@ void HartreeFockSolver::writeCoefficientsToFile(const std::string& filename,
     if (outFile.is_open()) {
         outFile << additional << "\n\n";
         outFile << "Number of Basis Functions: " << m_numStates << "\n\n";
-        outFile << coefficients;
+        outFile << "Number of Particles: " << m_numParticles << "\n\n";
+        outFile << coefficients.leftCols(m_numParticles/2);
     } else {
         std::cout << "File : " + filename + "could not be opened." << std::endl;
     } // end ifelse
