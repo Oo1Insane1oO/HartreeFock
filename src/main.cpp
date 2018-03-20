@@ -87,7 +87,8 @@ int main(int argc, char *argv[]) {
         if (myRank == 0) {
             if (inputs["filename"].as<std::string>().compare("")) {
                 HFS->writeCoefficientsToFile(inputs["filename"] .
-                        as<std::string>());
+                        as<std::string>(), "Omega: " +
+                        std::to_string(inputs["omega"].as<double>()));
             } // end if
             std::cout << Methods::stringPos(numProcs, 3) << std::endl;
             std::chrono::duration<double> time = end - start;

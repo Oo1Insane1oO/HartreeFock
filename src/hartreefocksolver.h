@@ -51,7 +51,7 @@ class HartreeFockSolver : public Integrals {
 
         void setInteraction(bool);
 
-        void writeCoefficientsToFile(const std::string&);
+        void writeCoefficientsToFile(const std::string&, const std::string&);
 };
 
 #endif /* HARTREEFOCKSOLVER_H */

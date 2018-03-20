@@ -311,11 +311,13 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     return 0;
 } // end function iterate
 
-void HartreeFockSolver::writeCoefficientsToFile(const std::string& filename) {
+void HartreeFockSolver::writeCoefficientsToFile(const std::string& filename,
+        const std::string& additional) {
     /* write coefficients (in order basis functions were given in integral
      * object) to file */
     std::ofstream outFile(filename);
     if (outFile.is_open()) {
+        outFile << additional << "\n\n";
         outFile << "Number of Basis Functions: " << m_numStates << "\n\n";
         outFile << coefficients;
     } else {
