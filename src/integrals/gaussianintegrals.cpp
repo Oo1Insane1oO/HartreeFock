@@ -202,79 +202,24 @@ inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
     static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
 
     // set all coefficients and integrals needed
-//     coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
     coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
     coeffs->setAuxiliary2D(auxMax, auxMax, xScaleHalf, xScaleHalf, xScaleHalf,
             xScaleHalf, centerVec);
 
     double sum = 0.0;
-    for (unsigned int ix = 0; ix < HCIx.size(); ++ix) {
-        if ((HCIx.size()%2==0 && ix%2==0) || (HCIx.size()%2!=0 && ix%2!=0)) {
-            /* ignore calculation when Hermite Coefficient is zero */
-            continue;
-        } // end if
-        for (unsigned int iy = 0; iy < HCIy.size(); ++iy) {
-            if ((HCIy.size()%2==0 && iy%2==0) || (HCIy.size()%2!=0 && iy%2!=0))
-            {
-                /* ignore calculation when Hermite Coefficient is zero */
-                continue;
-            } // end if
-            for (unsigned int jx = 0; jx < HCJx.size(); ++jx) {
-                if ((HCJx.size()%2==0 && jx%2==0) || (HCJx.size()%2!=0 &&
-                            jx%2!=0)) {
-                    /* ignore calculation when Hermite Coefficient is zero */
-                    continue;
-                } // end if
-                for (unsigned int jy = 0; jy < HCJy.size(); ++jy) {
-                    if ((HCJy.size()%2==0 && jy%2==0) || (HCJy.size()%2!=0 &&
-                                jy%2!=0)) {
-                        /* ignore calculation when Hermite Coefficient is zero
-                         * */
-                        continue;
-                    } // end if
-                    for (unsigned int kx = 0; kx < HCKx.size(); ++kx) {
-                        if ((HCKx.size()%2==0 && kx%2==0) || (HCKx.size()%2!=0
-                                    && kx%2!=0)) {
-                            /* ignore calculation when Hermite Coefficient is
-                             * zero */
-                            continue;
-                        } // end if
-                        for (unsigned int ky = 0; ky < HCKy.size(); ++ky) {
-                            if ((HCKy.size()%2==0 && ky%2==0) ||
-                                    (HCKy.size()%2!=0 && ky%2!=0)) {
-                                /* ignore calculation when Hermite Coefficient
-                                 * is zero */
-                                continue;
-                            } // end if
-                            for (unsigned int lx = 0; lx < HCLx.size(); ++lx) {
-                                if ((HCLx.size()%2==0 && lx%2==0) ||
-                                        (HCLx.size()%2!=0 && lx%2!=0)) {
-                                    /* ignore calculation when Hermite
-                                     * Coefficient is zero */
-                                    continue;
-                                } // end if
-                                for (unsigned int ly = 0; ly < HCLy.size();
-                                        ++ly) {
-                                    if ((HCLy.size()%2==0 && ly%2==0) ||
-                                            (HCLy.size()%2!=0 && ly%2!=0)) {
-                                        /* ignore calculation when Hermite
-                                         * Coefficient is zero */
-                                        continue;
-                                    } // end if
-                                    sum += pow(xScale, (ix+iy + kx+ky + jx+jy +
-                                                lx+ly)/2.) * HCIx[ix] *
-                                        HCIy[iy] * HCKx[kx] * HCKy[ky] *
-                                        HCJx[jx] * HCJy[jy] * HCLx[lx] *
-                                        HCLy[ly] * coulombElement2D(ix,iy,
-                                                jx,jy, kx,ky, lx,ly);
-                                } // end forly
-                            } // end forlx
-                        } // end forky
-                    } // end forkx
-                } // end forjy
-            } // end forjx
-        } // end foriy
-    } // end forix
+    for (unsigned int ix = (HCIx.size()%2==0 ? 1 : 0); ix < HCIx.size(); ix+=2)
+    for (unsigned int iy = (HCIy.size()%2==0 ? 1 : 0); iy < HCIy.size(); iy+=2)
+    for (unsigned int jx = (HCJx.size()%2==0 ? 1 : 0); jx < HCJx.size(); jx+=2)
+    for (unsigned int jy = (HCJy.size()%2==0 ? 1 : 0); jy < HCJy.size(); jy+=2)
+    for (unsigned int kx = (HCKx.size()%2==0 ? 1 : 0); kx < HCKx.size(); kx+=2)
+    for (unsigned int ky = (HCKy.size()%2==0 ? 1 : 0); ky < HCKy.size(); ky+=2)
+    for (unsigned int lx = (HCLx.size()%2==0 ? 1 : 0); lx < HCLx.size(); lx+=2)
+    for (unsigned int ly = (HCLy.size()%2==0 ? 1 : 0); ly < HCLy.size(); ly+=2)
+    {
+        sum += pow(xScale, (ix+iy + kx+ky + jx+jy + lx+ly)/2.) * HCIx[ix] *
+            HCIy[iy] * HCKx[kx] * HCKy[ky] * HCJx[jx] * HCJy[jy] * HCLx[lx] *
+            HCLy[ly] * coulombElement2D(ix,iy, jx,jy, kx,ky, lx,ly);
+    } // end for ix,iy,jx,jy,kx,ky,lx,ly
 
     return sum * coulomb2DFactor;
 } // end function coulomb2D
@@ -355,129 +300,24 @@ inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
             xScaleHalf, xScaleHalf, centerVec);
 
     double sum = 0.0;
-    for (unsigned int ix = 0; ix < HCIx.size(); ++ix) {
-        if ((HCIx.size()%2==0 && ix%2==0) || (HCIx.size()%2!=0 && ix%2!=0)) {
-            /* ignore calculation when Hermite Coefficient is zero */
-            continue;
-        } // end if
-        for (unsigned int iy = 0; iy < HCIy.size(); ++iy) {
-            if ((HCIy.size()%2==0 && iy%2==0) || (HCIy.size()%2!=0 && iy%2!=0))
-            {
-                /* ignore calculation when Hermite Coefficient is zero */
-                continue;
-            } // end if
-            for (unsigned int iz = 0; iz < HCIz.size(); ++iz) {
-                if ((HCIz.size()%2==0 && iz%2==0) || (HCIz.size()%2!=0 &&
-                            iz%2!=0)) {
-                    /* ignore calculation when Hermite Coefficient is zero */
-                    continue;
-                } // end if
-                for (unsigned int jx = 0; jx < HCJx.size(); ++jx) {
-                    if ((HCJx.size()%2==0 && jx%2==0) || (HCJx.size()%2!=0 &&
-                                jx%2!=0)) {
-                        /* ignore calculation when Hermite Coefficient is zero
-                         * */
-                        continue;
-                    } // end if
-                    for (unsigned int jy = 0; jy < HCJy.size(); ++jy) {
-                        if ((HCJy.size()%2==0 && jy%2==0) || (HCJy.size()%2!=0
-                                    && jy%2!=0)) {
-                            /* ignore calculation when Hermite Coefficient is
-                             * zero */
-                            continue;
-                        } // end if
-                        for (unsigned int jz = 0; jz < HCJz.size(); ++jz) {
-                            if ((HCJz.size()%2==0 && jz%2==0) ||
-                                    (HCJz.size()%2!=0 && jz%2!=0)) {
-                                /* ignore calculation when Hermite Coefficient
-                                 * is zero */
-                                continue;
-                            } // end if
-                            for (unsigned int kx = 0; kx < HCKx.size(); ++kx) {
-                                if ((HCKx.size()%2==0 && kx%2==0) ||
-                                        (HCKx.size()%2!=0 && kx%2!=0)) {
-                                    /* ignore calculation when Hermite
-                                     * Coefficient is zero */
-                                    continue;
-                                } // end if
-                                for (unsigned int ky = 0; ky < HCKy.size();
-                                        ++ky) {
-                                    if ((HCKy.size()%2==0 && ky%2==0) ||
-                                            (HCKy.size()%2!=0 && ky%2!=0)) {
-                                        /* ignore calculation when Hermite
-                                         * Coefficient is zero */
-                                        continue;
-                                    } // end if
-                                    for (unsigned int kz = 0; kz < HCKz.size();
-                                            ++kz) {
-                                        if ((HCKz.size()%2==0 && kz%2==0) ||
-                                                (HCKz.size()%2!=0 && kz%2!=0))
-                                        {
-                                            /* ignore calculation when Hermite
-                                             * Coefficient is zero */
-                                            continue;
-                                        } // end if
-                                        for (unsigned int lx = 0; lx <
-                                                HCLx.size(); ++lx) {
-                                            if ((HCLx.size()%2==0 && lx%2==0)
-                                                    || (HCLx.size()%2!=0 &&
-                                                        lx%2!=0)) {
-                                                /* ignore calculation when
-                                                 * Hermite Coefficient is zero
-                                                 * */
-                                                continue;
-                                            } // end if
-                                            for (unsigned int ly = 0; ly <
-                                                    HCLy.size(); ++ly) {
-                                                if ((HCLy.size()%2==0 &&
-                                                            ly%2==0) ||
-                                                        (HCLy.size()%2!=0 &&
-                                                         ly%2!=0)) {
-                                                    /* ignore calculation when
-                                                     * Hermite Coefficient is
-                                                     * zero */
-                                                    continue;
-                                                } // end if
-                                                for (unsigned int lz = 0; lz <
-                                                        HCLz.size(); ++lz) {
-                                                    if ((HCLz.size()%2==0 &&
-                                                                lz%2==0) ||
-                                                            (HCLz.size()%2!=0
-                                                             && lz%2!=0)) {
-                                                        /* ignore calculation
-                                                         * when Hermite
-                                                         * Coefficient is zero
-                                                         * */
-                                                        continue;
-                                                    } // end if
-                                                    sum += pow(xScale,
-                                                            (ix+iy+iz +
-                                                             kx+ky+kz +
-                                                             jx+jy+jz +
-                                                             lx+ly+lz)/2.) *
-                                                        HCIx[ix] * HCIy[iy] *
-                                                        HCIz[iz] * HCKx[kx] *
-                                                        HCKy[ky] * HCKz[kz] *
-                                                        HCJx[jx] * HCJy[jy] *
-                                                        HCJz[jz] * HCLx[lx] *
-                                                        HCLy[ly] * HCLz[lz] *
-                                                        coulombElement3D(
-                                                                ix,iy,iz,
-                                                                jx,jy,jz,
-                                                                kx,ky,kz,
-                                                                lx,ly,lz);
-                                                } // end forlz
-                                            } // end forly
-                                        } // end forlx
-                                    } // end forkz
-                                } // end forky
-                            } // end forkx
-                        } // end forjz
-                    } // end forjy
-                } // end forjx
-            } // end for iz
-        } // end foriy
-    } // end forix
+    for (unsigned int ix = (HCIx.size()%2==0 ? 1 : 0); ix < HCIx.size(); ix+=2)
+    for (unsigned int iy = (HCIy.size()%2==0 ? 1 : 0); iy < HCIy.size(); iy+=2)
+    for (unsigned int iz = (HCIz.size()%2==0 ? 1 : 0); iz < HCIz.size(); iz+=2)
+    for (unsigned int jx = (HCJx.size()%2==0 ? 1 : 0); jx < HCJx.size(); jx+=2)
+    for (unsigned int jy = (HCJy.size()%2==0 ? 1 : 0); jy < HCJy.size(); jy+=2)
+    for (unsigned int jz = (HCJz.size()%2==0 ? 1 : 0); jz < HCJz.size(); jz+=2)
+    for (unsigned int kx = (HCKx.size()%2==0 ? 1 : 0); kx < HCKx.size(); kx+=2)
+    for (unsigned int ky = (HCKy.size()%2==0 ? 1 : 0); ky < HCKy.size(); ky+=2)
+    for (unsigned int kz = (HCKz.size()%2==0 ? 1 : 0); kz < HCKz.size(); kz+=2)
+    for (unsigned int lx = (HCLx.size()%2==0 ? 1 : 0); lx < HCLx.size(); lx+=2)
+    for (unsigned int ly = (HCLy.size()%2==0 ? 1 : 0); ly < HCLy.size(); ly+=2)
+    for (unsigned int lz = (HCLz.size()%2==0 ? 1 : 0); lz < HCLz.size(); lz+=2)
+    {
+        sum += pow(xScale, (ix+iy+iz + kx+ky+kz + jx+jy+jz + lx+ly+lz)/2.) *
+            HCIx[ix] * HCIy[iy] * HCIz[iz] * HCKx[kx] * HCKy[ky] * HCKz[kz] *
+            HCJx[jx] * HCJy[jy] * HCJz[jz] * HCLx[lx] * HCLy[ly] * HCLz[lz] *
+            coulombElement3D( ix,iy,iz, jx,jy,jz, kx,ky,kz, lx,ly,lz);
+    } // end for ix,iy,iz,jx,jy,jz,kx,ky,kz,lx,ly,lz
 
     return sum * coulomb3DFactor;
 } // end function coulomb3D
@@ -538,6 +378,8 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
             normalizationFactors(k) * normalizationFactors(l) *
             (this->*coulombFunc)(i,j,k,l);
     } else {
+        /* return 0 in case integrand is odd (in which case integral is zero)
+         * */
         return 0.0;
     } // end ifselse
 } // end function coulombElement
