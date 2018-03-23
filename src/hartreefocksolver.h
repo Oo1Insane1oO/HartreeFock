@@ -25,6 +25,8 @@ class HartreeFockSolver : public Integrals {
         unsigned int m_dim, m_numStates, m_numParticles;
         int myRank, numProcs;
 
+        double groundStateEnergy;
+
         bool interaction;
 
         Eigen::ArrayXd twoBodyElements;

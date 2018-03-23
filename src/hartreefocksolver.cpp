@@ -245,74 +245,74 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
     // matrix with coefficient matrix set to identity
     assemble(progressDivider);
     if (myRank == 0) {
-    coefficients = Eigen::MatrixXd::Identity(m_numStates, m_numStates);
-    densityMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
-    setDensityMatrix();
-    FockMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
-    Eigen::VectorXd previousEnergies = Eigen::VectorXd::Zero(m_numStates);
-
-    // initialize eigenvalue/vector solver for hermitian matrix (Fock matrix is
-    // build to be hermitian)
-    Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
-
-    // run Hartree-Fock algorithm
-    std::string progressPosition, progressBuffer;
-    progressPosition = Methods::stringPos(myRank, 3) + "Progress: [";
-    for (unsigned int count = 0; count < maxIterations; ++count) {
-        /* run for maxIterations or until convergence is reached */
-
-        // set HF-matrix with current coefficients
-        setFockMatrix();
-
-        // find eigenvalues and eigenvector (HartreeFock-energies and
-        // coefficients respectively)
-        eigenSolver.compute(FockMatrix, overlapElements);
-        coefficients = eigenSolver.eigenvectors();
-
-        // set density matrix with new coefficients
+        coefficients = Eigen::MatrixXd::Identity(m_numStates, m_numStates);
+        densityMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
         setDensityMatrix();
+        FockMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
+        Eigen::VectorXd previousEnergies = Eigen::VectorXd::Zero(m_numStates);
 
-        // check for convergence with RMS of difference between previous and
-        // current energies 
-        double diff = sqrt((eigenSolver.eigenvalues() -
-                    previousEnergies).squaredNorm() / m_numStates);
-        if (diff < eps) {
-            break;
-        } // end if
+        // initialize eigenvalue/vector solver for hermitian matrix (Fock
+        // matrix is build to be hermitian)
+        Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
 
-        // update previous energies
-        previousEnergies = eigenSolver.eigenvalues();
+        // run Hartree-Fock algorithm
+        std::string progressPosition, progressBuffer;
+        progressPosition = Methods::stringPos(myRank, 3) + "Progress: [";
+        for (unsigned int count = 0; count < maxIterations; ++count) {
+            /* run for maxIterations or until convergence is reached */
 
-        // print progress
-        if (progressDivider) {
-            /* show progress if given */
-            if (!(static_cast<int>(fmod(count, Methods::divider(count,
-                                    maxIterations, progressDivider))))) {
-                /* print only a few times */
-                progressBuffer = progressPosition;
-                Methods::printProgressBar(progressBuffer,
-                        (float)((count==maxIterations-1) ? count : (count+1)) /
-                        maxIterations, 55, "HF");
+            // set HF-matrix with current coefficients
+            setFockMatrix();
+
+            // find eigenvalues and eigenvector (HartreeFock-energies and
+            // coefficients respectively)
+            eigenSolver.compute(FockMatrix, overlapElements);
+            coefficients = eigenSolver.eigenvectors();
+
+            // set density matrix with new coefficients
+            setDensityMatrix();
+
+            // check for convergence with RMS of difference between previous
+            // and current energies 
+            double diff = sqrt((eigenSolver.eigenvalues() -
+                        previousEnergies).squaredNorm() / m_numStates);
+            if (diff < eps) {
+                break;
             } // end if
-        } // end if
-    } // end forcount
 
-    // find estimate for ground state energy for m_numParticles
-    double groundStateEnergy = 2*eigenSolver.eigenvalues().segment(0,
-            m_numParticles/2).sum();
-    for (unsigned int a = 0; a < m_numStates; ++a) {
-        for (unsigned int b = 0; b < m_numStates; ++b) {
-            for (unsigned int c = 0; c < m_numStates; ++c) {
-                for (unsigned int d = 0; d < m_numStates; ++d) {
-                    groundStateEnergy -= densityMatrix(a,c) *
-                        densityMatrix(b,d) *
-                        twoBodyElements(dIndex(m_numStates, a,c,b,d));
-                } // end ford
-            } // end forc
-        } // end forb
-    } // end fora
-    return groundStateEnergy;
-    }
+            // update previous energies
+            previousEnergies = eigenSolver.eigenvalues();
+
+            // print progress
+            if (progressDivider) {
+                /* show progress if given */
+                if (!(static_cast<int>(fmod(count, Methods::divider(count,
+                                        maxIterations, progressDivider))))) {
+                    /* print only a few times */
+                    progressBuffer = progressPosition;
+                    Methods::printProgressBar(progressBuffer,
+                            (float)((count==maxIterations-1) ? count :
+                                (count+1)) / maxIterations, 55, "HF");
+                } // end if
+            } // end if
+        } // end forcount
+
+        // find estimate for ground state energy for m_numParticles
+        groundStateEnergy = 2*eigenSolver.eigenvalues().segment(0,
+                m_numParticles/2).sum();
+        for (unsigned int a = 0; a < m_numStates; ++a) {
+            for (unsigned int b = 0; b < m_numStates; ++b) {
+                for (unsigned int c = 0; c < m_numStates; ++c) {
+                    for (unsigned int d = 0; d < m_numStates; ++d) {
+                        groundStateEnergy -= densityMatrix(a,c) *
+                            densityMatrix(b,d) *
+                            twoBodyElements(dIndex(m_numStates, a,c,b,d));
+                    } // end ford
+                } // end forc
+            } // end forb
+        } // end fora
+        return groundStateEnergy;
+    } // end if
     return 0;
 } // end function iterate
 
@@ -322,6 +322,7 @@ void HartreeFockSolver::writeCoefficientsToFile(const std::string& filename,
      * object) to YAML file */
     std::ofstream outFile(filename + ".yaml");
     YAML::Node info;
+    info["E0"] = groundStateEnergy;
     info["omega"] = additional;
     info["dim"] = m_dim;
     info["numbasis"] = m_numStates;
@@ -336,6 +337,7 @@ void HartreeFockSolver::writeCoefficientsToFile(const std::string& filename,
     if (outFile.is_open()) {
         outFile << info;
     } else {
-        std::cout << "File : " + filename + "could not be opened." << std::endl;
+        std::cout << "File : " + filename + "could not be opened." <<
+            std::endl;
     } // end ifelse
 } // end function writeCoefficientsToFile
