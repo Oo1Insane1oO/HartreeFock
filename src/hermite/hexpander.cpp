@@ -83,7 +83,7 @@ void Hexpander::setAuxiliary2D(unsigned int xMax, unsigned int yMax, double a,
     for (unsigned int n = 0; n <= nMax; ++n) {
         /* calculate initial integrals */
         integrals2D(n)(0,0) = powVal *
-            GaussianQuadrature::gaussChebyshevQuad(10, this,
+            GaussianQuadrature::gaussChebyshevQuad(50, this,
                     &Hexpander::modifiedIntegrand, n, p*PQ.squaredNorm());
         powVal *= -2*p;
     } // end forn
