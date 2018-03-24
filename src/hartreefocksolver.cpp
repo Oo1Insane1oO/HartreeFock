@@ -317,13 +317,13 @@ double HartreeFockSolver::iterate(const unsigned int& maxIterations, const
 } // end function iterate
 
 void HartreeFockSolver::writeCoefficientsToFile(const std::string& filename,
-        const std::string& additional) {
+        const std::string& omega) {
     /* write coefficients (in order basis functions were given in integral
      * object) to YAML file */
     std::ofstream outFile(filename + ".yaml");
     YAML::Node info;
     info["E0"] = groundStateEnergy;
-    info["omega"] = additional;
+    info["omega"] = omega;
     info["dim"] = m_dim;
     info["numbasis"] = m_numStates;
     info["numparticles"] = m_numParticles;
