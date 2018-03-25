@@ -104,6 +104,11 @@ inline void HartreeFockSolver::assemble(unsigned int progressDivider) {
         } // end if
         MPI_Bcast(sizes.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Bcast(displ.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
+//         Eigen::ArrayXi sums = Eigen::ArrayXi::Zero(numProcs);
+//         sums(0) = pqMap.block(0,0,sizes(0),4).sum();
+//         for (unsigned int i = 1; i < sums.size(); ++i) {
+//             sums(i) += pqMap.block(0,sizes(i-1),sizes(i),4).sum();
+//         } // end fori
 
         // array containing two-body elements <ij|1/r_12|kl> for subset (r,s)
         // of set of range of (p,q) in each process
