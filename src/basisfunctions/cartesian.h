@@ -41,6 +41,7 @@ class Cartesian {
         const EigenIntPtrMat &getStates() const;
         const Eigen::Ref<const EigenIntPtrVec> getStates(const unsigned int&)
             const;
+        const int& getn(const unsigned int&, const unsigned int&) const;
         const Eigen::VectorXi &getn() const;
         const int &getn(const unsigned int&) const;
         const Eigen::VectorXi &getE() const;
