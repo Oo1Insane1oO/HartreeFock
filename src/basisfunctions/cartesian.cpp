@@ -136,6 +136,12 @@ const Eigen::Ref<const EigenIntPtrVec> Cartesian::getStates(const unsigned int
     return states.row(i);
 } // end function getStates
 
+const int& Cartesian::getn(const unsigned int& i, const unsigned int& d) const
+{
+    /* get n in state i for dimension d */
+    return *(states(i,d));
+} // end function getn
+
 const Eigen::VectorXi& Cartesian::getn() const {
     /* return vector of n-values */
     return n;

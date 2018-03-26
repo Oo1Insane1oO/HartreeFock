@@ -69,7 +69,7 @@ void GaussianIntegrals::setNormalizations() {
     for (unsigned int i = 0; i < GaussianBasis::Cartesian::getNumberOfStates();
             ++i) {
         for (unsigned int d = 0; d < m_dim; ++d) {
-            int n = *(GaussianBasis::Cartesian::getStates(i)(d));
+            const int& n = GaussianBasis::Cartesian::getn(i,d);
             normalizationFactors(i) *= 1.0 / ddexpr(n,n,
                     &GaussianIntegrals::ddexprOverlap);
         } // end ford
@@ -130,8 +130,8 @@ inline double GaussianIntegrals::laplacianElement(const unsigned int& i, const
     for (unsigned int d = 0; d < m_dim; ++d) {
         double tmpProdsd = 1.0;
         for (unsigned int dd = 0; dd < m_dim; ++dd) {
-            int ndd = *(GaussianBasis::Cartesian::getStates(i)(dd));
-            int mdd = *(GaussianBasis::Cartesian::getStates(j)(dd));
+            const int& ndd = GaussianBasis::Cartesian::getn(i,dd);
+            const int& mdd = GaussianBasis::Cartesian::getn(j,dd);
             if (dd != d) {
                 tmpProdsd *= ddexpr(ndd, mdd,
                         &GaussianIntegrals::ddexprOverlap);
@@ -153,8 +153,8 @@ inline double GaussianIntegrals::potentialElement(const unsigned int& i, const
     for (unsigned int d = 0; d < m_dim; ++d) {
         double tmpProdsd = 1.0;
         for (unsigned int dd = 0; dd < m_dim; ++dd) {
-            int ndd = *(GaussianBasis::Cartesian::getStates(i)(dd));
-            int mdd = *(GaussianBasis::Cartesian::getStates(j)(dd));
+            const int& ndd = GaussianBasis::Cartesian::getn(i,dd);
+            const int& mdd = GaussianBasis::Cartesian::getn(j,dd);
             if (dd != d) {
                 tmpProdsd *= ddexpr(ndd, mdd,
                         &GaussianIntegrals::ddexprOverlap);
@@ -197,22 +197,14 @@ inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
     /* calculate full coulomb integral in 2D case */
 
     // grab hermite coefficients
-    const std::vector<int>& HCIx =
-        HC(*(GaussianBasis::Cartesian::getStates(i)(0)));
-    const std::vector<int>& HCIy =
-        HC(*(GaussianBasis::Cartesian::getStates(i)(1)));
-    const std::vector<int>& HCJx =
-        HC(*(GaussianBasis::Cartesian::getStates(j)(0)));
-    const std::vector<int>& HCJy =
-        HC(*(GaussianBasis::Cartesian::getStates(j)(1)));
-    const std::vector<int>& HCKx =
-        HC(*(GaussianBasis::Cartesian::getStates(k)(0)));
-    const std::vector<int>& HCKy =
-        HC(*(GaussianBasis::Cartesian::getStates(k)(1)));
-    const std::vector<int>& HCLx =
-        HC(*(GaussianBasis::Cartesian::getStates(l)(0)));
-    const std::vector<int>& HCLy =
-        HC(*(GaussianBasis::Cartesian::getStates(l)(1)));
+    const std::vector<int>& HCIx = HC(GaussianBasis::Cartesian::getn(i,0));
+    const std::vector<int>& HCIy = HC(GaussianBasis::Cartesian::getn(i,1));
+    const std::vector<int>& HCJx = HC(GaussianBasis::Cartesian::getn(j,0));
+    const std::vector<int>& HCJy = HC(GaussianBasis::Cartesian::getn(j,1));
+    const std::vector<int>& HCKx = HC(GaussianBasis::Cartesian::getn(k,0));
+    const std::vector<int>& HCKy = HC(GaussianBasis::Cartesian::getn(k,1));
+    const std::vector<int>& HCLx = HC(GaussianBasis::Cartesian::getn(l,0));
+    const std::vector<int>& HCLy = HC(GaussianBasis::Cartesian::getn(l,1));
 
     // find the maximum index (upper limit for coeffs and integrals needed)
     unsigned int pmax = Methods::max(HCIx.size(), HCKx.size(), HCJx.size(),
@@ -281,30 +273,18 @@ inline double GaussianIntegrals::coulombElement3D(const unsigned int& ix, const
 inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
         int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate full coulomb integral in 2D case */
-    const std::vector<int>& HCIx =
-        HC(*(GaussianBasis::Cartesian::getStates(i)(0)));
-    const std::vector<int>& HCIy =
-        HC(*(GaussianBasis::Cartesian::getStates(i)(1)));
-    const std::vector<int>& HCIz =
-        HC(*(GaussianBasis::Cartesian::getStates(i)(2)));
-    const std::vector<int>& HCKx =
-        HC(*(GaussianBasis::Cartesian::getStates(k)(0)));
-    const std::vector<int>& HCKy =
-        HC(*(GaussianBasis::Cartesian::getStates(k)(1)));
-    const std::vector<int>& HCKz =
-        HC(*(GaussianBasis::Cartesian::getStates(k)(2)));
-    const std::vector<int>& HCJx =
-        HC(*(GaussianBasis::Cartesian::getStates(j)(0)));
-    const std::vector<int>& HCJy =
-        HC(*(GaussianBasis::Cartesian::getStates(j)(1)));
-    const std::vector<int>& HCJz =
-        HC(*(GaussianBasis::Cartesian::getStates(j)(2)));
-    const std::vector<int>& HCLx =
-        HC(*(GaussianBasis::Cartesian::getStates(l)(0)));
-    const std::vector<int>& HCLy =
-        HC(*(GaussianBasis::Cartesian::getStates(l)(1)));
-    const std::vector<int>& HCLz =
-        HC(*(GaussianBasis::Cartesian::getStates(l)(2)));
+    const std::vector<int>& HCIx = HC(GaussianBasis::Cartesian::getn(i,0));
+    const std::vector<int>& HCIy = HC(GaussianBasis::Cartesian::getn(i,1));
+    const std::vector<int>& HCIz = HC(GaussianBasis::Cartesian::getn(i,2));
+    const std::vector<int>& HCKx = HC(GaussianBasis::Cartesian::getn(k,0));
+    const std::vector<int>& HCKy = HC(GaussianBasis::Cartesian::getn(k,1));
+    const std::vector<int>& HCKz = HC(GaussianBasis::Cartesian::getn(k,2));
+    const std::vector<int>& HCJx = HC(GaussianBasis::Cartesian::getn(j,0));
+    const std::vector<int>& HCJy = HC(GaussianBasis::Cartesian::getn(j,1));
+    const std::vector<int>& HCJz = HC(GaussianBasis::Cartesian::getn(j,2));
+    const std::vector<int>& HCLx = HC(GaussianBasis::Cartesian::getn(l,0));
+    const std::vector<int>& HCLy = HC(GaussianBasis::Cartesian::getn(l,1));
+    const std::vector<int>& HCLz = HC(GaussianBasis::Cartesian::getn(l,2));
     
     unsigned int pmax = Methods::max(HCIx.size(), HCKx.size(), HCJx.size(),
             HCLx.size(), HCIy.size(), HCKy.size(), HCJy.size(), HCLy.size(),
@@ -348,8 +328,8 @@ double GaussianIntegrals::overlapElement(const unsigned int& i, const unsigned
     /* calculate and return the overlap integral element <i|j> */
     double prod = 1.0;
     for (unsigned int d = 0; d < m_dim; ++d) {
-        prod *= ddexpr(*(GaussianBasis::Cartesian::getStates(i)(d)),
-                *(GaussianBasis::Cartesian::getStates(j)(d)),
+        prod *= ddexpr(GaussianBasis::Cartesian::getn(i,d),
+                GaussianBasis::Cartesian::getn(j,d),
                 &GaussianIntegrals::ddexprOverlap);
     } // end ford
 
