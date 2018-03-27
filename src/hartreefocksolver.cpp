@@ -101,14 +101,42 @@ inline void HartreeFockSolver::assemble(unsigned int progressDivider) {
                 sizes(p) = Methods::divider(p, subSize*subSize, numProcs);
                 displ(p) = sizes.head(p).sum();
             } // end forp
+
+            // weight the sizes based on the sum of all (p,q,r,s) in process
+            Eigen::ArrayXi sums = Eigen::ArrayXi::Zero(numProcs);
+            auto findSum = [&]() {
+                /* find the sum of all pqrs elements in each process chunk */
+                for (unsigned int i = 0; i < sums.size(); ++i) {
+                    sums(i) = pqMap.block(displ(i), 0, sizes(i),4).sum();
+                } // end fori
+            }; // end lambda findSum
+            findSum();
+            int originalMean = floor(sums.mean());
+            // make sure total sum of pqrs within process chunk is within
+            // +-1 of originalMean
+            for (int i = 0; i < numProcs-1; ++i) {
+                for (int j = displ(i); j < displ(i)+sizes(i+1); ++j) {
+                    /* iterate over elements in next process */
+                    int newSum = sums(i) + pqMap.row(j).sum();
+                    if (newSum < originalMean) {
+                        /* take pqrs element j from next process */
+                        sizes(i) += 1;
+                        sizes(i+1) -= 1;
+                        displ(i+1) += 1;
+                    } else if ((newSum == originalMean-1) || (newSum ==
+                                originalMean+1) || (newSum > originalMean)) {
+                        /* break if total sum is within +-1 of originalMean
+                         * */
+                        break;
+                    } // end ifeif
+
+                    // find sum of current chunks
+                    findSum();
+                } // end forj
+            } // end fori
         } // end if
         MPI_Bcast(sizes.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Bcast(displ.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
-//         Eigen::ArrayXi sums = Eigen::ArrayXi::Zero(numProcs);
-//         sums(0) = pqMap.block(0,0,sizes(0),4).sum();
-//         for (unsigned int i = 1; i < sums.size(); ++i) {
-//             sums(i) += pqMap.block(0,sizes(i-1),sizes(i),4).sum();
-//         } // end fori
 
         // array containing two-body elements <ij|1/r_12|kl> for subset (r,s)
         // of set of range of (p,q) in each process
@@ -335,7 +363,7 @@ void HartreeFockSolver::writeCoefficientsToFile(const std::string& filename,
     std::vector<double> tmpCol(m_numStates);
     for (unsigned int p = 0; p < m_numParticles/2; ++p) {
         for (unsigned int i = 0; i < m_numStates; ++i) {
-            tmpCol[i] = coefficients(p,i);
+            tmpCol[i] = coefficients(i,p);
         } // end fori
         info["coeffs"].push_back(tmpCol);
     } // end forp
