@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
         } // end if
 
         auto start = std::chrono::high_resolution_clock::now();
-        double E = HFS->iterate(inputs["maxIter"].as<unsigned int>(), 1e-10,
+        double E = HFS->iterate(inputs["maxIter"].as<unsigned int>(), 1e-8,
                 progress);
         auto end = std::chrono::high_resolution_clock::now();
         if (myRank == 0) {
