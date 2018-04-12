@@ -1,98 +1,102 @@
 #ifndef HERMITE_H
 #define HERMITE_H
-static std::vector<int> HC0() {
-    std::vector<int> coeffs = std::vector<int>{1};
+
+#include <vector>
+#include <cmath>
+
+static std::vector<long int> HC0() {
+    std::vector<long int> coeffs = std::vector<long int>{1};
 
     return coeffs;
 }
-static std::vector<int> HC1() {
-    std::vector<int> coeffs = std::vector<int>{0,2};
+static std::vector<long int> HC1() {
+    std::vector<long int> coeffs = std::vector<long int>{0,2};
 
     return coeffs;
 }
-static std::vector<int> HC2() {
-    std::vector<int> coeffs = std::vector<int>{-2,0,4};
+static std::vector<long int> HC2() {
+    std::vector<long int> coeffs = std::vector<long int>{-2,0,4};
 
     return coeffs;
 }
-static std::vector<int> HC3() {
-    std::vector<int> coeffs = std::vector<int>{0,-12,0,8};
+static std::vector<long int> HC3() {
+    std::vector<long int> coeffs = std::vector<long int>{0,-12,0,8};
 
     return coeffs;
 }
-static std::vector<int> HC4() {
-    std::vector<int> coeffs = std::vector<int>{12,0,-48,0,16};
+static std::vector<long int> HC4() {
+    std::vector<long int> coeffs = std::vector<long int>{12,0,-48,0,16};
 
     return coeffs;
 }
-static std::vector<int> HC5() {
-    std::vector<int> coeffs = std::vector<int>{0,120,0,-160,0,32};
+static std::vector<long int> HC5() {
+    std::vector<long int> coeffs = std::vector<long int>{0,120,0,-160,0,32};
 
     return coeffs;
 }
-static std::vector<int> HC6() {
-    std::vector<int> coeffs = std::vector<int>{-120,0,720,0,-480,0,64};
+static std::vector<long int> HC6() {
+    std::vector<long int> coeffs = std::vector<long int>{-120,0,720,0,-480,0,64};
 
     return coeffs;
 }
-static std::vector<int> HC7() {
-    std::vector<int> coeffs = std::vector<int>{0,-1680,0,3360,0,-1344,0,128};
+static std::vector<long int> HC7() {
+    std::vector<long int> coeffs = std::vector<long int>{0,-1680,0,3360,0,-1344,0,128};
 
     return coeffs;
 }
-static std::vector<int> HC8() {
-    std::vector<int> coeffs = std::vector<int>{1680,0,-13440,0,13440,0,-3584,0,256};
+static std::vector<long int> HC8() {
+    std::vector<long int> coeffs = std::vector<long int>{1680,0,-13440,0,13440,0,-3584,0,256};
 
     return coeffs;
 }
-static std::vector<int> HC9() {
-    std::vector<int> coeffs = std::vector<int>{0,30240,0,-80640,0,48384,0,-9216,0,512};
+static std::vector<long int> HC9() {
+    std::vector<long int> coeffs = std::vector<long int>{0,30240,0,-80640,0,48384,0,-9216,0,512};
 
     return coeffs;
 }
-static std::vector<int> HC10() {
-    std::vector<int> coeffs = std::vector<int>{-30240,0,302400,0,-403200,0,161280,0,-23040,0,1024};
+static std::vector<long int> HC10() {
+    std::vector<long int> coeffs = std::vector<long int>{-30240,0,302400,0,-403200,0,161280,0,-23040,0,1024};
 
     return coeffs;
 }
-static std::vector<int> HC11() {
-    std::vector<int> coeffs = std::vector<int>{0,-665280,0,2217600,0,-1774080,0,506880,0,-56320,0,2048};
+static std::vector<long int> HC11() {
+    std::vector<long int> coeffs = std::vector<long int>{0,-665280,0,2217600,0,-1774080,0,506880,0,-56320,0,2048};
 
     return coeffs;
 }
-static std::vector<int> HC12() {
-    std::vector<int> coeffs = std::vector<int>{665280,0,-7983360,0,13305600,0,-7096320,0,1520640,0,-135168,0,4096};
+static std::vector<long int> HC12() {
+    std::vector<long int> coeffs = std::vector<long int>{665280,0,-7983360,0,13305600,0,-7096320,0,1520640,0,-135168,0,4096};
 
     return coeffs;
 }
-static std::vector<int> HC13() {
-    std::vector<int> coeffs = std::vector<int>{0,17297280,0,-69189120,0,69189120,0,-26357760,0,4392960,0,-319488,0,8192};
+static std::vector<long int> HC13() {
+    std::vector<long int> coeffs = std::vector<long int>{0,17297280,0,-69189120,0,69189120,0,-26357760,0,4392960,0,-319488,0,8192};
 
     return coeffs;
 }
-static std::vector<int> HC14() {
-    std::vector<int> coeffs = std::vector<int>{-17297280,0,242161920,0,-484323840,0,322882560,0,-92252160,0,12300288,0,-745472,0,16384};
+static std::vector<long int> HC14() {
+    std::vector<long int> coeffs = std::vector<long int>{-17297280,0,242161920,0,-484323840,0,322882560,0,-92252160,0,12300288,0,-745472,0,16384};
 
     return coeffs;
 }
-static std::vector<int> HC15() {
-    std::vector<int> coeffs = std::vector<int>{0,-518918400,0,2421619200,0,-2905943040,0,1383782400,0,-307507200,0,33546240,0,-1720320,0,32768};
+static std::vector<long int> HC15() {
+    std::vector<long int> coeffs = std::vector<long int>{0,-518918400,0,2421619200,0,-2905943040,0,1383782400,0,-307507200,0,33546240,0,-1720320,0,32768};
 
     return coeffs;
 }
-static std::vector<int> HC16() {
-    std::vector<int> coeffs = std::vector<int>{518918400,0,-8302694400,0,19372953600,0,-15498362880,0,5535129600,0,-984023040,0,89456640,0,-3932160,0,65536};
+static std::vector<long int> HC16() {
+    std::vector<long int> coeffs = std::vector<long int>{518918400,0,-8302694400,0,19372953600,0,-15498362880,0,5535129600,0,-984023040,0,89456640,0,-3932160,0,65536};
 
     return coeffs;
 }
-static std::vector<int> HC17() {
-    std::vector<int> coeffs = std::vector<int>{0,17643225600,0,-94097203200,0,131736084480,0,-75277762560,0,20910489600,0,-3041525760,0,233963520,0,-8912896,0,131072};
+static std::vector<long int> HC17() {
+    std::vector<long int> coeffs = std::vector<long int>{0,17643225600,0,-94097203200,0,131736084480,0,-75277762560,0,20910489600,0,-3041525760,0,233963520,0,-8912896,0,131072};
 
     return coeffs;
 }
-static std::vector<int> HC(int n) {
+static std::vector<long int> HC(int n) {
    if (n > 17) {
-       return std::vector<int>{-1};
+       return std::vector<long int>{-1};
    }
    switch(n) {
        case 0: return HC0();
@@ -113,7 +117,7 @@ static std::vector<int> HC(int n) {
        case 15: return HC15();
        case 16: return HC16();
        case 17: return HC17();
-       default: return std::vector<int>{0};
+       default: return std::vector<long int>{0};
    }
 }
 #pragma GCC diagnostic push
