@@ -70,8 +70,10 @@ void GaussianIntegrals::setNormalizations() {
             ++i) {
         for (unsigned int d = 0; d < m_dim; ++d) {
             const int& n = GaussianBasis::Cartesian::getn(i,d);
-            normalizationFactors(i) *= 1.0 / ddexpr(n,n,
-                    &GaussianIntegrals::ddexprOverlap);
+//             normalizationFactors(i) *= 1.0 / ddexpr(n,n,
+//                     &GaussianIntegrals::ddexprOverlap);
+            normalizationFactors(i) *= 1.0 / sqrt(sqrt(M_PI) * pow(2,n) *
+                    boost::math::factorial<double>(n));
         } // end ford
     } // end fori
     normalizationFactors = normalizationFactors.cwiseSqrt();
