@@ -4,7 +4,7 @@
 #include <boost/math/special_functions/gamma.hpp>
 
 DoubleWell::DoubleWell(const unsigned int dim, unsigned int cutOff) :
-    GaussianIntegrals(cutOff, dim), DWC() {
+    GaussianIntegrals(dim, cutOff), DWC() {
 } // end constructor
 
 DoubleWell::~DoubleWell() {
@@ -22,37 +22,66 @@ std::string DoubleWell::initializeParameters(double _R, unsigned int axis) {
     return message;
 } // end function initializeParameters
 
+double DoubleWell::overlapElement(const unsigned int& i, const unsigned int& j)
+{
+    /* calculate and return the overlap integral element <i|j> */
+    double res = 0.0;
+    for (unsigned int p = 0; p < DWC::C.col(i).size(); ++p) {
+        for (unsigned int q = 0; q < DWC::C.col(j).size(); ++q) {
+            res += DWC::C(p,i) * C(q,j) *
+                GaussianIntegrals::overlapElement(p,q);
+        } // end forq
+    } // end forp
+
+    return res;
+} // end function overlapElement
+
 double DoubleWell::oneBodyElement(const unsigned int& i, const unsigned int& j)
 {
     /* calculate and return oneBodyElement <i|h|k> = <i|K|j> + <i|P|j>, where K
      * is the kinetic part and P is the potential part. For this case the K+P
-     * part is the HO-potential part from taken from GaussianIntegrals with the
+     * part is the HO-potential part taken from GaussianIntegrals with the
      * added DW part */
-    double res = GaussianIntegrals::oneBodyElement(i,j) +
-        potentialDWElement(i,j);
+    double res = 0.0;
+    for (unsigned int p = 0; p < DWC::C.col(i).size(); ++p) {
+        for (unsigned int q = 0; q < DWC::C.col(j).size(); ++q) {
+            res += DWC::C(p,i) * C(q,j) *
+                GaussianIntegrals::oneBodyElement(p,q);
+        } // end forq
+    } // end forp
+
+    // add overlap part
     if (i == j) {
         res += RsqrdFactor;
     } // end if
 
-    return res;
+    return res + potentialDWElement(i,j);
 } // end function oneBodyElement
 
 double DoubleWell::potentialDWElement(const unsigned int& i, const unsigned
         int& j) {
     /* calculate -0.5*w*R*abs(axis) */
-    double res = 1.0;
-    for (unsigned int d = 0; d < m_dim; ++d) {
-        const int& nd = GaussianIntegrals::GaussianBasis::Cartesian::getn(i,d);
-        const int& md = GaussianIntegrals::GaussianBasis::Cartesian::getn(j,d);
-        if (d != m_axis) {
-            res *= GaussianIntegrals::ddexpr(nd, md,
-                    &DoubleWell::ddexprOverlap);
-        } else {
-            res *= potDWSum(nd, md);
-        } // end ifselse
-    } // end ford
+    double sum = 0.0;
+    for (unsigned int p = 0; p < DWC::C.col(i).size(); ++p) {
+        for (unsigned int q = 0; q < DWC::C.col(j).size(); ++q) {
+            double res = 1.0;
+            for (unsigned int d = 0; d < m_dim; ++d) {
+                const int& nd =
+                    GaussianIntegrals::GaussianBasis::Cartesian::getn(p,d);
+                const int& md =
+                    GaussianIntegrals::GaussianBasis::Cartesian::getn(q,d);
+                if (d != m_axis) {
+                    res *= GaussianIntegrals::ddexpr(nd, md,
+                            &DoubleWell::ddexprOverlap);
+                } else {
+                    res *= potDWSum(nd, md);
+                } // end ifselse
+            } // end ford
+            sum += res * normalizationFactor(p) * normalizationFactor(q);
+        } // end forq 
+    } // end forp
 
-    return -0.5 * m_R * res * normalizationFactor(i) * normalizationFactor(j);
+    return -0.5 * R * sum;
 } // end function potentialDWElement
 
 double DoubleWell::potDWSum(const int& ndd, const int& mdd) {
@@ -76,3 +105,23 @@ double DoubleWell::potDWSum(const int& ndd, const int& mdd) {
 
     return sums;
 } // end function ddexpr
+
+
+double DoubleWell::coulombElement(const unsigned int& i, const unsigned int& j,
+        const unsigned int& k, const unsigned int& l) {
+    /* calculate and return the two-body coulomb integral element
+     * <ij|1/r_12|kl> */
+    double res = 0.0;
+    for (unsigned int p = 0; p < DWC::C.col(i).size(); ++p) {
+        for (unsigned int q = 0; q < DWC::C.col(j).size(); ++q) {
+            for (unsigned int r = 0; r < DWC::C.col(k).size(); ++r) {
+                for (unsigned int s = 0; s < DWC::C.col(l).size(); ++s) {
+                    res += DWC::C(p,i)*DWC::C(q,j)*DWC::C(r,k)*DWC::C(s,l) *
+                        GaussianIntegrals::coulombElement(p,q,r,s);
+                } // end fors
+            } // end forr
+        } // end forq
+    } // end forp
+
+    return res;
+} // end function coulombElement 
