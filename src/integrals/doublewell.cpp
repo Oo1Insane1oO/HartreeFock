@@ -4,16 +4,14 @@
 #include <boost/math/special_functions/gamma.hpp>
 
 DoubleWell::DoubleWell(const unsigned int dim, unsigned int cutOff) :
-    GaussianIntegrals(cutOff, dim) {
+    GaussianIntegrals(cutOff, dim), DWC() {
 } // end constructor
 
 DoubleWell::~DoubleWell() {
 } // end deconstructor
 
-std::string DoubleWell::initializeParameters(double _R, Eigen::MatrixXd
-        coefficients, unsigned int axis) {
-    /* initialize GaussianIntegrals, set coefficients matrix and grab
-     * well-separation parameter R */
+std::string DoubleWell::initializeParameters(double _R, unsigned int axis) {
+    /* initialize GaussianIntegrals  and grab well-separation parameter R */
 
     // default to shifting well in x-direction
     m_axis = axis;
