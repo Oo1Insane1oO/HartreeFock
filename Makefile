@@ -54,6 +54,12 @@ ifeq ($(BASIS),GAUSSHERMITE)
 	BASISSRC = $(SRC)/basis/gaussianbasis.cpp
 endif
 
+ifeq ($(BASIS),DOUBLEWELL)
+	OTHER_BASIS_SOURCE := $(SRC)/basisfunctions/cartesian.cpp $(SRC)/hermite/hexpander.cpp $(SRC)/gaussianquadrature.cpp
+	INTEGRALS := $(wildcard $(SRC)/integrals/gaussianintegrals.cpp) $(SRC)/integrals/doublewell.cpp
+	BASISSRC = $(SRC)/basis/gaussianbasis.cpp
+endif
+
 ifeq ($(BASIS),STYPEGAUSSIAN)
 	OTHER_BASIS_SOURCE := $(SRC)/basisfunctions/gaussianprimitivebasis.cpp $(SRC)/basisfunctions/gaussiancontractedbasis.cpp
 	INTEGRALS := $(wildcard $(SRC)/integrals/gaussianstypeintegrals.cpp)
