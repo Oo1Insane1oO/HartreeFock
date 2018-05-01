@@ -10,7 +10,6 @@ class GaussianBasis;
 
 class GaussianIntegrals : public GaussianBasis  {
     private:
-        unsigned int m_dim, m_cutOff;
         double expScaleFactor, sqrtFactor, F0, F1, xScale, sqrtScale, powScale,
                sqrtScale1, xScaleHalf, coulomb2DFactor, coulomb3DFactor;
 
@@ -23,9 +22,6 @@ class GaussianIntegrals : public GaussianBasis  {
         inline double potentialElement(const unsigned int&, const unsigned
                 int&);
 
-        inline double ddexpr(const int&, const int&,
-                double(GaussianIntegrals::*)(const int&, const int&));
-        inline double ddexprOverlap(const int&, const int&);
         inline double ddexprLaplacian(const int&, const int&);
         inline double ddexprPotential(const int&, const int&);
 
@@ -50,6 +46,13 @@ class GaussianIntegrals : public GaussianBasis  {
                 unsigned int&, const unsigned int&);
         
         void setNormalizations();
+
+    protected:
+        unsigned int m_dim, m_cutOff;
+        
+        double ddexpr(const int&, const int&,
+                double(GaussianIntegrals::*)(const int&, const int&));
+        double ddexprOverlap(const int&, const int&);
 
     public:
         GaussianIntegrals(const unsigned int, unsigned int, double=1);

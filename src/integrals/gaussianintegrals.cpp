@@ -85,8 +85,8 @@ const double& GaussianIntegrals::normalizationFactor(const unsigned int& n)
     return normalizationFactors(n); 
 } // end function normalizationFactor
 
-inline double GaussianIntegrals::overlapd(const unsigned int& n, const unsigned
-        int& m) {
+double GaussianIntegrals::overlapd(const unsigned int& n, const unsigned int&
+        m) {
     /* calculate and return <g_n|g_m> (overlap) in 1 dimension */
     int s = n + m;
     if ((s<=-1) || (s%2)) {
@@ -96,7 +96,7 @@ inline double GaussianIntegrals::overlapd(const unsigned int& n, const unsigned
     return boost::math::tgamma<double>((s+1)/2.) / sqrt(xScale);
 } // end function overlapd
 
-inline double GaussianIntegrals::ddexpr(const int& ndd, const int& mdd,
+double GaussianIntegrals::ddexpr(const int& ndd, const int& mdd,
         double(GaussianIntegrals::* f)(const int&, const int&)) {
     /* expression for sum over contracted functions */
     double sums = 0.0;

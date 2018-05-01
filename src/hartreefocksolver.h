@@ -4,6 +4,11 @@
 #include <Eigen/Dense>
 #include <mpi.h>
 
+#ifdef DOUBLEWELL
+    #include "integrals/doublewell.h"
+    using Integrals = DoubleWell;
+#endif
+
 #ifdef GAUSSHERMITE
     #include "integrals/gaussianintegrals.h"
 
