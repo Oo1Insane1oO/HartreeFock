@@ -4,9 +4,11 @@
 #include <Eigen/Dense>
 
 #include "gaussianintegrals.h"
+#include "../basisfunctions/dwc.h"
+
 class GaussianIntegrals;
 
-class DoubleWell : public GaussianIntegrals {
+class DoubleWell : public GaussianIntegrals, private DWC {
     private:
         unsigned int m_dim, m_axis;
         double R, RsqrdFactor;
