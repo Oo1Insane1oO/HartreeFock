@@ -16,10 +16,9 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
 GaussianIntegrals::~GaussianIntegrals() {
 } // end deconstructor
 
-GaussianBasis* GaussianIntegrals::getBasis() {
-    /* return a pointer to GaussianBasis */
-    return dynamic_cast<GaussianBasis*>(this);
-} // end function getBasis
+unsigned int GaussianIntegrals::getSize() {
+    return Cartesian::getSize();
+} // end function getSize
 
 std::string GaussianIntegrals::initializeParameters(double omega) {
     /* set value of oscillator frequency */

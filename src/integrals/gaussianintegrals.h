@@ -57,7 +57,7 @@ class GaussianIntegrals : public GaussianBasis  {
         GaussianIntegrals(const unsigned int, unsigned int, double=1);
         virtual ~GaussianIntegrals();
 
-        GaussianBasis* getBasis();
+        unsigned int getSize();
 
         std::string initializeParameters(double);
 
