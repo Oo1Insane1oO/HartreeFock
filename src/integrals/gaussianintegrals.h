@@ -27,8 +27,6 @@ class GaussianIntegrals : public GaussianBasis  {
 
         inline double overlapd(const unsigned int&, const unsigned int&); 
 
-        const double& normalizationFactor(const unsigned int&) const;
-
         double (GaussianIntegrals::*coulombFunc)(const unsigned int&,
                 const unsigned int&, const unsigned int&, const unsigned int&);
         inline double coulombElement2D(const unsigned int&, const unsigned
@@ -53,6 +51,7 @@ class GaussianIntegrals : public GaussianBasis  {
         double ddexpr(const int&, const int&,
                 double(GaussianIntegrals::*)(const int&, const int&));
         double ddexprOverlap(const int&, const int&);
+        const double& normalizationFactor(const unsigned int&) const;
 
     public:
         GaussianIntegrals(const unsigned int, unsigned int, double=1);

@@ -16,17 +16,20 @@ class DoubleWell : public GaussianIntegrals, private DWC {
         double potentialDWElement(const unsigned int&, const unsigned int&);
         double potDWSum(const int&, const int&);
 
+//         double expansionResult(const unsigned int&, const unsigned int&,
+//                 double(GaussianIntegrals::*)(const unsigned int&, const
+//                     unsigned int&));
+
     public:
         DoubleWell (const unsigned int, unsigned int);
         virtual ~DoubleWell ();
         
-        std::string initializeParameters(double, Eigen::MatrixXd, unsigned int=0);
+        std::string initializeParameters(double, unsigned int=0);
 
-        virtual double overlapElement(const unsigned int&, const unsigned int&)
-            = 0;
+        double overlapElement(const unsigned int&, const unsigned int&);
         double oneBodyElement(const unsigned int&, const unsigned int&);
-        virtual double coulombElement(const unsigned int&, const unsigned int&,
-                const unsigned int&, const unsigned int&) = 0;
+        double coulombElement(const unsigned int&, const unsigned int&, const
+                unsigned int&, const unsigned int&);
 };
 
 #endif /* DOUBLEWELL_H */
