@@ -10,11 +10,18 @@ class GaussianIntegrals;
 
 class DoubleWell : public GaussianIntegrals, private DWC {
     private:
-        unsigned int m_dim, m_axis;
+        unsigned int m_dim, m_axis, m_numBasis;
         double R, RsqrdFactor;
+
+        Eigen::ArrayXd normalizationFactors;
 
         double potentialDWElement(const unsigned int&, const unsigned int&);
         double potDWSum(const int&, const int&);
+
+        const double& normalizationFactor(const unsigned int&) const;
+        double overlapElementNonNormal(const unsigned int&, const unsigned int&);
+
+        void setNormalizations();
 
 //         double expansionResult(const unsigned int&, const unsigned int&,
 //                 double(GaussianIntegrals::*)(const unsigned int&, const
@@ -23,6 +30,8 @@ class DoubleWell : public GaussianIntegrals, private DWC {
     public:
         DoubleWell (const unsigned int, unsigned int);
         virtual ~DoubleWell ();
+
+        unsigned int getSize();
         
         std::string initializeParameters(double, unsigned int=0);
 

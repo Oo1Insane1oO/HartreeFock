@@ -46,7 +46,7 @@ inline void HartreeFockSolver::assemble(unsigned int progressDivider) {
     // class Cartesian (in derived basis) creates full-shell with both
     // spins(each one-body function is created for both spin up and down),
     // divide by two to take the restricted form of the Hartree-Fock equation.
-    m_numStates = Integrals::getBasis()->getSize()/2;
+    m_numStates = Integrals::getSize()/2;
 
     // matrix containing elements <i|h|j> (one-body elements) and elements
     // <i|j> (overlap elements)
