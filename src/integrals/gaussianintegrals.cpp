@@ -89,7 +89,7 @@ double GaussianIntegrals::overlapd(const unsigned int& n, const unsigned int&
         m) {
     /* calculate and return <g_n|g_m> (overlap) in 1 dimension */
     int s = n + m;
-    if ((s<=-1) || (s%2)) {
+    if ((s<=-1) || (s%2==1)) {
         return 0.0;
     } // end if
 

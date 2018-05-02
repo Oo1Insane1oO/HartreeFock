@@ -37,7 +37,7 @@ unsigned int DoubleWell::getSize() {
 } // end function getSize
 
 void DoubleWell::setNormalizations() {
-    /* precalculate normalizations in arraty */
+    /* precalculate normalizations in array */
     normalizationFactors = Eigen::ArrayXd::Constant(m_numBasis, 1.0);
     for (unsigned int k = 0; k  < m_numBasis; ++k) {
         normalizationFactors(k) = 1.0 /
@@ -72,7 +72,7 @@ double DoubleWell::oneBodyElement(const unsigned int& i, const unsigned int& j)
      * added DW part */
     double res = 0.0;
     for (unsigned int p = 0; p < DWC::C.rows(); ++p) {
-        res += DWC::C(p,i) * (RsqrdFactor +
+        res += DWC::C(p,i)*DWC::C(p,j) * (RsqrdFactor +
                 *(GaussianIntegrals::GaussianBasis::Cartesian::getStates(p)
                     (m_dim + 2)));
     } // end forp
@@ -92,11 +92,11 @@ double DoubleWell::potentialDWElement(const unsigned int& i, const unsigned
                     GaussianIntegrals::GaussianBasis::Cartesian::getn(p,d);
                 const int& md =
                     GaussianIntegrals::GaussianBasis::Cartesian::getn(q,d);
-                if (d != m_axis) {
+                if (d == m_axis) {
+                    res *= potDWSum(nd, md);
+                } else {
                     res *= GaussianIntegrals::ddexpr(nd, md,
                             &DoubleWell::ddexprOverlap);
-                } else {
-                    res *= potDWSum(nd, md);
                 } // end ifselse
             } // end ford
             sum += DWC::C(p,i) * DWC::C(q,j) * res;
@@ -114,13 +114,13 @@ double DoubleWell::potDWSum(const int& ndd, const int& mdd) {
             int s = p + q;
             if (s%2!=1) {
                 sums += HC(ndd)[p]*HC(mdd)[q] *
-                    boost::math::tgamma<double>((s+2)/2.);
+                    boost::math::tgamma<double>((s+2.)/2.);
             } // end if
         } // end forq
     } // end forp
 
     return sums;
-} // end function potDWSum 
+} // end function potDWSum
 
 double DoubleWell::coulombElement(const unsigned int& i, const unsigned int& j,
         const unsigned int& k, const unsigned int& l) {
@@ -139,5 +139,5 @@ double DoubleWell::coulombElement(const unsigned int& i, const unsigned int& j,
     } // end forp
 
     return res * normalizationFactor(i) * normalizationFactor(j) *
-        normalizationFactor(k) * normalizationFactor(l) ;
+        normalizationFactor(k) * normalizationFactor(l);
 } // end function coulombElement
