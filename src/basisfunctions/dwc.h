@@ -14,7 +14,7 @@ class DWC {
 
    public:
            DWC() {
-               C = Eigen::Map<const Eigen::MatrixXd>(m_C,6,6);
+               C = Eigen::Map<const Eigen::MatrixXd>(m_C,6,6).transpose();
            }
            virtual ~DWC() {}
            Eigen::MatrixXd C;
