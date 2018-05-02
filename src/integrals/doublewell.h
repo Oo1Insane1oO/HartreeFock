@@ -10,7 +10,7 @@ class GaussianIntegrals;
 
 class DoubleWell : public GaussianIntegrals, private DWC {
     private:
-        unsigned int m_dim, m_axis, m_numBasis;
+        unsigned int m_axis, m_numBasis;
         double R, RsqrdFactor;
 
         Eigen::ArrayXd normalizationFactors;
@@ -19,7 +19,6 @@ class DoubleWell : public GaussianIntegrals, private DWC {
         double potDWSum(const int&, const int&);
 
         const double& normalizationFactor(const unsigned int&) const;
-        double overlapElementNonNormal(const unsigned int&, const unsigned int&);
 
         void setNormalizations();
 
