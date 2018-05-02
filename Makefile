@@ -18,7 +18,7 @@ endif
 
 DEBUG ?= OFF
 ifeq ($(DEBUG),ON)
-	CXXFLAGS := -g -std=c++17 -Wall -Wextra $(INC)
+	CXXFLAGS := -g -O0 -std=c++17 -Wall -Wextra $(INC)
 endif
 
 ifeq ($(TESTS),ON)

@@ -17,7 +17,8 @@ GaussianIntegrals::~GaussianIntegrals() {
 } // end deconstructor
 
 unsigned int GaussianIntegrals::getSize() {
-    return Cartesian::getSize();
+    /* return number of states */
+    return GaussianBasis::getSize();
 } // end function getSize
 
 std::string GaussianIntegrals::initializeParameters(double omega) {

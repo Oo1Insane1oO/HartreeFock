@@ -6,6 +6,7 @@
 
 DoubleWell::DoubleWell(const unsigned int dim, unsigned int cutOff) :
     GaussianIntegrals(dim, cutOff), DWC() {
+    m_numBasis = cutOff;
 } // end constructor
 
 DoubleWell::~DoubleWell() {
@@ -20,14 +21,18 @@ std::string DoubleWell::initializeParameters(double _R, unsigned int axis) {
     RsqrdFactor = 1.0/8.0 * R*R;
     std::string message = GaussianIntegrals::initializeParameters(1.0);
 
-    m_numBasis = GaussianIntegrals::GaussianBasis::getSize()/2;
+    // increase size of basis
+    GaussianIntegrals::GaussianBasis::setup(2*DWC::C.rows(), m_dim);
 
+    // reinitialize normalizations
     setNormalizations();
+    GaussianIntegrals::setNormalizations();
 
     return message;
 } // end function initializeParameters
 
 unsigned int DoubleWell::getSize() {
+    /* return number of states (by two because of spin) */
     return 2*m_numBasis;
 } // end function getSize
 
@@ -35,7 +40,8 @@ void DoubleWell::setNormalizations() {
     /* precalculate normalizations in arraty */
     normalizationFactors = Eigen::ArrayXd::Constant(m_numBasis, 1.0);
     for (unsigned int k = 0; k  < m_numBasis; ++k) {
-        normalizationFactors(k) = 1.0 / sqrt(overlapElementNonNormal(k,k));
+        normalizationFactors(k) = 1.0 /
+            sqrt(DWC::C.col(k).array().pow(2).sum());
     } // end fork
 } // end function setNormalizations
 
@@ -44,28 +50,13 @@ const double& DoubleWell::normalizationFactor(const unsigned int& n) const {
     return normalizationFactors(n);
 } // end function normalizationFactor
 
-double DoubleWell::overlapElementNonNormal(const unsigned int& i, const
-        unsigned int& j) {
-    /* calculate and return the overlap integral element <i|j> (not normalized,
-     * for use in setNormalizations function) */
-    double res = 0.0;
-    for (unsigned int p = 0; p < m_numBasis; ++p) {
-        for (unsigned int q = 0; q < m_numBasis; ++q) {
-            res += DWC::C(i,p) * DWC::C(j,q) *
-                GaussianIntegrals::overlapElement(p,q);
-        } // end forq
-    } // end forp
-
-    return res;
-} // end function overlapElement
-
 double DoubleWell::overlapElement(const unsigned int& i, const unsigned int& j)
 {
     /* calculate and return the overlap integral element <i|j> */
     double res = 0.0;
-    for (unsigned int p = 0; p < m_numBasis; ++p) {
-        for (unsigned int q = 0; q < m_numBasis; ++q) {
-            res += DWC::C(i,p) * DWC::C(j,q) *
+    for (unsigned int p = 0; p < DWC::C.rows(); ++p) {
+        for (unsigned int q = 0; q < DWC::C.rows(); ++q) {
+            res += DWC::C(p,i) * DWC::C(q,j) *
                 GaussianIntegrals::overlapElement(p,q);
         } // end forq
     } // end forp
@@ -80,10 +71,10 @@ double DoubleWell::oneBodyElement(const unsigned int& i, const unsigned int& j)
      * part is the HO-potential part taken from GaussianIntegrals with the
      * added DW part */
     double res = 0.0;
-    for (unsigned int p = 0; p < m_numBasis; ++p) {
-        res += RsqrdFactor +
-            *(GaussianIntegrals::GaussianBasis::Cartesian::getStates(p)(m_dim +
-                        2));
+    for (unsigned int p = 0; p < DWC::C.rows(); ++p) {
+        res += DWC::C(p,i) * (RsqrdFactor +
+                *(GaussianIntegrals::GaussianBasis::Cartesian::getStates(p)
+                    (m_dim + 2)));
     } // end forp
 
     return res + potentialDWElement(i,j);
@@ -93,8 +84,8 @@ double DoubleWell::potentialDWElement(const unsigned int& i, const unsigned
         int& j) {
     /* calculate -0.5*w*R*abs(axis) */
     double sum = 0.0;
-    for (unsigned int p = 0; p < m_numBasis; ++p) {
-        for (unsigned int q = 0; q < m_numBasis; ++q) {
+    for (unsigned int p = 0; p < DWC::C.rows(); ++p) {
+        for (unsigned int q = 0; q < DWC::C.rows(); ++q) {
             double res = 1.0;
             for (unsigned int d = 0; d < m_dim; ++d) {
                 const int& nd =
@@ -108,7 +99,7 @@ double DoubleWell::potentialDWElement(const unsigned int& i, const unsigned
                     res *= potDWSum(nd, md);
                 } // end ifselse
             } // end ford
-            sum += DWC::C(i,p) * DWC::C(j,q) * res;
+            sum += DWC::C(p,i) * DWC::C(q,j) * res;
         } // end forq 
     } // end forp
 
@@ -117,37 +108,30 @@ double DoubleWell::potentialDWElement(const unsigned int& i, const unsigned
 
 double DoubleWell::potDWSum(const int& ndd, const int& mdd) {
     /* expression for sum over contracted functions */
-    auto potDW = [](const int& p, const int& q) {
-        /* analytic expression for integrals over abs(axis) times a gaussian */
-        int s = p + q;
-        if ((s<=-1) or (s%2==1)) {
-            return static_cast<double>(0.0);
-        } // end if
-        
-        return boost::math::tgamma<double>((s+2)/2.);
-    }; // end lambda potDw
-
     double sums = 0.0;
     for (int p = 0; p <= ndd; ++p) {
         for (int q = 0; q <= mdd; ++q) {
-            sums += HC(ndd)[p]*HC(mdd)[q] * potDW(p,q);
+            int s = p + q;
+            if (s%2!=1) {
+                sums += HC(ndd)[p]*HC(mdd)[q] *
+                    boost::math::tgamma<double>((s+2)/2.);
+            } // end if
         } // end forq
     } // end forp
 
     return sums;
-} // end function ddexpr
-
+} // end function potDWSum 
 
 double DoubleWell::coulombElement(const unsigned int& i, const unsigned int& j,
         const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
     double res = 0.0;
-    for (unsigned int p = 0; p < m_numBasis; ++p) {
-        for (unsigned int q = 0; q < m_numBasis; ++q) {
-            for (unsigned int r = 0; r < m_numBasis; ++r) {
-                for (unsigned int s = 0; s < m_numBasis; ++s) {
-                    res += DWC::C(i,p)*DWC::C(j,q)*DWC::C(k,r)*DWC::C(l,s) *
+    for (unsigned int p = 0; p < DWC::C.rows(); ++p) {
+        for (unsigned int q = 0; q < DWC::C.rows(); ++q) {
+            for (unsigned int r = 0; r < DWC::C.rows(); ++r) {
+                for (unsigned int s = 0; s < DWC::C.rows(); ++s) {
+                    res += DWC::C(p,i)*DWC::C(q,j)*DWC::C(r,k)*DWC::C(s,l) *
                         GaussianIntegrals::coulombElement(p,q,r,s);
                 } // end fors
             } // end forr
@@ -156,4 +140,4 @@ double DoubleWell::coulombElement(const unsigned int& i, const unsigned int& j,
 
     return res * normalizationFactor(i) * normalizationFactor(j) *
         normalizationFactor(k) * normalizationFactor(l) ;
-} // end function coulombElement 
+} // end function coulombElement

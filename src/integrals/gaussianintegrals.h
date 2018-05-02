@@ -14,6 +14,7 @@ class GaussianIntegrals : public GaussianBasis  {
                sqrtScale1, xScaleHalf, coulomb2DFactor, coulomb3DFactor;
 
         Eigen::ArrayXd normalizationFactors;
+        const double& normalizationFactor(const unsigned int&) const;
 
         std::unique_ptr<Hexpander> coeffs;
         
@@ -42,8 +43,6 @@ class GaussianIntegrals : public GaussianBasis  {
                 unsigned int&, const unsigned int&);
         inline double coulomb3D(const unsigned int&, const unsigned int&, const
                 unsigned int&, const unsigned int&);
-        
-        void setNormalizations();
 
     protected:
         unsigned int m_dim, m_cutOff;
@@ -51,7 +50,7 @@ class GaussianIntegrals : public GaussianBasis  {
         double ddexpr(const int&, const int&,
                 double(GaussianIntegrals::*)(const int&, const int&));
         double ddexprOverlap(const int&, const int&);
-        const double& normalizationFactor(const unsigned int&) const;
+        void setNormalizations();
 
     public:
         GaussianIntegrals(const unsigned int, unsigned int, double=1);

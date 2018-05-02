@@ -6,6 +6,8 @@
 
 #ifdef DOUBLEWELL
     #include "integrals/doublewell.h"
+    
+    class DoubleWell;
     using Integrals = DoubleWell;
 #endif
 
