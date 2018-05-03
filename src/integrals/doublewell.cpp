@@ -1,11 +1,12 @@
 #include "doublewell.h"
 #include "../hermite/hermite.h"
 #include "../methods.h"
+#include "../hartreefocksolver.h"
 
 #include <boost/math/special_functions/gamma.hpp>
 
 DoubleWell::DoubleWell(const unsigned int dim, unsigned int cutOff) :
-    GaussianIntegrals(dim, cutOff), DWC() {
+    GaussianIntegrals(hfsIn, dim, cutOff), DWC() {
     m_numBasis = cutOff;
 } // end constructor
 
@@ -24,10 +25,6 @@ std::string DoubleWell::initializeParameters(double _R, unsigned int axis) {
     // increase size of basis
     GaussianIntegrals::GaussianBasis::setup(2*DWC::C.rows(), m_dim);
 
-    // reinitialize normalizations
-    setNormalizations();
-    GaussianIntegrals::setNormalizations();
-
     return message;
 } // end function initializeParameters
 
@@ -35,20 +32,6 @@ unsigned int DoubleWell::getSize() {
     /* return number of states (by two because of spin) */
     return 2*m_numBasis;
 } // end function getSize
-
-void DoubleWell::setNormalizations() {
-    /* precalculate normalizations in array */
-    normalizationFactors = Eigen::ArrayXd::Constant(m_numBasis, 1.0);
-    for (unsigned int k = 0; k  < m_numBasis; ++k) {
-        normalizationFactors(k) = 1.0 /
-            sqrt(DWC::C.col(k).array().pow(2).sum());
-    } // end fork
-} // end function setNormalizations
-
-const double& DoubleWell::normalizationFactor(const unsigned int& n) const {
-    /* normalization for Gauss-Hermite of order n */
-    return normalizationFactors(n);
-} // end function normalizationFactor
 
 double DoubleWell::overlapElement(const unsigned int& i, const unsigned int& j)
 {
@@ -61,7 +44,7 @@ double DoubleWell::overlapElement(const unsigned int& i, const unsigned int& j)
         } // end forq
     } // end forp
 
-    return res * normalizationFactor(i) * normalizationFactor(j);
+    return res;
 } // end function overlapElement
 
 double DoubleWell::oneBodyElement(const unsigned int& i, const unsigned int& j)
@@ -71,13 +54,12 @@ double DoubleWell::oneBodyElement(const unsigned int& i, const unsigned int& j)
      * part is the HO-potential part taken from GaussianIntegrals with the
      * added DW part */
     double res = 0.0;
-    for (unsigned int p = 0; p < DWC::C.rows(); ++p) {
-        res += DWC::C(p,i)*DWC::C(p,j) * (RsqrdFactor +
-                *(GaussianIntegrals::GaussianBasis::Cartesian::getStates(p)
-                    (m_dim + 2)));
-    } // end forp
+    if (i == j) {
+        /* Add diagonal part */
+        res += DWC::epsDW(i);
+    } // end if
 
-    return res + potentialDWElement(i,j);
+    return res;
 } // end function oneBodyElement
 
 double DoubleWell::potentialDWElement(const unsigned int& i, const unsigned
@@ -103,7 +85,7 @@ double DoubleWell::potentialDWElement(const unsigned int& i, const unsigned
         } // end forq 
     } // end forp
 
-    return -0.5 * R * sum * normalizationFactor(i) * normalizationFactor(j);
+    return -0.5 * R * sum;
 } // end function potentialDWElement
 
 double DoubleWell::potDWSum(const int& ndd, const int& mdd) {
@@ -138,6 +120,5 @@ double DoubleWell::coulombElement(const unsigned int& i, const unsigned int& j,
         } // end forq
     } // end forp
 
-    return res * normalizationFactor(i) * normalizationFactor(j) *
-        normalizationFactor(k) * normalizationFactor(l);
+    return res;
 } // end function coulombElement

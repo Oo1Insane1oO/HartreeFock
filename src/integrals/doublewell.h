@@ -7,27 +7,20 @@
 #include "../basisfunctions/dwc.h"
 
 class GaussianIntegrals;
+class HartreeFockSolver;
 
 class DoubleWell : public GaussianIntegrals, private DWC {
     private:
         unsigned int m_axis, m_numBasis;
         double R, RsqrdFactor;
 
-        Eigen::ArrayXd normalizationFactors;
-
         double potentialDWElement(const unsigned int&, const unsigned int&);
         double potDWSum(const int&, const int&);
 
-        const double& normalizationFactor(const unsigned int&) const;
-
-        void setNormalizations();
-
-//         double expansionResult(const unsigned int&, const unsigned int&,
-//                 double(GaussianIntegrals::*)(const unsigned int&, const
-//                     unsigned int&));
+        void assembleTwoBodyElementsHarmonicOscillator();
 
     public:
-        DoubleWell (const unsigned int, unsigned int);
+        DoubleWell (HartreeFockSolver*, const unsigned int, unsigned int);
         virtual ~DoubleWell ();
 
         unsigned int getSize();
