@@ -1,5 +1,6 @@
 #include "gaussianintegrals.h"
 #include "../hermite/hermite.h"
+#include "../hartreefocksolver.h"
 
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/math/special_functions/gamma.hpp>
