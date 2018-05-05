@@ -7,11 +7,18 @@
 #include <mpi.h>
 #include <yaml-cpp/yaml.h>
 
+#ifdef GAUSSHERMITE
+    #include "integrals/gaussianintegrals.h"
+#endif
+
+#ifdef DOUBLEWELL
+    #include "integrals/doublewell.h"
+#endif
+
 #ifdef TESTS
     #include "../tests/test_main.cpp"
 #endif
 
-#include "hartreefocksolver.h"
 #include "hermite/hexpander.h"
 
 YAML::Node argsParser(const char* inputFile) {
@@ -75,13 +82,12 @@ int main(int argc, char *argv[]) {
 
     // dimensions, cutoff, numParticles
     #ifdef GAUSSHERMITE
-        HartreeFockSolver* HFS = new
-            HartreeFockSolver(inputs["dim"].as<unsigned int>(),
+        GaussianIntegrals* HFS = new
+            GaussianIntegrals(inputs["dim"].as<unsigned int>(),
                     inputs["numBasis"].as<unsigned int>(),
                     inputs["numParticles"].as<unsigned int>());
-        std::string message =
-            HFS->getIntegralObj()->initializeParameters(inputs["omega"] .
-                    as<double>());
+        std::string message = HFS->initializeParameters(inputs["omega"] .
+                as<double>());
         if (message.compare("")) {
             if (myRank == 0) {
                 std::cout << message << std::endl;
@@ -108,28 +114,27 @@ int main(int argc, char *argv[]) {
         } // end if
     #endif
     
-    #ifdef STYPEGAUSSIAN
-        Eigen::VectorXd scalingVec = Eigen::VectorXd::Zero(4);
-        Eigen::MatrixXd centralMatrix = Eigen::MatrixXd::Zero(4,2);
-        scalingVec << 0.25, 0.5, 1.0, 1.5;
-        centralMatrix << 0, 0,
-                         0, 0,
-                         0, 0,
-                         0, 0;
-
-        HartreeFockSolver* HFS = new HartreeFockSolver(2, 6, 2);
-        HFS->getIntegralObj()->initializeParameters(scalingVec, centralMatrix);
-        double E = HFS->iterate(100, 1e-10);
-    #endif
+//     #ifdef STYPEGAUSSIAN
+//         Eigen::VectorXd scalingVec = Eigen::VectorXd::Zero(4);
+//         Eigen::MatrixXd centralMatrix = Eigen::MatrixXd::Zero(4,2);
+//         scalingVec << 0.25, 0.5, 1.0, 1.5;
+//         centralMatrix << 0, 0,
+//                          0, 0,
+//                          0, 0,
+//                          0, 0;
+// 
+//         HartreeFockSolver* HFS = new HartreeFockSolver(2, 6, 2);
+//         HFS->getIntegralObj()->initializeParameters(scalingVec, centralMatrix);
+//         double E = HFS->iterate(100, 1e-10);
+//     #endif
 
     #ifdef DOUBLEWELL
-        HartreeFockSolver* HFS = new
-            HartreeFockSolver(inputs["dim"].as<unsigned int>(),
+        DoubleWell* HFS = new
+            DoubleWell(inputs["dim"].as<unsigned int>(),
                     inputs["numBasis"].as<unsigned int>(),
                     inputs["numParticles"].as<unsigned int>());
-        std::string message =
-            HFS->getIntegralObj()->initializeParameters(inputs["R"] .
-                    as<double>());
+        std::string message = HFS->initializeParameters(inputs["R"] .
+                as<double>());
         if (message.compare("")) {
             if (myRank == 0) {
                 std::cout << message << std::endl;

@@ -1,12 +1,13 @@
 #include "gaussianintegrals.h"
 #include "../hermite/hermite.h"
-#include "../hartreefocksolver.h"
 
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/math/special_functions/gamma.hpp>
 
 GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
-        cutOff, double scaling) : GaussianBasis(cutOff, dim) {
+        cutOff, const unsigned int numParticles, double scaling) :
+    HartreeFockSolver<GaussianIntegrals>(this, dim, cutOff, numParticles), 
+    GaussianBasis(cutOff, dim) {
     m_cutOff = cutOff;
     m_dim = dim;
     expScaleFactor = scaling;

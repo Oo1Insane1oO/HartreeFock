@@ -3,13 +3,16 @@
 
 #include "../basis/gaussianbasis.h"
 #include "../hermite/hexpander.h"
+#include "../hartreefocksolver.h"
 
 #include <string>
 
 class GaussianBasis;
-class HartreeFockSolver;
 
-class GaussianIntegrals : public GaussianBasis  {
+class GaussianIntegrals : 
+    public HartreeFockSolver<GaussianIntegrals>, 
+    protected GaussianBasis {
+    using HartreeFockSolver<GaussianIntegrals>::m_dim;
     private:
         double expScaleFactor, sqrtFactor, F0, F1, xScale, sqrtScale, powScale,
                sqrtScale1, xScaleHalf, coulomb2DFactor, coulomb3DFactor;
@@ -46,7 +49,7 @@ class GaussianIntegrals : public GaussianBasis  {
                 unsigned int&, const unsigned int&);
 
     protected:
-        unsigned int m_dim, m_cutOff;
+        unsigned int m_cutOff;
         
         double ddexpr(const int&, const int&,
                 double(GaussianIntegrals::*)(const int&, const int&));
@@ -54,7 +57,10 @@ class GaussianIntegrals : public GaussianBasis  {
         void setNormalizations();
 
     public:
-        GaussianIntegrals(const unsigned int, unsigned int, double=1);
+        using HartreeFockSolver<GaussianIntegrals>::iterate;
+        using HartreeFockSolver<GaussianIntegrals>::writeCoefficientsToFile;
+        GaussianIntegrals(const unsigned int, unsigned int, const unsigned int,
+                double=1);
         virtual ~GaussianIntegrals();
 
         unsigned int getSize();
