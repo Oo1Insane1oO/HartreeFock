@@ -10,27 +10,6 @@
 #include <vector>
 
 #include <yaml-cpp/yaml.h>
-// 
-// #ifdef DOUBLEWELL
-//     #include "integrals/doublewell.h"
-//     
-//     class DoubleWell;
-//     using Integrals = DoubleWell;
-// #endif
-// 
-// #ifdef GAUSSHERMITE
-//     #include "integrals/gaussianintegrals.h"
-// 
-//     class GaussianIntegrals;
-//     using Integrals = GaussianIntegrals;
-// #endif
-// 
-// #ifdef STYPEGAUSSIAN
-//     #include "integrals/gaussianstypeintegrals.h"
-// 
-//     class GaussianStypeIntegrals;
-//     using Integrals = GaussianStypeIntegrals;
-// #endif
 
 #include <string>
 
@@ -45,10 +24,53 @@ class HartreeFockSolver {
 
         bool interaction;
 
-        Eigen::ArrayXd twoBodyElements;
+        Eigen::ArrayXd twoBodyElements, twoBodyNonAntiSymmetrizedElements;
         Eigen::MatrixXd oneBodyElements, overlapElements;
 
         Eigen::MatrixXd FockMatrix, densityMatrix, coefficients;
+        
+        inline void setDensityMatrix() {
+            /* set density matrix in HartreeFock */
+            for (unsigned int c = 0; c < coefficients.rows(); ++c) {
+                for (unsigned int d = 0; d < coefficients.cols(); ++d) {
+                    densityMatrix(c,d) = 0;
+                    for (unsigned int i = 0; i < m_numParticles/2; ++i) {
+                        densityMatrix(c,d) += coefficients(c,i) *
+                            coefficients(d,i);
+                    } // end fori
+                } // end ford
+            } // end forc
+        } // end function setDensityMatrix
+
+        inline void setFockMatrix() {
+            /* set Hartree-Fock matrix */
+            FockMatrix.setZero();
+            for (unsigned int p = 0; p < m_numStates; ++p) {
+                for (unsigned int q = p; q < m_numStates; ++q) {
+                    FockMatrix(p,q) = oneBodyElements(p,q);
+                    for (unsigned int r = 0; r < m_numStates; ++r) {
+                        for (unsigned int s = 0; s < m_numStates; ++s) {
+                            FockMatrix(p,q) += densityMatrix(r,s) *
+                                twoBodyElements(dIndex(m_numStates, p,q,r,s));
+                        } // end fors
+                    } // end forr
+
+                    // matrix is symmetric by definition
+                    FockMatrix(q,p) = FockMatrix(p,q);
+                } // end forq
+            } // end forp
+        } // end function sethartreeFockMatrix
+
+        inline unsigned int dIndex(const unsigned int& N, const unsigned int&
+                i, const unsigned int& j, const unsigned int& k, const unsigned
+                int& l) {
+            /* calculate offset for 4d-matrix (square case) for indices
+             * (i,j,k,l) */
+            return i + N * (j + N * (k + N*l));
+        } // end function dIndex
+       
+    protected:
+        unsigned int m_dim, m_numStates, m_numParticles;
 
         inline void assemble(unsigned int progressDivider=0) {
             /* assemble integral elements (with symmetries) */
@@ -173,7 +195,7 @@ class HartreeFockSolver {
                     progressPosition = Methods::stringPos(myRank, 3) +
                         "Progress: [";
                 } // end if
-                for (unsigned int pq = pqstart; pq < pqEnd; ++pq) {
+                for (int pq = pqstart; pq < pqEnd; ++pq) {
                     myTmpTwoBody(rs) = m_I->coulombElement(pqMap(pq,0),
                             pqMap(pq,1), pqMap(pq,2), pqMap(pq,3));
                     myTmpTwoBodyAS(rs) = m_I->coulombElement(pqMap(pq,0),
@@ -209,12 +231,10 @@ class HartreeFockSolver {
 
                 // set symmetric values in full two-body matrix used in
                 // Hartree-Fock algorithm
-                Eigen::ArrayXd tmpTwoBody;
+                twoBodyNonAntiSymmetrizedElements =
+                    Eigen::ArrayXd::Zero(m_numStates * m_numStates
+                        * m_numStates * m_numStates);
                 if (myRank == 0) {
-                    /* allocate complete matrix for root only */
-                    tmpTwoBody = Eigen::ArrayXd::Zero(m_numStates * m_numStates
-                            * m_numStates * m_numStates);
-
                     int pqrs = 0;
                     for (unsigned int p = 0; p < m_numStates; ++p) {
                         for (unsigned int q = p; q < m_numStates; ++q) {
@@ -222,27 +242,37 @@ class HartreeFockSolver {
                                 for (unsigned int s = r; s < m_numStates; ++s)
                                 {
                                     double value = pqrsElements(pqrs);
-                                    tmpTwoBody(dIndex(m_numStates, p,q,r,s)) =
+                                    twoBodyNonAntiSymmetrizedElements(
+                                            dIndex(m_numStates, p,q,r,s)) =
                                         value;
-                                    tmpTwoBody(dIndex(m_numStates, r,q,p,s)) =
+                                    twoBodyNonAntiSymmetrizedElements(
+                                            dIndex(m_numStates, r,q,p,s)) =
                                         value;
-                                    tmpTwoBody(dIndex(m_numStates, r,s,p,q)) =
+                                    twoBodyNonAntiSymmetrizedElements(
+                                            dIndex(m_numStates, r,s,p,q)) =
                                         value;
-                                    tmpTwoBody(dIndex(m_numStates, p,s,r,q)) =
+                                    twoBodyNonAntiSymmetrizedElements(
+                                            dIndex(m_numStates, p,s,r,q)) =
                                         value;
-                                    tmpTwoBody(dIndex(m_numStates, q,p,s,r)) =
+                                    twoBodyNonAntiSymmetrizedElements(
+                                            dIndex(m_numStates, q,p,s,r)) =
                                         value;
-                                    tmpTwoBody(dIndex(m_numStates, s,p,q,r)) =
+                                    twoBodyNonAntiSymmetrizedElements(
+                                            dIndex(m_numStates, s,p,q,r)) =
                                         value;
-                                    tmpTwoBody(dIndex(m_numStates, s,r,q,p)) =
+                                    twoBodyNonAntiSymmetrizedElements(
+                                            dIndex(m_numStates, s,r,q,p)) =
                                         value;
-                                    tmpTwoBody(dIndex(m_numStates, q,r,s,p)) =
+                                    twoBodyNonAntiSymmetrizedElements(
+                                            dIndex(m_numStates, q,r,s,p)) =
                                         value;
 
                                     double asvalue = pqsrElements(pqrs);
-                                    tmpTwoBody(dIndex(m_numStates, p,q,s,r)) =
+                                    twoBodyNonAntiSymmetrizedElements(
+                                            dIndex(m_numStates, p,q,s,r)) =
                                         asvalue;
-                                    tmpTwoBody(dIndex(m_numStates, q,p,r,s)) =
+                                    twoBodyNonAntiSymmetrizedElements(
+                                            dIndex(m_numStates, q,p,r,s)) =
                                         asvalue;
 
                                     pqrs++;
@@ -262,60 +292,22 @@ class HartreeFockSolver {
                                 {
                                     twoBodyElements(dIndex(m_numStates,
                                                 p,q,r,s)) =
-                                        2*tmpTwoBody(dIndex(m_numStates,
-                                                    p,r,q,s)) -
-                                        tmpTwoBody(dIndex(m_numStates,
-                                                    p,r,s,q));
+                                        2*twoBodyNonAntiSymmetrizedElements(
+                                                dIndex(m_numStates, p,r,q,s)) -
+                                        twoBodyNonAntiSymmetrizedElements(
+                                                dIndex(m_numStates, p,r,s,q));
                                 } // end fors
                             } // end forr
                         } // end forq
                     } // end forp
                 } // end if
             } // end if
+
+            MPI_Bcast(twoBodyNonAntiSymmetrizedElements.data(),
+                    twoBodyNonAntiSymmetrizedElements.size(), MPI_DOUBLE, 0,
+                    MPI_COMM_WORLD);
         } // end function assemble
         
-        inline void setDensityMatrix() {
-            /* set density matrix in HartreeFock */
-            for (unsigned int c = 0; c < coefficients.rows(); ++c) {
-                for (unsigned int d = 0; d < coefficients.cols(); ++d) {
-                    densityMatrix(c,d) = 0;
-                    for (unsigned int i = 0; i < m_numParticles/2; ++i) {
-                        densityMatrix(c,d) += coefficients(c,i) *
-                            coefficients(d,i);
-                    } // end fori
-                } // end ford
-            } // end forc
-        } // end function setDensityMatrix
-
-        inline void setFockMatrix() {
-            /* set Hartree-Fock matrix */
-            FockMatrix.setZero();
-            for (unsigned int p = 0; p < m_numStates; ++p) {
-                for (unsigned int q = p; q < m_numStates; ++q) {
-                    FockMatrix(p,q) = oneBodyElements(p,q);
-                    for (unsigned int r = 0; r < m_numStates; ++r) {
-                        for (unsigned int s = 0; s < m_numStates; ++s) {
-                            FockMatrix(p,q) += densityMatrix(r,s) *
-                                twoBodyElements(dIndex(m_numStates, p,q,r,s));
-                        } // end fors
-                    } // end forr
-
-                    // matrix is symmetric by definition
-                    FockMatrix(q,p) = FockMatrix(p,q);
-                } // end forq
-            } // end forp
-        } // end function sethartreeFockMatrix
-
-        inline unsigned int dIndex(const unsigned int& N, const unsigned int&
-                i, const unsigned int& j, const unsigned int& k, const unsigned
-                int& l) {
-            /* calculate offset for 4d-matrix (square case) for indices
-             * (i,j,k,l) */
-            return i + N * (j + N * (k + N*l));
-        } // end function dIndex
-       
-    protected:
-        unsigned int m_dim, m_numStates, m_numParticles;
 
     public:
         HartreeFockSolver(Integrals* IIn, const unsigned int dimension,
@@ -424,6 +416,13 @@ class HartreeFockSolver {
             } // end if
             return 0;
         } // end function iterate
+
+        const double& getTwoBodyElement(const unsigned int& i, const unsigned
+                int& j, const unsigned int& k, const unsigned int& l) {
+            /* return two-body non-antisymmetrized elements */
+            return twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                        i,j,k,l));
+        } // end function getTwoBodyElement 
 
         void setInteraction(bool a) {
             /* set interaction on (if a=true) or false (if a=false) */
