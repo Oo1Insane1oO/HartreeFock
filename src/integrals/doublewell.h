@@ -10,9 +10,9 @@
 class GaussianIntegrals;
 
 class DoubleWell : 
-    public HartreeFockSolver<DoubleWell>, 
-    private GaussianIntegrals, 
-    private DWC {
+    public HartreeFockSolver<DoubleWell>,
+    private DWC,
+    private GaussianIntegrals {
     using HartreeFockSolver<DoubleWell>::m_dim;
     private:
         unsigned int m_axis, m_numBasis;
