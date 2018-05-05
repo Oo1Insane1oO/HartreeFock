@@ -54,8 +54,7 @@ class GaussianIntegrals : public GaussianBasis  {
         void setNormalizations();
 
     public:
-        GaussianIntegrals(HartreeFockSolver*, const unsigned int, unsigned int,
-                double=1);
+        GaussianIntegrals(const unsigned int, unsigned int, double=1);
         virtual ~GaussianIntegrals();
 
         unsigned int getSize();

@@ -6,7 +6,7 @@
 #include <boost/math/special_functions/gamma.hpp>
 
 DoubleWell::DoubleWell(const unsigned int dim, unsigned int cutOff) :
-    GaussianIntegrals(hfsIn, dim, cutOff), DWC() {
+    GaussianIntegrals(dim, cutOff), DWC() {
     m_numBasis = cutOff;
 } // end constructor
 
@@ -22,8 +22,9 @@ std::string DoubleWell::initializeParameters(double _R, unsigned int axis) {
     RsqrdFactor = 1.0/8.0 * R*R;
     std::string message = GaussianIntegrals::initializeParameters(1.0);
 
-    // increase size of basis
+    // increase size of basis and reinitialize GaussianIntegrals
     GaussianIntegrals::GaussianBasis::setup(2*DWC::C.rows(), m_dim);
+    GaussianIntegrals::setNormalizations();
 
     return message;
 } // end function initializeParameters
@@ -37,12 +38,9 @@ double DoubleWell::overlapElement(const unsigned int& i, const unsigned int& j)
 {
     /* calculate and return the overlap integral element <i|j> */
     double res = 0.0;
-    for (unsigned int p = 0; p < DWC::C.rows(); ++p) {
-        for (unsigned int q = 0; q < DWC::C.rows(); ++q) {
-            res += DWC::C(p,i) * DWC::C(q,j) *
-                GaussianIntegrals::overlapElement(p,q);
-        } // end forq
-    } // end forp
+    if (i ==j) {
+        res += 1;
+    } // end if
 
     return res;
 } // end function overlapElement
