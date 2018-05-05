@@ -286,7 +286,7 @@ void Cartesian::printStates() {
     std::cout << "Number of states: " << states.rows() << std::endl;
 } // end function print state
 
-void Cartesian::writeToFile(std::string filename) {
+void Cartesian::writeStatesToFile(std::string filename) {
     /* write current configuration (after possibly restructure call) if states
      * to file */
     std::ofstream outFile;

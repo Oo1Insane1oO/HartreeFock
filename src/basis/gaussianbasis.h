@@ -4,7 +4,7 @@
 #include "../basisfunctions/cartesian.h"
 #include "../methods.h"
 
-class GaussianBasis : public Cartesian{
+class GaussianBasis : public Cartesian {
     private:
         unsigned int m_dim;
         double scaling;

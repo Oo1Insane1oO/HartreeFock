@@ -57,7 +57,7 @@ class Cartesian {
 
         void printStates();
 
-        void writeToFile(std::string);
+        void writeStatesToFile(std::string);
 };
 
 #endif /* CARTESIAN_H */

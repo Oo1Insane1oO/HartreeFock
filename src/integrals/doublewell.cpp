@@ -1,12 +1,15 @@
 #include "doublewell.h"
 #include "../hermite/hermite.h"
 #include "../methods.h"
-#include "../hartreefocksolver.h"
 
 #include <boost/math/special_functions/gamma.hpp>
 
-DoubleWell::DoubleWell(const unsigned int dim, unsigned int cutOff) :
-    GaussianIntegrals(dim, cutOff), DWC() {
+DoubleWell::DoubleWell(const unsigned int dim, unsigned int cutOff, const
+        unsigned int numParticles) :
+    HartreeFockSolver<DoubleWell>(this, dim, cutOff, numParticles),
+    GaussianIntegrals(dim, cutOff, numParticles), 
+    DWC() {
+    /* construct */
     m_numBasis = cutOff;
 } // end constructor
 

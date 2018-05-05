@@ -5,11 +5,15 @@
 
 #include "gaussianintegrals.h"
 #include "../basisfunctions/dwc.h"
+#include "../hartreefocksolver.h"
 
 class GaussianIntegrals;
-class HartreeFockSolver;
 
-class DoubleWell : public GaussianIntegrals, private DWC {
+class DoubleWell : 
+    public HartreeFockSolver<DoubleWell>, 
+    private GaussianIntegrals, 
+    private DWC {
+    using HartreeFockSolver<DoubleWell>::m_dim;
     private:
         unsigned int m_axis, m_numBasis;
         double R, RsqrdFactor;
@@ -18,7 +22,9 @@ class DoubleWell : public GaussianIntegrals, private DWC {
         double potDWSum(const int&, const int&);
 
     public:
-        DoubleWell (const unsigned int, unsigned int);
+        using HartreeFockSolver<DoubleWell>::iterate;
+        using HartreeFockSolver<DoubleWell>::writeCoefficientsToFile;
+        DoubleWell (const unsigned int, unsigned int, const unsigned int);
         virtual ~DoubleWell ();
 
         unsigned int getSize();
