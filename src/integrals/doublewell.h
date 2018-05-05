@@ -17,10 +17,8 @@ class DoubleWell : public GaussianIntegrals, private DWC {
         double potentialDWElement(const unsigned int&, const unsigned int&);
         double potDWSum(const int&, const int&);
 
-        void assembleTwoBodyElementsHarmonicOscillator();
-
     public:
-        DoubleWell (HartreeFockSolver*, const unsigned int, unsigned int);
+        DoubleWell (const unsigned int, unsigned int);
         virtual ~DoubleWell ();
 
         unsigned int getSize();
