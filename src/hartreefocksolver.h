@@ -113,19 +113,17 @@ class HartreeFockSolver {
                 subSize /= 2;
                 Eigen::ArrayXXi pqMap(subSize*subSize,4);
                 int j = 0;
-                for (unsigned int p = 0; p < m_numStates; ++p) {
-                    for (unsigned int q = p; q < m_numStates; ++q) {
-                        for (unsigned int r = 0; r < m_numStates; ++r) {
-                            for (unsigned int s = r; s < m_numStates; ++s) {
-                                pqMap(j,0) = p;
-                                pqMap(j,1) = q;
-                                pqMap(j,2) = r;
-                                pqMap(j,3) = s;
-                                j++;
-                            } // end fors
-                        } // end forr
-                    } // end forq
-                } // end forp
+                for (unsigned int p = 0; p < m_numStates; ++p)
+                for (unsigned int q = p; q < m_numStates; ++q)
+                for (unsigned int r = 0; r < m_numStates; ++r)
+                for (unsigned int s = r; s < m_numStates; ++s)
+                {
+                    pqMap(j,0) = p;
+                    pqMap(j,1) = q;
+                    pqMap(j,2) = r;
+                    pqMap(j,3) = s;
+                    j++;
+                } // end for p,q,r,s
                 
                 // distribute sizes
                 Eigen::ArrayXd pqrsElements, pqsrElements;
@@ -237,70 +235,53 @@ class HartreeFockSolver {
                         * m_numStates * m_numStates);
                 if (myRank == 0) {
                     int pqrs = 0;
-                    for (unsigned int p = 0; p < m_numStates; ++p) {
-                        for (unsigned int q = p; q < m_numStates; ++q) {
-                            for (unsigned int r = 0; r < m_numStates; ++r) {
-                                for (unsigned int s = r; s < m_numStates; ++s)
-                                {
-                                    double value = pqrsElements(pqrs);
-                                    twoBodyNonAntiSymmetrizedElements(
-                                            dIndex(m_numStates, p,q,r,s)) =
-                                        value;
-                                    twoBodyNonAntiSymmetrizedElements(
-                                            dIndex(m_numStates, r,q,p,s)) =
-                                        value;
-                                    twoBodyNonAntiSymmetrizedElements(
-                                            dIndex(m_numStates, r,s,p,q)) =
-                                        value;
-                                    twoBodyNonAntiSymmetrizedElements(
-                                            dIndex(m_numStates, p,s,r,q)) =
-                                        value;
-                                    twoBodyNonAntiSymmetrizedElements(
-                                            dIndex(m_numStates, q,p,s,r)) =
-                                        value;
-                                    twoBodyNonAntiSymmetrizedElements(
-                                            dIndex(m_numStates, s,p,q,r)) =
-                                        value;
-                                    twoBodyNonAntiSymmetrizedElements(
-                                            dIndex(m_numStates, s,r,q,p)) =
-                                        value;
-                                    twoBodyNonAntiSymmetrizedElements(
-                                            dIndex(m_numStates, q,r,s,p)) =
-                                        value;
+                    for (unsigned int p = 0; p < m_numStates; ++p)
+                    for (unsigned int q = p; q < m_numStates; ++q)
+                    for (unsigned int r = 0; r < m_numStates; ++r)
+                    for (unsigned int s = r; s < m_numStates; ++s)
+                    {
+                        double value = pqrsElements(pqrs);
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    p,q,r,s)) = value;
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    r,q,p,s)) = value;
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    r,s,p,q)) = value;
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    p,s,r,q)) = value;
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    q,p,s,r)) = value;
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    s,p,q,r)) = value;
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    s,r,q,p)) = value;
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    q,r,s,p)) = value;
 
-                                    double asvalue = pqsrElements(pqrs);
-                                    twoBodyNonAntiSymmetrizedElements(
-                                            dIndex(m_numStates, p,q,s,r)) =
-                                        asvalue;
-                                    twoBodyNonAntiSymmetrizedElements(
-                                            dIndex(m_numStates, q,p,r,s)) =
-                                        asvalue;
+                        double asvalue = pqsrElements(pqrs);
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    p,q,s,r)) = asvalue;
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    q,p,r,s)) = asvalue;
 
-                                    pqrs++;
-                                } // end fors
-                            } // end forr
-                        } // end forq
-                    } // end forp
+                        pqrs++;
+                    } // end for p,q,r,s
             
                     // array containing antisymmetric elements
                     // <ij|1/r_12|kl>_AS = 2<ij|1/r_12|kl>_- <ij|1/r_12|lk>
                     twoBodyElements = Eigen::ArrayXd::Zero(m_numStates *
                             m_numStates * m_numStates * m_numStates);
-                    for (unsigned int p = 0; p < m_numStates; ++p) {
-                        for (unsigned int q = 0; q < m_numStates; ++q) {
-                            for (unsigned int r = 0; r < m_numStates; ++r) {
-                                for (unsigned int s = 0; s < m_numStates; ++s)
-                                {
-                                    twoBodyElements(dIndex(m_numStates,
-                                                p,q,r,s)) =
-                                        2*twoBodyNonAntiSymmetrizedElements(
-                                                dIndex(m_numStates, p,r,q,s)) -
-                                        twoBodyNonAntiSymmetrizedElements(
-                                                dIndex(m_numStates, p,r,s,q));
-                                } // end fors
-                            } // end forr
-                        } // end forq
-                    } // end forp
+                    for (unsigned int p = 0; p < m_numStates; ++p)
+                    for (unsigned int q = 0; q < m_numStates; ++q)
+                    for (unsigned int r = 0; r < m_numStates; ++r)
+                    for (unsigned int s = 0; s < m_numStates; ++s)
+                    {
+                        twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
+                            2*twoBodyNonAntiSymmetrizedElements(
+                                    dIndex(m_numStates, p,r,q,s)) -
+                            twoBodyNonAntiSymmetrizedElements(
+                                    dIndex(m_numStates, p,r,s,q));
+                    } // end for p,q,r,s
                 } // end if
             } // end if
 
@@ -309,7 +290,6 @@ class HartreeFockSolver {
                     MPI_COMM_WORLD);
         } // end function assemble
         
-
     public:
         HartreeFockSolver(Integrals* IIn, const unsigned int dimension,
                 unsigned int cut, const unsigned int numParticles) {
@@ -403,20 +383,19 @@ class HartreeFockSolver {
                 // find estimate for ground state energy for m_numParticles
                 groundStateEnergy = 2*eigenSolver.eigenvalues().segment(0,
                         m_numParticles/2).sum();
-                for (unsigned int a = 0; a < m_numStates; ++a) {
-                    for (unsigned int b = 0; b < m_numStates; ++b) {
-                        for (unsigned int c = 0; c < m_numStates; ++c) {
-                            for (unsigned int d = 0; d < m_numStates; ++d) {
-                                groundStateEnergy -= densityMatrix(a,c) *
-                                    densityMatrix(b,d) *
-                                    twoBodyElements(dIndex(m_numStates,
-                                                a,c,b,d));
-                            } // end ford
-                        } // end forc
-                    } // end forb
-                } // end fora
+                for (unsigned int a = 0; a < m_numStates; ++a)
+                for (unsigned int b = 0; b < m_numStates; ++b)
+                for (unsigned int c = 0; c < m_numStates; ++c)
+                for (unsigned int d = 0; d < m_numStates; ++d)
+                {
+                    groundStateEnergy -= densityMatrix(a,c) *
+                        densityMatrix(b,d) *
+                        twoBodyElements(dIndex(m_numStates, a,c,b,d));
+                } // end for a,b,c,d
+
                 return groundStateEnergy;
             } // end if
+
             return 0;
         } // end function iterate
 
