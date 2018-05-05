@@ -18,11 +18,6 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
 GaussianIntegrals::~GaussianIntegrals() {
 } // end deconstructor
 
-unsigned int GaussianIntegrals::getSize() {
-    /* return number of states */
-    return GaussianBasis::getSize();
-} // end function getSize
-
 std::string GaussianIntegrals::initializeParameters(double omega) {
     /* set value of oscillator frequency */
     xScale = omega;

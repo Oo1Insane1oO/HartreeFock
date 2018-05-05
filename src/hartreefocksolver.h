@@ -70,7 +70,7 @@ class HartreeFockSolver {
         } // end function dIndex
        
     protected:
-        unsigned int m_dim, m_numStates, m_numParticles;
+        unsigned int m_dim, m_numStates, m_numParticles, m_basisSize;
 
         inline void assemble(unsigned int progressDivider=0) {
             /* assemble integral elements (with symmetries) */
@@ -79,7 +79,8 @@ class HartreeFockSolver {
             // spins(each one-body function is created for both spin up and
             // down), divide by two to take the restricted form of the
             // Hartree-Fock equation.
-            m_numStates = m_I->getSize()/2;
+
+            m_numStates = m_basisSize / 2;
 
             // matrix containing elements <i|h|j> (one-body elements) and
             // elements <i|j> (overlap elements)
@@ -316,6 +317,8 @@ class HartreeFockSolver {
              * basis and integrals */
 
             m_I = IIn;
+
+            m_basisSize = cut;
 
             m_dim = dimension;
             m_numParticles = numParticles;
