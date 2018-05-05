@@ -17,7 +17,8 @@ DoubleWell::~DoubleWell() {
 } // end deconstructor
 
 std::string DoubleWell::initializeParameters(double _R, unsigned int axis) {
-    /* initialize GaussianIntegrals and grab well-separation parameter R */
+    /* initialize GaussianIntegrals and grab well-separation parameter R
+     * (axis=0 by default) */
 
     // default to shifting well in x-direction
     m_axis = axis;

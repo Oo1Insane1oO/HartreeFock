@@ -145,7 +145,10 @@ class Fit:
         res = self.potDWElement(i,j)
         if i==j:
             """ kinetic + HO potential part """
-            res += self.basisList[i,-2]
+            if (self.dim == 2):
+                res += self.basisList[i,-2]
+            else:
+                res += 3/2. + (self.basisList[i,-2] - 1)
         # end if
 
         return res
