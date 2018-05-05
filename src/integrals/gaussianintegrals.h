@@ -63,8 +63,6 @@ class GaussianIntegrals :
                 double=1);
         virtual ~GaussianIntegrals();
 
-        unsigned int getSize();
-
         std::string initializeParameters(double);
 
         double overlapElement(const unsigned int&, const unsigned int&);

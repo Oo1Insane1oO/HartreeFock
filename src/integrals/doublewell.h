@@ -26,8 +26,6 @@ class DoubleWell :
         using HartreeFockSolver<DoubleWell>::writeCoefficientsToFile;
         DoubleWell (const unsigned int, unsigned int, const unsigned int);
         virtual ~DoubleWell ();
-
-        unsigned int getSize();
         
         std::string initializeParameters(double, unsigned int=0);
 

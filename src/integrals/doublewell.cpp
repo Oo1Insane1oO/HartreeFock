@@ -31,11 +31,6 @@ std::string DoubleWell::initializeParameters(double _R, unsigned int axis) {
     return message;
 } // end function initializeParameters
 
-unsigned int DoubleWell::getSize() {
-    /* return number of states (by two because of spin) */
-    return 2*m_numBasis;
-} // end function getSize
-
 double DoubleWell::overlapElement(const unsigned int& i, const unsigned int& j)
 {
     /* calculate and return the overlap integral element <i|j> */
