@@ -1,7 +1,6 @@
 #include "hexpander.h"
 
 #include "../gaussianquadrature.h"
-#include "../methods.h"
 
 #include <cmath>
 #include <iostream>
@@ -96,7 +95,7 @@ void Hexpander::setAuxiliary2D(unsigned int xMax, unsigned int yMax, double a,
                         /* out of bounds */
                         continue;
                     } // end if
-                    unsigned int ijMax = Methods::max(i,j);
+                    unsigned int ijMax = (i > j ? i : j);
                     int i2 = i;
                     int j2 = j;
                     int i3 = i;
@@ -154,7 +153,8 @@ void Hexpander::setAuxiliary3D(unsigned int xMax, unsigned int yMax, unsigned
                             /* out of bounds */
                             continue;
                         } // end if
-                        unsigned int ijkMax = Methods::max(i,j,k);
+                        unsigned int ijkMax = (i>j ? (i>k ? i : k) : (j>k ? j :
+                                    k));
                         int i2 = i;
                         int j2 = j;
                         int k2 = k;
@@ -206,10 +206,11 @@ double Hexpander::boysIntegrand(double u, const unsigned int& n, const double&
         pRR) {
     /* Integrand of Boys function (using Gauss-Chebyshev method) */
     double powu = 1;
+    double uu = -u*u;
     for (unsigned int i = 0; i < 2*n; ++i) {
         powu *= u;
     } // end fori
-    return powu * sqrt(1 - u*u) * exp(-u*u*pRR);
+    return powu * sqrt(1 + uu) * exp(uu*pRR);
 } // end function boysIntegrand
 
 double Hexpander::modifiedIntegrand(double u, const unsigned int& n, const

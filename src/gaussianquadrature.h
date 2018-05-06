@@ -45,6 +45,7 @@ class GaussianQuadrature {
             unsigned int s = (n<2 ? 2 : n); // n > 2 is assumed
             double pis = M_PI/s; // all weights are pi/n
             double sum = 0.0;
+            #pragma omp parallel for reduction(+:sum)
             for (unsigned int i = 0; i < s; ++i) {
                 sum += (obj->*f)(cos(pis * (i-0.5)), args...);
             } // end fori

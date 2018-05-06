@@ -56,8 +56,6 @@ double DoubleWell::coulombElement(const unsigned int& i, const unsigned int& j,
         for (unsigned int q = 0; q < DWC::C.rows(); ++q) {
             for (unsigned int r = 0; r < DWC::C.rows(); ++r) {
                 for (unsigned int s = 0; s < DWC::C.rows(); ++s) {
-//                     res += DWC::C(p,i)*DWC::C(q,j)*DWC::C(r,k)*DWC::C(s,l) *
-//                         GaussianIntegrals::coulombElement(p,q,r,s);
                     res += DWC::C(p,i)*DWC::C(q,j)*DWC::C(r,k)*DWC::C(s,l) *
                         GaussianIntegrals::HartreeFockSolver::
                         getTwoBodyElement(p,q,r,s);
