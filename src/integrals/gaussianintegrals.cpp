@@ -12,7 +12,8 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
     m_dim = dim;
     expScaleFactor = scaling;
     sqrtFactor = sqrt(scaling);
-    coeffs = std::make_unique<Hexpander>();
+    coeffs2D = std::make_unique<Hexpander2D>();
+    coeffs3D = std::make_unique<Hexpander3D>();
 } // end constructor
 
 GaussianIntegrals::~GaussianIntegrals() {
@@ -181,9 +182,10 @@ inline double GaussianIntegrals::coulombElement2D(const unsigned int& ix, const
             int pSign = (((px+py)%2==0) ? 1 : -1);
             for (unsigned int qx = 0; qx <= jx+lx; ++qx) {
                 for (unsigned int qy = 0; qy <= jy+ly; ++qy) {
-                    sum += coeffs->coeff(ix,kx,px) * coeffs->coeff(iy,ky,py) *
-                        coeffs->coeff(jx,lx,qx) * coeffs->coeff(jy,ly,qy) *
-                        coeffs->auxiliary2D(0, px+qx, py+qy) * pSign;
+                    sum += coeffs2D->coeff(ix,kx,px) *
+                        coeffs2D->coeff(iy,ky,py) * coeffs2D->coeff(jx,lx,qx) *
+                        coeffs2D->coeff(jy,ly,qy) * coeffs2D->auxiliary2D(0,
+                                px+qx, py+qy) * pSign;
                 } // end forqy
             } // end forqx
         } // end forpy
@@ -212,19 +214,6 @@ inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
         HC(GaussianBasis::Cartesian::getn(l,0));
     const std::vector<long int>& HCLy =
         HC(GaussianBasis::Cartesian::getn(l,1));
-
-    // find the maximum index (upper limit for coeffs and integrals needed)
-    unsigned int pmax = Methods::max(HCIx.size(), HCKx.size(), HCJx.size(),
-            HCLx.size(), HCIy.size(), HCKy.size(), HCJy.size(), HCLy.size());
-    unsigned int auxMax = 2*Methods::max(HCIx.size()+HCKx.size(),
-            HCJx.size()+HCLx.size(), HCIy.size()+HCKy.size(),
-            HCJy.size()+HCLy.size());
-    static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
-
-    // set all coefficients and integrals needed
-    coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
-    coeffs->setAuxiliary2D(auxMax, auxMax, xScaleHalf, xScaleHalf, xScaleHalf,
-            xScaleHalf, centerVec);
 
     double sum = 0.0;
     for (unsigned int ix = (HCIx.size()%2==0 ? 1 : 0); ix < HCIx.size(); ix+=2)
@@ -260,13 +249,13 @@ inline double GaussianIntegrals::coulombElement3D(const unsigned int& ix, const
                 for (unsigned int qx = 0; qx <= jx+lx; ++qx) {
                     for (unsigned int qy = 0; qy <= jy+ly; ++qy) {
                         for (unsigned int qz = 0; qz <= jz+lz; ++qz) {
-                            sum += coeffs->coeff(ix,kx,px) *
-                                coeffs->coeff(iy,ky,py) *
-                                coeffs->coeff(iz,kz,pz) *
-                                coeffs->coeff(jx,lx,qx) *
-                                coeffs->coeff(jy,ly,qy) *
-                                coeffs->coeff(jz,lz,qz) *
-                                coeffs->auxiliary3D(0, px+qx, py+qy, pz+qz) *
+                            sum += coeffs3D->coeff(ix,kx,px) *
+                                coeffs3D->coeff(iy,ky,py) *
+                                coeffs3D->coeff(iz,kz,pz) *
+                                coeffs3D->coeff(jx,lx,qx) *
+                                coeffs3D->coeff(jy,ly,qy) *
+                                coeffs3D->coeff(jz,lz,qz) *
+                                coeffs3D->auxiliary3D(0, px+qx, py+qy, pz+qz) *
                                 pSign;
                         } // end forqz
                     } // end forqy
@@ -305,20 +294,6 @@ inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
     const std::vector<long int>& HCLz =
         HC(GaussianBasis::Cartesian::getn(l,2));
     
-    unsigned int pmax = Methods::max(HCIx.size(), HCKx.size(), HCJx.size(),
-            HCLx.size(), HCIy.size(), HCKy.size(), HCJy.size(), HCLy.size(),
-            HCIz.size(), HCKz.size(), HCJz.size(), HCLz.size());
-    unsigned int auxMax = 2*Methods::max(HCIx.size()+HCKx.size(),
-            HCJx.size()+HCLx.size(), HCIy.size()+HCKy.size(),
-            HCJy.size()+HCLy.size(), HCIz.size()+HCKz.size(),
-            HCJz.size()+HCLz.size());
-    static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
-
-    // set coefficients and integralElements
-    coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
-    coeffs->setAuxiliary3D(auxMax, auxMax, auxMax, xScaleHalf, xScaleHalf,
-            xScaleHalf, xScaleHalf, centerVec);
-
     double sum = 0.0;
     for (unsigned int ix = (HCIx.size()%2==0 ? 1 : 0); ix < HCIx.size(); ix+=2)
     for (unsigned int iy = (HCIy.size()%2==0 ? 1 : 0); iy < HCIy.size(); iy+=2)

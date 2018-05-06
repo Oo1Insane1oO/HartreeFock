@@ -20,7 +20,7 @@ class GaussianIntegrals :
         Eigen::ArrayXd normalizationFactors;
         const double& normalizationFactor(const unsigned int&) const;
 
-        std::unique_ptr<Hexpander> coeffs;
+        std::unique_ptr<Hexpander> coeffs2D, coeffs3D;
         
         inline double laplacianElement(const unsigned int&, const unsigned
                 int&);
