@@ -173,6 +173,7 @@ class Fit:
         n3D = len(C3D)
         with open("dwc.h", "a") as writeFile:
             writeFile.write("#ifndef DWC_H\n#define DWC_H\n")
+            writeFile.write("\n#include <array>\n")
             writeFile.write(
                     "\nclass DWC {\n"\
                     "   private:\n")
@@ -186,11 +187,11 @@ class Fit:
                     "   public:\n"
                     "       DWC(const unsigned int dim) {\n"
                     "           if (dim==2) {\n"
-                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C2D,%i,%i);\n"
-                    "               epsDW = Eigen::Map<const Eigen::ArrayXd>(m_epsDW2D,%i);\n"
+                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C2D.data(),%i,%i);\n"
+                    "               epsDW = Eigen::Map<const Eigen::ArrayXd>(m_epsDW2D.data(),%i);\n"
                     "           } else if (dim==3) {\n"
-                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C3D,%i,%i);\n"
-                    "               epsDW = Eigen::Map<const Eigen::ArrayXd>(m_epsDW3D,%i);\n"
+                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C3D.data(),%i,%i);\n"
+                    "               epsDW = Eigen::Map<const Eigen::ArrayXd>(m_epsDW3D.data(),%i);\n"
                     "           } // end ifeif\n\n"
                     "       } // end constructor\n" % (n2D, n2D, n2D, n3D, n3D, n3D))
         # end with open
@@ -207,8 +208,8 @@ class Fit:
         """ write coefficients matrix C to C++ header DWC """
         with open("dwc.h", "a") as writeFile:
             n = len(C)
-            writeFile.write("       static constexpr double m_epsDW%s[%i] = {\n"
-                % (ext,n))
+            writeFile.write("       static constexpr std::array<double,%i> m_epsDW%s = {\n"
+                % (n,ext))
             for i in range(n):
                 if i==n-1:
                     writeFile.write("                   " + str(E[i]))
@@ -218,7 +219,7 @@ class Fit:
                 # end ifelse
             # end fori
             writeFile.write("\n             };\n")
-            writeFile.write("       static constexpr double m_C%s[%i] = {\n" % (ext,n*n))
+            writeFile.write("       static constexpr std::array<double,%i> m_C%s = {\n" % (n*n,ext))
             writeFile.write("               ")
             for i in range(n):
                 for j in range(n):

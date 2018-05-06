@@ -61,14 +61,14 @@ class HartreeFockSolver {
             } // end forp
         } // end function sethartreeFockMatrix
 
-        inline unsigned int dIndex(const unsigned int& N, const unsigned int&
-                i, const unsigned int& j, const unsigned int& k, const unsigned
-                int& l) {
+        unsigned int dIndex(const unsigned int& N, const unsigned int& i, const
+                unsigned int& j, const unsigned int& k, const unsigned int& l)
+            const {
             /* calculate offset for 4d-matrix (square case) for indices
              * (i,j,k,l) */
             return i + N * (j + N * (k + N*l));
         } // end function dIndex
-       
+
     protected:
         unsigned int m_dim, m_numStates, m_numParticles, m_basisSize;
 
@@ -400,7 +400,7 @@ class HartreeFockSolver {
         } // end function iterate
 
         const double& getTwoBodyElement(const unsigned int& i, const unsigned
-                int& j, const unsigned int& k, const unsigned int& l) {
+                int& j, const unsigned int& k, const unsigned int& l) const {
             /* return two-body non-antisymmetrized elements */
             return twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
                         i,j,k,l));
