@@ -37,7 +37,7 @@ class GaussianQuadrature {
 
             return sum;
         } // end function gaussHermiteQuad
-        
+
         template<typename U, typename F, typename... Args> static inline double
             gaussChebyshevQuad(const unsigned int n, const U& obj, F f, Args...
                     args) {

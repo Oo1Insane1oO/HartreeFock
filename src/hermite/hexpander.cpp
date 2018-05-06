@@ -8,6 +8,9 @@
 
 Hexpander::Hexpander() {
     /* default constructor */
+
+    constexpr std::array<std::array<std::array<double, 6>, 6>, 11> i2dvals =
+        I2Dvalues<5, 5>(0.5,0.5,0.5,0.5, {0.0,0.0});
 } // end constructor
 
 Hexpander::~Hexpander() {
@@ -212,8 +215,8 @@ double Hexpander::boysIntegrand(double u, const unsigned int& n, const double&
     return powu * sqrt(1 - u*u) * exp(-u*u*pRR);
 } // end function boysIntegrand
 
-double Hexpander::modifiedIntegrand(double u, const unsigned int& n, const
-        double& pRR) {
+double Hexpander::modifiedIntegrand(double u, const unsigned int n, const
+        double pRR) {
     /* integrand assuming Gauss-Chebyshev method is used (the 1/sqrt(1-u^2)
      * part is absorbed) */
     double powu = 1;
