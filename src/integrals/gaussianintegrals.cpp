@@ -28,10 +28,20 @@ std::string GaussianIntegrals::initializeParameters(double omega) {
     coulomb2DFactor = pow(M_PI/xScale, 1.5) / sqrt(2);
     coulomb3DFactor = pow(M_PI/xScale, 2.5) / sqrt(2);
 
-    // choose coulombElement function for 2D or 3D
+    // choose coulombElement function for 2D or 3D and set all coefficients and
+    // 1D integral elements
+    const Eigen::VectorXi& nvalues = GaussianBasis::Cartesian::getn();
+    unsigned int pmax = nvalues(nvalues.size()-1);
+    unsigned int auxMax = 2*(pmax+pmax);
+    static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
+    coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
     if (m_dim == 2) {
+        coeffs->setAuxiliary2D(auxMax, auxMax, xScaleHalf, xScaleHalf,
+                xScaleHalf, xScaleHalf, centerVec);
         coulombFunc = &GaussianIntegrals::coulomb2D;
     } else {
+        coeffs->setAuxiliary3D(auxMax, auxMax, auxMax, xScaleHalf, xScaleHalf,
+                xScaleHalf, xScaleHalf, centerVec);
         coulombFunc = &GaussianIntegrals::coulomb3D;
     } // end if
 
@@ -213,19 +223,6 @@ inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
     const std::vector<long int>& HCLy =
         HC(GaussianBasis::Cartesian::getn(l,1));
 
-    // find the maximum index (upper limit for coeffs and integrals needed)
-    unsigned int pmax = Methods::max(HCIx.size(), HCKx.size(), HCJx.size(),
-            HCLx.size(), HCIy.size(), HCKy.size(), HCJy.size(), HCLy.size());
-    unsigned int auxMax = 2*Methods::max(HCIx.size()+HCKx.size(),
-            HCJx.size()+HCLx.size(), HCIy.size()+HCKy.size(),
-            HCJy.size()+HCLy.size());
-    static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
-
-    // set all coefficients and integrals needed
-    coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
-    coeffs->setAuxiliary2D(auxMax, auxMax, xScaleHalf, xScaleHalf, xScaleHalf,
-            xScaleHalf, centerVec);
-
     double sum = 0.0;
     for (unsigned int ix = (HCIx.size()%2==0 ? 1 : 0); ix < HCIx.size(); ix+=2)
     for (unsigned int iy = (HCIy.size()%2==0 ? 1 : 0); iy < HCIy.size(); iy+=2)
@@ -305,20 +302,6 @@ inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
     const std::vector<long int>& HCLz =
         HC(GaussianBasis::Cartesian::getn(l,2));
     
-    unsigned int pmax = Methods::max(HCIx.size(), HCKx.size(), HCJx.size(),
-            HCLx.size(), HCIy.size(), HCKy.size(), HCJy.size(), HCLy.size(),
-            HCIz.size(), HCKz.size(), HCJz.size(), HCLz.size());
-    unsigned int auxMax = 2*Methods::max(HCIx.size()+HCKx.size(),
-            HCJx.size()+HCLx.size(), HCIy.size()+HCKy.size(),
-            HCJy.size()+HCLy.size(), HCIz.size()+HCKz.size(),
-            HCJz.size()+HCLz.size());
-    static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
-
-    // set coefficients and integralElements
-    coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
-    coeffs->setAuxiliary3D(auxMax, auxMax, auxMax, xScaleHalf, xScaleHalf,
-            xScaleHalf, xScaleHalf, centerVec);
-
     double sum = 0.0;
     for (unsigned int ix = (HCIx.size()%2==0 ? 1 : 0); ix < HCIx.size(); ix+=2)
     for (unsigned int iy = (HCIy.size()%2==0 ? 1 : 0); iy < HCIy.size(); iy+=2)
