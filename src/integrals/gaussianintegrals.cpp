@@ -12,8 +12,6 @@ GaussianIntegrals::GaussianIntegrals(const unsigned int dim, unsigned int
     m_dim = dim;
     expScaleFactor = scaling;
     sqrtFactor = sqrt(scaling);
-    coeffs2D = std::make_unique<Hexpander2D>();
-    coeffs3D = std::make_unique<Hexpander3D>();
 } // end constructor
 
 GaussianIntegrals::~GaussianIntegrals() {
@@ -28,12 +26,14 @@ std::string GaussianIntegrals::initializeParameters(double omega) {
     powScale = pow(xScale, 2*m_dim);
     coulomb2DFactor = pow(M_PI/xScale, 1.5) / sqrt(2);
     coulomb3DFactor = pow(M_PI/xScale, 2.5) / sqrt(2);
-
-    // choose coulombElement function for 2D or 3D
+   
+    // choose coulombElement function for 2D or 3D and initialize coefficients
     if (m_dim == 2) {
+        coeffs2D = std::make_unique<Hexpander2D>();
         coulombFunc = &GaussianIntegrals::coulomb2D;
     } else {
         coulombFunc = &GaussianIntegrals::coulomb3D;
+        coeffs3D = std::make_unique<Hexpander3D>();
     } // end if
 
     // calculate and set normalization factors to array

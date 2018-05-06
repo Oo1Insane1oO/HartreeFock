@@ -56,7 +56,7 @@ class Hexpander2D : public HexpanderCoeffs {
             double powVal = 1;
             double s = 50;
             double pis = M_PI/s; // all weights are pi/n
-            for (unsigned int n = 0; n <= nMax; ++n) {
+            for (unsigned int n = 0; n <= NM; ++n) {
                 /* calculate initial integrals */
                 values[n][0][0] = powVal; 
                 double tmpVal = 0.0;
