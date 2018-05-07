@@ -138,40 +138,33 @@ class HartreeFockSolver {
                         displ(p) = sizes.head(p).sum();
                     } // end forp
 
-                    // weight the sizes based on the sum of all (p,q,r,s) in
-                    // process
+                    // Weight the sizes based on the sum of all (p,q,r,s) in
+                    // process. make sure total sum of pqrs within process
+                    // chunk is within originalMean
                     Eigen::ArrayXi sums = Eigen::ArrayXi::Zero(numProcs);
-                    auto findSum = [&]() {
-                        /* find the sum of all pqrs elements in each process
-                         * chunk */
-                        for (unsigned int i = 0; i < sums.size(); ++i) {
-                            sums(i) = pqMap.block(displ(i), 0,
-                                    sizes(i),4).sum();
-                        } // end fori
-                    }; // end lambda findSum
-                    findSum();
-                    int originalMean = floor(sums.mean());
-                    // make sure total sum of pqrs within process chunk is
-                    // within +-1 of originalMean
+                    for (unsigned int i = 0; i < sums.size(); ++i) {
+                        sums(i) = pqMap.block(displ(i), 0,
+                                sizes(i),4).sum();
+                    } // end fori
+                    int originalMean = ceil(sums.mean());
                     for (int i = 0; i < numProcs-1; ++i) {
                         for (int j = displ(i); j < displ(i)+sizes(i+1); ++j) {
                             /* iterate over elements in next process */
-                            int newSum = sums(i) + pqMap.row(j).sum();
+                            double jSum = pqMap.row(j).sum();
+                            int newSum = sums(i) + jSum;
                             if (newSum < originalMean) {
-                                /* take pqrs element j from next process */
+                                /* take pqrs element j from next process and
+                                 * update sums */
                                 sizes(i) += 1;
                                 sizes(i+1) -= 1;
                                 displ(i+1) += 1;
-                            } else if ((newSum == originalMean-1) || (newSum ==
-                                        originalMean+1) || (newSum >
-                                            originalMean)) {
-                                /* break if total sum is within +-1 of
-                                 * originalMean */
+                                sums(i) = newSum;
+                                sums(i+1) -= jSum;
+                            } // end if
+                            if (newSum >= originalMean) {
+                                /* break if total sum is within originalMean */
                                 break;
-                            } // end ifeif
-
-                            // find sum of current chunks
-                            findSum();
+                            } // end if
                         } // end forj
                     } // end fori
                 } // end if
