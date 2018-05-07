@@ -147,7 +147,7 @@ class HartreeFockSolver {
                             double jSum = pqMap.row(j).sum();
                             int newSum = sums(i) + jSum;
                             if (newSum < originalMean) {
-                                /* take pqrs element j from next process and
+                                /* take pq element j from next process and
                                  * update sums */
                                 sizes(i) += 1;
                                 sizes(i+1) -= 1;
@@ -155,7 +155,9 @@ class HartreeFockSolver {
                                 sums(i) = newSum;
                                 sums(i+1) -= jSum;
                             } // end if
-                            if (newSum >= originalMean) {
+                            if ((newSum>=originalMean) ||
+                                    (newSum==(originalMean-1)) ||
+                                    (newSum==(originalMean+1))) {
                                 /* break if total sum is within originalMean */
                                 break;
                             } // end if
@@ -169,22 +171,25 @@ class HartreeFockSolver {
                 // (r,s) of set of range of (p,q) in each process
                 int pqstart = displ(myRank);
                 int pqEnd = pqstart+sizes(myRank);
-                if (progressDivider) {
-                    progressDivider = (int)exp(fmod(4.5, pqEnd));
-                } // end if
-                for (unsigned int i = 0; i < numProcs; ++i) {
-                    displ(i) += i*subSize;
-                } // end fori
                 sizes *= subSize;
+                displ(0) = 0;
+                for (int i = 1; i < numProcs; ++i) {
+                    displ(i) = sizes.head(i).sum();
+                } // end fori
+                if (progressDivider) {
+                    progressDivider = (int)exp(fmod(4.5, sizes(myRank)));
+                } // end if
                 Eigen::ArrayXd myTmpTwoBody(sizes(myRank)),
                     myTmpTwoBodyAS(sizes(myRank));
-                int rs = 0;
+
                 // save first part of progress bar
                 std::string progressPosition, progressBuffer;
                 if (progressDivider) {
                     progressPosition = Methods::stringPos(myRank, 3) +
                         "Progress: [";
                 } // end if
+
+                int rs = 0;
                 for (int pq = pqstart; pq < pqEnd; ++pq) {
                     for (unsigned int r = 0; r < m_numStates; ++r) {
                         for (unsigned int s = r; s < m_numStates; ++s) {
@@ -197,7 +202,7 @@ class HartreeFockSolver {
                             // print progress
                             if (progressDivider) {
                                 /* show progress if given */
-                                int progressStart = pq - pqstart;
+                                int progressStart = pq - pqstart + rs;
                                 if (!(static_cast<int>(fmod(progressStart,
                                                     Methods::divider(progressStart,
                                                         sizes(myRank),
