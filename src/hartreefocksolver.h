@@ -111,19 +111,15 @@ class HartreeFockSolver {
                 // create matrix containing pairs (p,q)
                 int subSize = m_numStates * (m_numStates+1);
                 subSize /= 2;
-                Eigen::ArrayXXi pqMap(subSize*subSize,4);
+                Eigen::ArrayXXi pqMap(subSize,2);
                 int j = 0;
                 for (unsigned int p = 0; p < m_numStates; ++p)
                 for (unsigned int q = p; q < m_numStates; ++q)
-                for (unsigned int r = 0; r < m_numStates; ++r)
-                for (unsigned int s = r; s < m_numStates; ++s)
                 {
                     pqMap(j,0) = p;
                     pqMap(j,1) = q;
-                    pqMap(j,2) = r;
-                    pqMap(j,3) = s;
                     j++;
-                } // end for p,q,r,s
+                } // end for p,q
                 
                 // distribute sizes
                 Eigen::ArrayXd pqrsElements, pqsrElements;
@@ -133,8 +129,7 @@ class HartreeFockSolver {
                     pqrsElements = Eigen::ArrayXd::Zero(subSize*subSize);
                     pqsrElements = Eigen::ArrayXd::Zero(subSize*subSize);
                     for (int p = 0; p < numProcs; ++p) {
-                        sizes(p) = Methods::divider(p, subSize*subSize,
-                                numProcs);
+                        sizes(p) = Methods::divider(p, subSize, numProcs);
                         displ(p) = sizes.head(p).sum();
                     } // end forp
 
@@ -143,8 +138,7 @@ class HartreeFockSolver {
                     // chunk is within originalMean
                     Eigen::ArrayXi sums = Eigen::ArrayXi::Zero(numProcs);
                     for (unsigned int i = 0; i < sums.size(); ++i) {
-                        sums(i) = pqMap.block(displ(i), 0,
-                                sizes(i),4).sum();
+                        sums(i) = pqMap.block(displ(i), 0, sizes(i),2).sum();
                     } // end fori
                     int originalMean = ceil(sums.mean());
                     for (int i = 0; i < numProcs-1; ++i) {
@@ -173,13 +167,17 @@ class HartreeFockSolver {
 
                 // array containing two-body elements <ij|1/r_12|kl> for subset
                 // (r,s) of set of range of (p,q) in each process
-                Eigen::ArrayXd myTmpTwoBody(sizes(myRank)),
-                    myTmpTwoBodyAS(sizes(myRank));
                 int pqstart = displ(myRank);
                 int pqEnd = pqstart+sizes(myRank);
                 if (progressDivider) {
                     progressDivider = (int)exp(fmod(4.5, pqEnd));
                 } // end if
+                for (unsigned int i = 0; i < numProcs; ++i) {
+                    displ(i) += i*subSize;
+                } // end fori
+                sizes *= subSize;
+                Eigen::ArrayXd myTmpTwoBody(sizes(myRank)),
+                    myTmpTwoBodyAS(sizes(myRank));
                 int rs = 0;
                 // save first part of progress bar
                 std::string progressPosition, progressBuffer;
@@ -188,29 +186,34 @@ class HartreeFockSolver {
                         "Progress: [";
                 } // end if
                 for (int pq = pqstart; pq < pqEnd; ++pq) {
-                    myTmpTwoBody(rs) = m_I->coulombElement(pqMap(pq,0),
-                            pqMap(pq,1), pqMap(pq,2), pqMap(pq,3));
-                    myTmpTwoBodyAS(rs) = m_I->coulombElement(pqMap(pq,0),
-                            pqMap(pq,1), pqMap(pq,3), pqMap(pq,2));
-                    
-                    // print progress
-                    if (progressDivider) {
-                        /* show progress if given */
-                        int progressStart = pq - pqstart;
-                        if (!(static_cast<int>(fmod(progressStart,
-                                            Methods::divider(progressStart,
-                                                sizes(myRank),
-                                                progressDivider))))) {
-                            /* print only a few times */
-                            progressBuffer = progressPosition;
-                            Methods::printProgressBar(progressBuffer,
-                                    (float)((progressStart==sizes(myRank)-1) ?
-                                        progressStart : (progressStart+1)) /
-                                    sizes(myRank), 55, "Two-Body");
-                        } // end if
-                    } // end if
+                    for (unsigned int r = 0; r < m_numStates; ++r) {
+                        for (unsigned int s = r; s < m_numStates; ++s) {
+                            myTmpTwoBody(rs) = m_I->coulombElement(pqMap(pq,0),
+                                    pqMap(pq,1), r, s);
+                            myTmpTwoBodyAS(rs) =
+                                m_I->coulombElement(pqMap(pq,0), pqMap(pq,1),
+                                        s, r);
+                            
+                            // print progress
+                            if (progressDivider) {
+                                /* show progress if given */
+                                int progressStart = pq - pqstart;
+                                if (!(static_cast<int>(fmod(progressStart,
+                                                    Methods::divider(progressStart,
+                                                        sizes(myRank),
+                                                        progressDivider))))) {
+                                    /* print only a few times */
+                                    progressBuffer = progressPosition;
+                                    Methods::printProgressBar(progressBuffer,
+                                            (float)((progressStart==sizes(myRank)-1) ?
+                                                progressStart : (progressStart+1)) /
+                                            sizes(myRank), 55, "Two-Body");
+                                } // end if
+                            } // end if
 
-                    rs++;
+                            rs++;
+                        } // end fors
+                    } // end forrr
                 } // end forpq
 
                 // gather subresults from slaves into complete matrix in root
