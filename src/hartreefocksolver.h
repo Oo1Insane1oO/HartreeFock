@@ -122,8 +122,6 @@ class HartreeFockSolver {
                     if (fileExists) {
                         readTwoBodyMatrix();
                     } // end if
-                    std::cout << dirpath + "/" + twoBodyFileName  << std::endl;
-                    exit(1);
                 } // end if
 
                 // let slaves know of the file-check clarity (#religous?)
@@ -253,6 +251,7 @@ class HartreeFockSolver {
                         setNonAntiSymmetrizedElements(pqrsElements,
                                 pqsrElements);
                         setAntiSymmetrizedElements();
+                        writeTwoBodyElementsToFile();
                     } // end if
                 } // end if
             } // end if
@@ -474,9 +473,10 @@ class HartreeFockSolver {
                 for (unsigned int r = 0; r < m_numStates; ++r)
                 for (unsigned int s = 0; s < m_numStates; ++s)
                 {
-                    twoBodyFile <<
-                        std::to_string(twoBodyNonAntiSymmetrizedElements(
-                                    dIndex(m_numStates, p,q,r,s))) << " ";
+                    twoBodyFile << std::fixed << std::setprecision(16) <<
+                        twoBodyNonAntiSymmetrizedElements( dIndex(m_numStates,
+                                    p,q,r,s));
+                    twoBodyFile << " ";
                 } // end for p,q,r,s
             } // end if
             twoBodyFile.close();

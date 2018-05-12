@@ -76,7 +76,7 @@ std::string GaussianIntegrals::initializeParameters(double omega) {
 
 void GaussianIntegrals::setFileName(const double& omega) {
     /* set filename of input file based on omega and numBasis (cutoff) */
-    auto eraser = [&](std::string& s) {
+    auto eraser = [](std::string& s) {
         s.erase(s.find_last_not_of('0') + 1, std::string::npos);
         if(s.back() == '.') {
             s += "0";
