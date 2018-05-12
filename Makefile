@@ -8,8 +8,8 @@ ifeq ($(TESTS),ON)
 endif
 
 CC = mpic++
-LDFLAGS	= -fopenmp -lpthread -lyaml-cpp $(LIBS)
-CXXFLAGS = -O3 -fopenmp -std=c++17 -Wall -Wextra $(INC)
+LDFLAGS	= -fopenmp -lpthread -lyaml-cpp -lboost_filesystem -lboost_system  $(LIBS)
+CXXFLAGS = -O3 -fopenmp -std=c++17 $(INC)
 
 WRITE ?= OFF
 ifeq ($(WRITE),ON)

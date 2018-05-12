@@ -86,7 +86,6 @@ void GaussianIntegrals::setFileName(const double& omega) {
     std::string wString = std::to_string(omega);
     std::string LString = std::to_string(m_cutOff);
     eraser(wString);
-    eraser(LString);
 
     HartreeFockSolver::twoBodyFileName = "w" + wString  + "_L" + LString  +
     ".txt";

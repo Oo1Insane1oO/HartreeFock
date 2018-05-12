@@ -71,6 +71,80 @@ class HartreeFockSolver {
             return i + N * (j + N * (k + N*l));
         } // end function dIndex
 
+        void setAntiSymmetrizedElements() {
+            /* array containing antisymmetric elements <ij|1/r_12|kl>_AS =
+             * 2<ij|1/r_12|kl>_- <ij|1/r_12|lk> */
+            for (unsigned int p = 0; p < m_numStates; ++p)
+            for (unsigned int q = 0; q < m_numStates; ++q)
+            for (unsigned int r = 0; r < m_numStates; ++r)
+            for (unsigned int s = 0; s < m_numStates; ++s)
+            {
+                twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
+                    2*twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                p,r,q,s)) -
+                    twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                p,r,s,q));
+            } // end for p,q,r,s
+        } // end function setAntiSymmetrizedElements
+
+        void setNonAntiSymmetrizedElements(const Eigen::ArrayXd& pqrsElements,
+                const Eigen::ArrayXd& pqsrElements) {
+            /* set symmetric values in full two-body matrix used in
+             * Hartree-Fock algorithm */
+            int pqrs = 0;
+            for (unsigned int p = 0; p < m_numStates; ++p)
+            for (unsigned int q = p; q < m_numStates; ++q)
+            for (unsigned int r = 0; r < m_numStates; ++r)
+            for (unsigned int s = r; s < m_numStates; ++s)
+            {
+                double value = pqrsElements(pqrs);
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, p,q,r,s))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, r,q,p,s))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, r,s,p,q))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, p,s,r,q))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, q,p,s,r))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, s,p,q,r))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, s,r,q,p))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, q,r,s,p))
+                    = value;
+
+                double asvalue = pqsrElements(pqrs);
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, p,q,s,r))
+                    = asvalue;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, q,p,r,s))
+                    = asvalue;
+
+                pqrs++;
+            } // end for p,q,r,s
+        } // end function setNonAntiSymmetrizedElements
+
+        void readTwoBodyMatrix() {
+            /* read in two-body non-antisymmetrized elementsa and set
+             * anti-symmetrized elements */
+            std::ifstream twoBodyFile;
+            twoBodyFile.open(dirpath + "/" + twoBodyFileName);
+            if (twoBodyFile.is_open()) {
+                for (unsigned int p = 0; p < m_numStates; ++p)
+                for (unsigned int q = 0; q < m_numStates; ++q)
+                for (unsigned int r = 0; r < m_numStates; ++r)
+                for (unsigned int s = 0; s < m_numStates; ++s)
+                {
+                    twoBodyFile >>
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    p,q,r,s));
+                } // end for p,q,r,s
+            } // end if
+            twoBodyFile.close();
+            setAntiSymmetrizedElements();
+        } //  end function readTwoBodyMatrix
+
     protected:
         unsigned int m_dim, m_numStates, m_numParticles, m_basisSize;
 
@@ -112,22 +186,28 @@ class HartreeFockSolver {
 
             // set two-body coupled (Coulomb) integral elements
             if (interaction) {
-                // let root check if file of two-body elemetns exists
-                bool fileExists;
+                // let root check if file of two-body elements exists
+                int fileExists = 0;
                 twoBodyElements = Eigen::ArrayXd::Zero(m_numStates *
                         m_numStates * m_numStates * m_numStates);
+                twoBodyNonAntiSymmetrizedElements =
+                    Eigen::ArrayXd::Zero(m_numStates * m_numStates *
+                            m_numStates * m_numStates);
                 if (myRank == 0) {
-                    boost::filesystem::path p(dirpath + "/" + twoBodyFileName);
-                    fileExists = (boost::filesystem::exists(p) ? true : false);
-                    if (fileExists) {
-                        readTwoBodyMatrix();
+                    if (twoBodyFileName.compare("")) {
+                        boost::filesystem::path p(dirpath + "/" + twoBodyFileName);
+                        fileExists = (boost::filesystem::exists(p) ? 1 : 0);
+                        if (fileExists) {
+                            readTwoBodyMatrix();
+                        } // end if
                     } // end if
                 } // end if
 
                 // let slaves know of the file-check clarity (#religous?)
                 MPI_Bcast(&fileExists, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-                if (!fileExists) {
+                if (fileExists == 0) {
+                    /* only calculate if file does not exist */
                     // create matrix containing pairs (p,q)
                     int subSize = m_numStates * (m_numStates+1);
                     subSize /= 2;
@@ -251,101 +331,23 @@ class HartreeFockSolver {
                         setNonAntiSymmetrizedElements(pqrsElements,
                                 pqsrElements);
                         setAntiSymmetrizedElements();
-                        writeTwoBodyElementsToFile();
+                        if (twoBodyFileName.compare("")) {
+                            writeTwoBodyElementsToFile();
+                        } // end if
                     } // end if
                 } // end if
-            } // end if
 
-            MPI_Bcast(twoBodyNonAntiSymmetrizedElements.data(),
-                    twoBodyNonAntiSymmetrizedElements.size(), MPI_DOUBLE, 0,
-                    MPI_COMM_WORLD);
+                MPI_Bcast(twoBodyNonAntiSymmetrizedElements.data(),
+                        twoBodyNonAntiSymmetrizedElements.size(), MPI_DOUBLE,
+                        0, MPI_COMM_WORLD);
+            } // end if
         } // end function assemble
 
-        void setAntiSymmetrizedElements() {
-            /* array containing antisymmetric elements <ij|1/r_12|kl>_AS =
-             * 2<ij|1/r_12|kl>_- <ij|1/r_12|lk> */
-            for (unsigned int p = 0; p < m_numStates; ++p)
-            for (unsigned int q = 0; q < m_numStates; ++q)
-            for (unsigned int r = 0; r < m_numStates; ++r)
-            for (unsigned int s = 0; s < m_numStates; ++s)
-            {
-                twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
-                    2*twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                p,r,q,s)) -
-                    twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                p,r,s,q));
-            } // end for p,q,r,s
-        } // end function setAntiSymmetrizedElements
-
-        void setNonAntiSymmetrizedElements(const Eigen::ArrayXd& pqrsElements,
-                const Eigen::ArrayXd& pqsrElements) {
-            /* set symmetric values in full two-body matrix used in
-             * Hartree-Fock algorithm */
-            twoBodyNonAntiSymmetrizedElements =
-                Eigen::ArrayXd::Zero(m_numStates * m_numStates * m_numStates *
-                        m_numStates);
-            int pqrs = 0;
-            for (unsigned int p = 0; p < m_numStates; ++p)
-            for (unsigned int q = p; q < m_numStates; ++q)
-            for (unsigned int r = 0; r < m_numStates; ++r)
-            for (unsigned int s = r; s < m_numStates; ++s)
-            {
-                double value = pqrsElements(pqrs);
-                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, p,q,r,s))
-                    = value;
-                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, r,q,p,s))
-                    = value;
-                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, r,s,p,q))
-                    = value;
-                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, p,s,r,q))
-                    = value;
-                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, q,p,s,r))
-                    = value;
-                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, s,p,q,r))
-                    = value;
-                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, s,r,q,p))
-                    = value;
-                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, q,r,s,p))
-                    = value;
-
-                double asvalue = pqsrElements(pqrs);
-                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, p,q,s,r))
-                    = asvalue;
-                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, q,p,r,s))
-                    = asvalue;
-
-                pqrs++;
-            } // end for p,q,r,s
-        } // end function setNonAntiSymmetrizedElements
-
-        void readTwoBodyMatrix() {
-            /* read in two-body non-antisymmetrized elementsa and set
-             * anti-symmetrized elements */
-            twoBodyNonAntiSymmetrizedElements =
-                Eigen::ArrayXd::Zero(m_numStates * m_numStates * m_numStates *
-                        m_numStates);
-            std::ifstream twoBodyFile;
-            twoBodyFile.open(dirpath + "/" + twoBodyFileName);
-            if (twoBodyFile.is_open()) {
-                for (unsigned int p = 0; p < m_numStates; ++p)
-                for (unsigned int q = 0; q < m_numStates; ++q)
-                for (unsigned int r = 0; r < m_numStates; ++r)
-                for (unsigned int s = 0; s < m_numStates; ++s)
-                {
-                    twoBodyFile >>
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    p,q,r,s));
-                } // end for p,q,r,s
-            } // end if
-            twoBodyFile.close();
-            setAntiSymmetrizedElements();
-        } //  end function readTwoBodyMatrix
     public:
         HartreeFockSolver(Integrals* IIn, const unsigned int dimension,
                 unsigned int cut, const unsigned int numParticles) {
             /* set dimensions, cutoff and number of particles and initialize
              * basis and integrals */
-
             dirpath = "src/integrals/inputs";
 
             m_I = IIn;
