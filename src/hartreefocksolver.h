@@ -1,15 +1,15 @@
 #ifndef HARTREEFOCKSOLVER_H
 #define HARTREEFOCKSOLVER_H
 
-#include <Eigen/Dense>
-#include <mpi.h>
-
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
 
+#include <Eigen/Dense>
 #include <yaml-cpp/yaml.h>
+#include <mpi.h>
+#include <boost/filesystem.hpp>
 
 #include <string>
 
@@ -23,6 +23,8 @@ class HartreeFockSolver {
         double groundStateEnergy;
 
         bool interaction;
+
+        std::string dirpath;
 
         Eigen::ArrayXd twoBodyElements, twoBodyNonAntiSymmetrizedElements;
         Eigen::MatrixXd oneBodyElements, overlapElements;
@@ -72,6 +74,8 @@ class HartreeFockSolver {
     protected:
         unsigned int m_dim, m_numStates, m_numParticles, m_basisSize;
 
+        std::string twoBodyFileName;
+
         inline void assemble(unsigned int progressDivider=0) {
             /* assemble integral elements (with symmetries) */
 
@@ -108,173 +112,148 @@ class HartreeFockSolver {
 
             // set two-body coupled (Coulomb) integral elements
             if (interaction) {
-                // create matrix containing pairs (p,q)
-                int subSize = m_numStates * (m_numStates+1);
-                subSize /= 2;
-                Eigen::ArrayXXi pqMap(subSize*subSize,4);
-                int j = 0;
-                for (unsigned int p = 0; p < m_numStates; ++p)
-                for (unsigned int q = p; q < m_numStates; ++q)
-                for (unsigned int r = 0; r < m_numStates; ++r)
-                for (unsigned int s = r; s < m_numStates; ++s)
-                {
-                    pqMap(j,0) = p;
-                    pqMap(j,1) = q;
-                    pqMap(j,2) = r;
-                    pqMap(j,3) = s;
-                    j++;
-                } // end for p,q,r,s
-                
-                // distribute sizes
-                Eigen::ArrayXd pqrsElements, pqsrElements;
-                Eigen::ArrayXi displ(numProcs);
-                Eigen::ArrayXi sizes(numProcs);
+                // let root check if file of two-body elemetns exists
+                bool fileExists;
+                twoBodyElements = Eigen::ArrayXd::Zero(m_numStates *
+                        m_numStates * m_numStates * m_numStates);
                 if (myRank == 0) {
-                    pqrsElements = Eigen::ArrayXd::Zero(subSize*subSize);
-                    pqsrElements = Eigen::ArrayXd::Zero(subSize*subSize);
-                    for (int p = 0; p < numProcs; ++p) {
-                        sizes(p) = Methods::divider(p, subSize*subSize,
-                                numProcs);
-                        displ(p) = sizes.head(p).sum();
-                    } // end forp
-
-                    // Weight the sizes based on the sum of all (p,q,r,s) in
-                    // process. make sure total sum of pqrs within process
-                    // chunk is within originalMean
-                    Eigen::ArrayXi sums = Eigen::ArrayXi::Zero(numProcs);
-                    for (unsigned int i = 0; i < sums.size(); ++i) {
-                        sums(i) = pqMap.block(displ(i), 0,
-                                sizes(i),4).sum();
-                    } // end fori
-                    int originalMean = ceil(sums.mean());
-                    for (int i = 0; i < numProcs-1; ++i) {
-                        for (int j = displ(i); j < displ(i)+sizes(i+1); ++j) {
-                            /* iterate over elements in next process */
-                            double jSum = pqMap.row(j).sum();
-                            int newSum = sums(i) + jSum;
-                            if (newSum < originalMean) {
-                                /* take pqrs element j from next process and
-                                 * update sums */
-                                sizes(i) += 1;
-                                sizes(i+1) -= 1;
-                                displ(i+1) += 1;
-                                sums(i) = newSum;
-                                sums(i+1) -= jSum;
-                            } // end if
-                            if (newSum >= originalMean) {
-                                /* break if total sum is within originalMean */
-                                break;
-                            } // end if
-                        } // end forj
-                    } // end fori
-                } // end if
-                MPI_Bcast(sizes.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
-                MPI_Bcast(displ.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
-
-                // array containing two-body elements <ij|1/r_12|kl> for subset
-                // (r,s) of set of range of (p,q) in each process
-                Eigen::ArrayXd myTmpTwoBody(sizes(myRank)),
-                    myTmpTwoBodyAS(sizes(myRank));
-                int pqstart = displ(myRank);
-                int pqEnd = pqstart+sizes(myRank);
-                if (progressDivider) {
-                    progressDivider = (int)exp(fmod(4.5, pqEnd));
-                } // end if
-                int rs = 0;
-                // save first part of progress bar
-                std::string progressPosition, progressBuffer;
-                if (progressDivider) {
-                    progressPosition = Methods::stringPos(myRank, 3) +
-                        "Progress: [";
-                } // end if
-                for (int pq = pqstart; pq < pqEnd; ++pq) {
-                    myTmpTwoBody(rs) = m_I->coulombElement(pqMap(pq,0),
-                            pqMap(pq,1), pqMap(pq,2), pqMap(pq,3));
-                    myTmpTwoBodyAS(rs) = m_I->coulombElement(pqMap(pq,0),
-                            pqMap(pq,1), pqMap(pq,3), pqMap(pq,2));
-                    
-                    // print progress
-                    if (progressDivider) {
-                        /* show progress if given */
-                        int progressStart = pq - pqstart;
-                        if (!(static_cast<int>(fmod(progressStart,
-                                            Methods::divider(progressStart,
-                                                sizes(myRank),
-                                                progressDivider))))) {
-                            /* print only a few times */
-                            progressBuffer = progressPosition;
-                            Methods::printProgressBar(progressBuffer,
-                                    (float)((progressStart==sizes(myRank)-1) ?
-                                        progressStart : (progressStart+1)) /
-                                    sizes(myRank), 55, "Two-Body");
-                        } // end if
+                    boost::filesystem::path p(dirpath + "/" + twoBodyFileName);
+                    fileExists = (boost::filesystem::exists(p) ? true : false);
+                    if (fileExists) {
+                        readTwoBodyMatrix();
                     } // end if
+                    std::cout << dirpath + "/" + twoBodyFileName  << std::endl;
+                    exit(1);
+                } // end if
 
-                    rs++;
-                } // end forpq
+                // let slaves know of the file-check clarity (#religous?)
+                MPI_Bcast(&fileExists, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-                // gather subresults from slaves into complete matrix in root
-                MPI_Gatherv(myTmpTwoBody.data(), sizes(myRank), MPI_DOUBLE,
-                        pqrsElements.data(), sizes.data(), displ.data(),
-                        MPI_DOUBLE, 0, MPI_COMM_WORLD);
-                MPI_Gatherv(myTmpTwoBodyAS.data(), sizes(myRank), MPI_DOUBLE,
-                        pqsrElements.data(), sizes.data(), displ.data(),
-                        MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-                // set symmetric values in full two-body matrix used in
-                // Hartree-Fock algorithm
-                twoBodyNonAntiSymmetrizedElements =
-                    Eigen::ArrayXd::Zero(m_numStates * m_numStates
-                        * m_numStates * m_numStates);
-                if (myRank == 0) {
-                    int pqrs = 0;
+                if (!fileExists) {
+                    // create matrix containing pairs (p,q)
+                    int subSize = m_numStates * (m_numStates+1);
+                    subSize /= 2;
+                    Eigen::ArrayXXi pqMap(subSize*subSize,4);
+                    int j = 0;
                     for (unsigned int p = 0; p < m_numStates; ++p)
                     for (unsigned int q = p; q < m_numStates; ++q)
                     for (unsigned int r = 0; r < m_numStates; ++r)
                     for (unsigned int s = r; s < m_numStates; ++s)
                     {
-                        double value = pqrsElements(pqrs);
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    p,q,r,s)) = value;
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    r,q,p,s)) = value;
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    r,s,p,q)) = value;
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    p,s,r,q)) = value;
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    q,p,s,r)) = value;
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    s,p,q,r)) = value;
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    s,r,q,p)) = value;
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    q,r,s,p)) = value;
-
-                        double asvalue = pqsrElements(pqrs);
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    p,q,s,r)) = asvalue;
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    q,p,r,s)) = asvalue;
-
-                        pqrs++;
+                        pqMap(j,0) = p;
+                        pqMap(j,1) = q;
+                        pqMap(j,2) = r;
+                        pqMap(j,3) = s;
+                        j++;
                     } // end for p,q,r,s
-            
-                    // array containing antisymmetric elements
-                    // <ij|1/r_12|kl>_AS = 2<ij|1/r_12|kl>_- <ij|1/r_12|lk>
-                    twoBodyElements = Eigen::ArrayXd::Zero(m_numStates *
-                            m_numStates * m_numStates * m_numStates);
-                    for (unsigned int p = 0; p < m_numStates; ++p)
-                    for (unsigned int q = 0; q < m_numStates; ++q)
-                    for (unsigned int r = 0; r < m_numStates; ++r)
-                    for (unsigned int s = 0; s < m_numStates; ++s)
-                    {
-                        twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
-                            2*twoBodyNonAntiSymmetrizedElements(
-                                    dIndex(m_numStates, p,r,q,s)) -
-                            twoBodyNonAntiSymmetrizedElements(
-                                    dIndex(m_numStates, p,r,s,q));
-                    } // end for p,q,r,s
+                    
+                    // distribute sizes
+                    Eigen::ArrayXd pqrsElements, pqsrElements;
+                    Eigen::ArrayXi displ(numProcs);
+                    Eigen::ArrayXi sizes(numProcs);
+                    if (myRank == 0) {
+                        pqrsElements = Eigen::ArrayXd::Zero(subSize*subSize);
+                        pqsrElements = Eigen::ArrayXd::Zero(subSize*subSize);
+                        for (int p = 0; p < numProcs; ++p) {
+                            sizes(p) = Methods::divider(p, subSize*subSize,
+                                    numProcs);
+                            displ(p) = sizes.head(p).sum();
+                        } // end forp
+
+                        // Weight the sizes based on the sum of all (p,q,r,s)
+                        // in process. make sure total sum of pqrs within
+                        // process chunk is within originalMean
+                        Eigen::ArrayXi sums = Eigen::ArrayXi::Zero(numProcs);
+                        for (unsigned int i = 0; i < sums.size(); ++i) {
+                            sums(i) = pqMap.block(displ(i), 0,
+                                    sizes(i),4).sum();
+                        } // end fori
+                        int originalMean = ceil(sums.mean());
+                        for (int i = 0; i < numProcs-1; ++i) {
+                            for (int j = displ(i); j < displ(i)+sizes(i+1);
+                                    ++j) {
+                                /* iterate over elements in next process */
+                                double jSum = pqMap.row(j).sum();
+                                int newSum = sums(i) + jSum;
+                                if (newSum < originalMean) {
+                                    /* take pqrs element j from next process
+                                     * and update sums */
+                                    sizes(i) += 1;
+                                    sizes(i+1) -= 1;
+                                    displ(i+1) += 1;
+                                    sums(i) = newSum;
+                                    sums(i+1) -= jSum;
+                                } // end if
+                                if (newSum >= originalMean) {
+                                    /* break if total sum is within
+                                     * originalMean */
+                                    break;
+                                } // end if
+                            } // end forj
+                        } // end fori
+                    } // end if
+                    MPI_Bcast(sizes.data(), numProcs, MPI_INT, 0,
+                            MPI_COMM_WORLD);
+                    MPI_Bcast(displ.data(), numProcs, MPI_INT, 0,
+                            MPI_COMM_WORLD);
+
+                    // array containing two-body elements <ij|1/r_12|kl> for
+                    // subset (r,s) of set of range of (p,q) in each process
+                    Eigen::ArrayXd myTmpTwoBody(sizes(myRank)),
+                        myTmpTwoBodyAS(sizes(myRank));
+                    int pqstart = displ(myRank);
+                    int pqEnd = pqstart+sizes(myRank);
+                    if (progressDivider) {
+                        progressDivider = (int)exp(fmod(4.5, pqEnd));
+                    } // end if
+                    int rs = 0;
+                    // save first part of progress bar
+                    std::string progressPosition, progressBuffer;
+                    if (progressDivider) {
+                        progressPosition = Methods::stringPos(myRank, 3) +
+                            "Progress: [";
+                    } // end if
+                    for (int pq = pqstart; pq < pqEnd; ++pq) {
+                        myTmpTwoBody(rs) = m_I->coulombElement(pqMap(pq,0),
+                                pqMap(pq,1), pqMap(pq,2), pqMap(pq,3));
+                        myTmpTwoBodyAS(rs) = m_I->coulombElement(pqMap(pq,0),
+                                pqMap(pq,1), pqMap(pq,3), pqMap(pq,2));
+                        
+                        // print progress
+                        if (progressDivider) {
+                            /* show progress if given */
+                            int progressStart = pq - pqstart;
+                            if (!(static_cast<int>(fmod(progressStart,
+                                                Methods::divider(progressStart,
+                                                    sizes(myRank),
+                                                    progressDivider))))) {
+                                /* print only a few times */
+                                progressBuffer = progressPosition;
+                                Methods::printProgressBar(progressBuffer,
+                                        (float)((progressStart==sizes(myRank)-1)
+                                            ?  progressStart :
+                                            (progressStart+1)) / sizes(myRank),
+                                        55, "Two-Body");
+                            } // end if
+                        } // end if
+
+                        rs++;
+                    } // end forpq
+
+                    // gather subresults from slaves into complete matrix in
+                    // root
+                    MPI_Gatherv(myTmpTwoBody.data(), sizes(myRank), MPI_DOUBLE,
+                            pqrsElements.data(), sizes.data(), displ.data(),
+                            MPI_DOUBLE, 0, MPI_COMM_WORLD);
+                    MPI_Gatherv(myTmpTwoBodyAS.data(), sizes(myRank),
+                            MPI_DOUBLE, pqsrElements.data(), sizes.data(),
+                            displ.data(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+                
+                    if (myRank == 0) {
+                        setNonAntiSymmetrizedElements(pqrsElements,
+                                pqsrElements);
+                        setAntiSymmetrizedElements();
+                    } // end if
                 } // end if
             } // end if
 
@@ -282,12 +261,93 @@ class HartreeFockSolver {
                     twoBodyNonAntiSymmetrizedElements.size(), MPI_DOUBLE, 0,
                     MPI_COMM_WORLD);
         } // end function assemble
-        
+
+        void setAntiSymmetrizedElements() {
+            /* array containing antisymmetric elements <ij|1/r_12|kl>_AS =
+             * 2<ij|1/r_12|kl>_- <ij|1/r_12|lk> */
+            for (unsigned int p = 0; p < m_numStates; ++p)
+            for (unsigned int q = 0; q < m_numStates; ++q)
+            for (unsigned int r = 0; r < m_numStates; ++r)
+            for (unsigned int s = 0; s < m_numStates; ++s)
+            {
+                twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
+                    2*twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                p,r,q,s)) -
+                    twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                p,r,s,q));
+            } // end for p,q,r,s
+        } // end function setAntiSymmetrizedElements
+
+        void setNonAntiSymmetrizedElements(const Eigen::ArrayXd& pqrsElements,
+                const Eigen::ArrayXd& pqsrElements) {
+            /* set symmetric values in full two-body matrix used in
+             * Hartree-Fock algorithm */
+            twoBodyNonAntiSymmetrizedElements =
+                Eigen::ArrayXd::Zero(m_numStates * m_numStates * m_numStates *
+                        m_numStates);
+            int pqrs = 0;
+            for (unsigned int p = 0; p < m_numStates; ++p)
+            for (unsigned int q = p; q < m_numStates; ++q)
+            for (unsigned int r = 0; r < m_numStates; ++r)
+            for (unsigned int s = r; s < m_numStates; ++s)
+            {
+                double value = pqrsElements(pqrs);
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, p,q,r,s))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, r,q,p,s))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, r,s,p,q))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, p,s,r,q))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, q,p,s,r))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, s,p,q,r))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, s,r,q,p))
+                    = value;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, q,r,s,p))
+                    = value;
+
+                double asvalue = pqsrElements(pqrs);
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, p,q,s,r))
+                    = asvalue;
+                twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, q,p,r,s))
+                    = asvalue;
+
+                pqrs++;
+            } // end for p,q,r,s
+        } // end function setNonAntiSymmetrizedElements
+
+        void readTwoBodyMatrix() {
+            /* read in two-body non-antisymmetrized elementsa and set
+             * anti-symmetrized elements */
+            twoBodyNonAntiSymmetrizedElements =
+                Eigen::ArrayXd::Zero(m_numStates * m_numStates * m_numStates *
+                        m_numStates);
+            std::ifstream twoBodyFile;
+            twoBodyFile.open(dirpath + "/" + twoBodyFileName);
+            if (twoBodyFile.is_open()) {
+                for (unsigned int p = 0; p < m_numStates; ++p)
+                for (unsigned int q = 0; q < m_numStates; ++q)
+                for (unsigned int r = 0; r < m_numStates; ++r)
+                for (unsigned int s = 0; s < m_numStates; ++s)
+                {
+                    twoBodyFile >>
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    p,q,r,s));
+                } // end for p,q,r,s
+            } // end if
+            twoBodyFile.close();
+            setAntiSymmetrizedElements();
+        } //  end function readTwoBodyMatrix
     public:
         HartreeFockSolver(Integrals* IIn, const unsigned int dimension,
                 unsigned int cut, const unsigned int numParticles) {
             /* set dimensions, cutoff and number of particles and initialize
              * basis and integrals */
+
+            dirpath = "src/integrals/inputs";
 
             m_I = IIn;
 
@@ -313,6 +373,7 @@ class HartreeFockSolver {
             // pre-calculate one- and two-body matrix-elements and set initial
             // density matrix with coefficient matrix set to identity
             assemble(progressDivider);
+
             if (myRank == 0) {
                 coefficients = Eigen::MatrixXd::Identity(m_numStates,
                         m_numStates);
@@ -403,6 +464,23 @@ class HartreeFockSolver {
             /* set interaction on (if a=true) or false (if a=false) */
             interaction = a;
         } // end function setInteraction
+
+        void writeTwoBodyElementsToFile() {
+            /* write elements to file */
+            std::ofstream twoBodyFile(dirpath + "/" + twoBodyFileName);
+            if (twoBodyFile.is_open()) {
+                for (unsigned int p = 0; p < m_numStates; ++p)
+                for (unsigned int q = 0; q < m_numStates; ++q)
+                for (unsigned int r = 0; r < m_numStates; ++r)
+                for (unsigned int s = 0; s < m_numStates; ++s)
+                {
+                    twoBodyFile <<
+                        std::to_string(twoBodyNonAntiSymmetrizedElements(
+                                    dIndex(m_numStates, p,q,r,s))) << " ";
+                } // end for p,q,r,s
+            } // end if
+            twoBodyFile.close();
+        } // end function writeTwoBodyElementsToFile
 
         void writeCoefficientsToFile(const std::string& filename, const
                 std::string& omega) {

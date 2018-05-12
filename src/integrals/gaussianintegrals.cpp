@@ -27,6 +27,10 @@ std::string GaussianIntegrals::initializeParameters(double omega) {
     powScale = pow(xScale, 2*m_dim);
     coulomb2DFactor = pow(M_PI/xScale, 1.5) / sqrt(2);
     coulomb3DFactor = pow(M_PI/xScale, 2.5) / sqrt(2);
+
+    // set filename for file containing two-body elements (let HFS calculate
+    // and create one if it doesnt exist)
+    setFileName(omega);
     
     nSum = Eigen::ArrayXi::Zero(m_dim);
 
@@ -69,6 +73,24 @@ std::string GaussianIntegrals::initializeParameters(double omega) {
         return "";
     } // end if
 } // end function initializeParameter 
+
+void GaussianIntegrals::setFileName(const double& omega) {
+    /* set filename of input file based on omega and numBasis (cutoff) */
+    auto eraser = [&](std::string& s) {
+        s.erase(s.find_last_not_of('0') + 1, std::string::npos);
+        if(s.back() == '.') {
+            s += "0";
+        } // end if
+    }; // end lambda eraser
+
+    std::string wString = std::to_string(omega);
+    std::string LString = std::to_string(m_cutOff);
+    eraser(wString);
+    eraser(LString);
+
+    HartreeFockSolver::twoBodyFileName = "w" + wString  + "_L" + LString  +
+    ".txt";
+} // end function setFileName
 
 void GaussianIntegrals::setNormalizations() {
     /* calculate and set normalization factors for all basis functions */

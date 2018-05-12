@@ -50,6 +50,8 @@ class GaussianIntegrals :
         inline double coulomb3D(const unsigned int&, const unsigned int&, const
                 unsigned int&, const unsigned int&);
 
+        void setFileName(const double&);
+
     protected:
         unsigned int m_cutOff;
         
