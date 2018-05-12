@@ -132,29 +132,24 @@ class HartreeFockSolver {
              * anti-symmetrized elements */
             std::ifstream twoBodyFile;
             twoBodyFile.open(twoBodyFileName);
-            Eigen::ArrayXd tmp =
-                Eigen::ArrayXd::Zero(totalSize*totalSize*totalSize*totalSize);
+            double buf = 0;
             if (twoBodyFile.is_open()) {
                 for (unsigned int p = 0; p < totalSize; ++p)
                 for (unsigned int q = 0; q < totalSize; ++q)
                 for (unsigned int r = 0; r < totalSize; ++r)
                 for (unsigned int s = 0; s < totalSize; ++s)
                 {
-                    twoBodyFile >> tmp(dIndex(totalSize, p,q,r,s));
+                    if ((p < m_numStates) && 
+                        (q < m_numStates) && 
+                        (r < m_numStates) && 
+                        (s < m_numStates)) {
+                        twoBodyFile >> twoBodyNonAntiSymmetrizedElements(
+                                dIndex(m_numStates, p,q,r,s));
+                    } else {
+                        twoBodyFile >> buf;
+                    } // end ifelse
                 } // end for p,q,r,s
                 twoBodyFile.close();
-                for (unsigned int p = 0; p < totalSize; ++p)
-                for (unsigned int q = 0; q < totalSize; ++q)
-                for (unsigned int r = 0; r < totalSize; ++r)
-                for (unsigned int s = 0; s < totalSize; ++s)
-                {
-                    if ((p<m_numStates) && (q<m_numStates) && (r<m_numStates)
-                            && (s<m_numStates)) {
-                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    p,q,r,s)) = tmp(dIndex(totalSize,
-                                        p,q,r,s));
-                    } // end if
-                } // end for p,q,r,s
             } // end if
             setAntiSymmetrizedElements();
         } //  end function readTwoBodyMatrix
@@ -182,7 +177,7 @@ class HartreeFockSolver {
                 } // end try-catch
                 if (fileL > m_basisSize) {
                     /* return once suitable file is found */
-                    totalSize = fileL;
+                    totalSize = fileL/2;
                     twoBodyFileName = x.path();
                     return true;
                 } // end if
