@@ -5,11 +5,11 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <experimental/filesystem>
 
 #include <Eigen/Dense>
 #include <yaml-cpp/yaml.h>
 #include <mpi.h>
-#include <boost/filesystem.hpp>
 
 #include <string>
 
@@ -17,6 +17,8 @@ template<class Integrals>
 class HartreeFockSolver {
     private:
         Integrals* m_I;
+
+        unsigned int totalSize;
 
         int myRank, numProcs;
 
@@ -126,24 +128,68 @@ class HartreeFockSolver {
         } // end function setNonAntiSymmetrizedElements
 
         void readTwoBodyMatrix() {
-            /* read in two-body non-antisymmetrized elementsa and set
+            /* read in two-body non-antisymmetrized elements and set *
              * anti-symmetrized elements */
             std::ifstream twoBodyFile;
-            twoBodyFile.open(dirpath + "/" + twoBodyFileName);
+            twoBodyFile.open(twoBodyFileName);
+            Eigen::ArrayXd tmp =
+                Eigen::ArrayXd::Zero(totalSize*totalSize*totalSize*totalSize);
             if (twoBodyFile.is_open()) {
-                for (unsigned int p = 0; p < m_numStates; ++p)
-                for (unsigned int q = 0; q < m_numStates; ++q)
-                for (unsigned int r = 0; r < m_numStates; ++r)
-                for (unsigned int s = 0; s < m_numStates; ++s)
+                for (unsigned int p = 0; p < totalSize; ++p)
+                for (unsigned int q = 0; q < totalSize; ++q)
+                for (unsigned int r = 0; r < totalSize; ++r)
+                for (unsigned int s = 0; s < totalSize; ++s)
                 {
-                    twoBodyFile >>
+                    twoBodyFile >> tmp(dIndex(totalSize, p,q,r,s));
+                } // end for p,q,r,s
+                twoBodyFile.close();
+                for (unsigned int p = 0; p < totalSize; ++p)
+                for (unsigned int q = 0; q < totalSize; ++q)
+                for (unsigned int r = 0; r < totalSize; ++r)
+                for (unsigned int s = 0; s < totalSize; ++s)
+                {
+                    if ((p<m_numStates) && (q<m_numStates) && (r<m_numStates)
+                            && (s<m_numStates)) {
                         twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                    p,q,r,s));
+                                    p,q,r,s)) = tmp(dIndex(totalSize,
+                                        p,q,r,s));
+                    } // end if
                 } // end for p,q,r,s
             } // end if
-            twoBodyFile.close();
             setAntiSymmetrizedElements();
         } //  end function readTwoBodyMatrix
+
+        bool checkAndPrependFileName() {
+            /* Prepend path to filename, check if file with larger matrix than
+             * given cutoff exists, use that one if it exists. */
+            namespace fs = std::experimental::filesystem;
+
+            // prepend path
+            twoBodyFileName = dirpath + "/" + twoBodyFileName;
+
+            for (auto& x : fs::directory_iterator(dirpath)) {
+                std::string Lstring = "";
+                std::string filex = x.path().filename().replace_extension("");
+                for (unsigned int i = filex.find_first_of("L")+1; i <
+                        filex.size(); ++i) {
+                    Lstring += filex.at(i);
+                } // end fori
+                int fileL = 0;
+                try {
+                    fileL = std::stoi(Lstring);
+                } catch (std::string) {
+                    continue;
+                } // end try-catch
+                if (fileL > m_basisSize) {
+                    /* return once suitable file is found */
+                    totalSize = fileL;
+                    twoBodyFileName = x.path();
+                    return true;
+                } // end if
+            } // end forx
+
+            return fs::exists(twoBodyFileName);
+        } // end function checkFileName
 
     protected:
         unsigned int m_dim, m_numStates, m_numParticles, m_basisSize;
@@ -159,6 +205,7 @@ class HartreeFockSolver {
             // Hartree-Fock equation.
 
             m_numStates = m_basisSize / 2;
+            totalSize = m_numStates;
 
             // matrix containing elements <i|h|j> (one-body elements) and
             // elements <i|j> (overlap elements)
@@ -187,16 +234,15 @@ class HartreeFockSolver {
             // set two-body coupled (Coulomb) integral elements
             if (interaction) {
                 // let root check if file of two-body elements exists
-                int fileExists = 0;
                 twoBodyElements = Eigen::ArrayXd::Zero(m_numStates *
                         m_numStates * m_numStates * m_numStates);
                 twoBodyNonAntiSymmetrizedElements =
                     Eigen::ArrayXd::Zero(m_numStates * m_numStates *
                             m_numStates * m_numStates);
+                bool fileExists = false;
                 if (myRank == 0) {
                     if (twoBodyFileName.compare("")) {
-                        boost::filesystem::path p(dirpath + "/" + twoBodyFileName);
-                        fileExists = (boost::filesystem::exists(p) ? 1 : 0);
+                        fileExists = checkAndPrependFileName();
                         if (fileExists) {
                             readTwoBodyMatrix();
                         } // end if
@@ -331,9 +377,7 @@ class HartreeFockSolver {
                         setNonAntiSymmetrizedElements(pqrsElements,
                                 pqsrElements);
                         setAntiSymmetrizedElements();
-                        if (twoBodyFileName.compare("")) {
-                            writeTwoBodyElementsToFile();
-                        } // end if
+                        writeTwoBodyElementsToFile();
                     } // end if
                 } // end if
 
@@ -349,6 +393,8 @@ class HartreeFockSolver {
             /* set dimensions, cutoff and number of particles and initialize
              * basis and integrals */
             dirpath = "src/integrals/inputs";
+
+            twoBodyFileName = "";
 
             m_I = IIn;
 
@@ -468,7 +514,7 @@ class HartreeFockSolver {
 
         void writeTwoBodyElementsToFile() {
             /* write elements to file */
-            std::ofstream twoBodyFile(dirpath + "/" + twoBodyFileName);
+            std::ofstream twoBodyFile(twoBodyFileName);
             if (twoBodyFile.is_open()) {
                 for (unsigned int p = 0; p < m_numStates; ++p)
                 for (unsigned int q = 0; q < m_numStates; ++q)

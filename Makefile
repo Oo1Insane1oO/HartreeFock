@@ -8,7 +8,7 @@ ifeq ($(TESTS),ON)
 endif
 
 CC = mpic++
-LDFLAGS	= -fopenmp -lpthread -lyaml-cpp -lboost_filesystem -lboost_system  $(LIBS)
+LDFLAGS	= -fopenmp -lpthread -lyaml-cpp -lboost_filesystem -lstdc++fs $(LIBS)
 CXXFLAGS = -O3 -fopenmp -std=c++17 $(INC)
 
 WRITE ?= OFF

@@ -76,19 +76,19 @@ std::string GaussianIntegrals::initializeParameters(double omega) {
 
 void GaussianIntegrals::setFileName(const double& omega) {
     /* set filename of input file based on omega and numBasis (cutoff) */
-    auto eraser = [](std::string& s) {
-        s.erase(s.find_last_not_of('0') + 1, std::string::npos);
-        if(s.back() == '.') {
-            s += "0";
-        } // end if
-    }; // end lambda eraser
-
     std::string wString = std::to_string(omega);
+
+    // remove trailing zeros except one after comma
+    wString.erase(wString.find_last_not_of('0') + 1, std::string::npos);
+    if(wString.back() == '.') {
+        wString += "0";
+    } // end if
+
+    // basis size is an int, let it be
     std::string LString = std::to_string(m_cutOff);
-    eraser(wString);
 
     HartreeFockSolver::twoBodyFileName = "w" + wString  + "_L" + LString  +
-    ".txt";
+        ".txt";
 } // end function setFileName
 
 void GaussianIntegrals::setNormalizations() {
