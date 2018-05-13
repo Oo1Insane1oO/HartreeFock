@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 
 class Cartesian {
     using EigenIntPtrMat = Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>;

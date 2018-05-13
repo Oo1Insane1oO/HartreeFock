@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
         } // end if
 
         auto start = std::chrono::high_resolution_clock::now();
-        double E = HFS->iterate(inputs["maxIter"].as<unsigned int>(), 1e-3,
+        double E = HFS->iterate(inputs["maxIter"].as<unsigned int>(), 1e-6,
                 progress);
         auto end = std::chrono::high_resolution_clock::now();
         if (myRank == 0) {
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
         } // end if
         
         auto start = std::chrono::high_resolution_clock::now();
-        double E = HFS->iterate(inputs["maxIter"].as<unsigned int>(), 1e-8,
+        double E = HFS->iterate(inputs["maxIter"].as<unsigned int>(), 1e-6,
                 progress);
         auto end = std::chrono::high_resolution_clock::now();
         if (myRank == 0) {
