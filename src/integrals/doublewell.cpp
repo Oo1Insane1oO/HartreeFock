@@ -52,6 +52,7 @@ double DoubleWell::coulombElement(const unsigned int& i, const unsigned int& j,
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
     double res = 0.0;
+    GaussianIntegrals::HartreeFockSolver::setIterator();
     for (unsigned int p = 0; p < DWC::C.rows(); ++p) {
         for (unsigned int q = 0; q < DWC::C.rows(); ++q) {
             for (unsigned int r = 0; r < DWC::C.rows(); ++r) {

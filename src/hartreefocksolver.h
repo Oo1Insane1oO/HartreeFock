@@ -31,6 +31,11 @@ class HartreeFockSolver {
 
         Eigen::SparseVector<double> twoBodyElements;
 
+        Eigen::SparseVector<double>::InnerIterator itp;
+        Eigen::SparseVector<double>::InnerIterator itq;
+        Eigen::SparseVector<double>::InnerIterator itr;
+        Eigen::SparseVector<double>::InnerIterator its;
+
         std::string dirpath;
 
         Eigen::VectorXd twoBodyNonAntiSymmetrizedElements;
@@ -378,12 +383,23 @@ class HartreeFockSolver {
 //                         twoBodyElements.nonZeros(), MPI_DOUBLE, 0,
 //                         MPI_COMM_WORLD);
 // 
-                twoBodyElements =
-                    twoBodyNonAntiSymmetrizedElements.sparseView();
+                int sizeInfo[2];
+                if (myRank == 0) {
+                    twoBodyElements =
+                        twoBodyNonAntiSymmetrizedElements.sparseView();
+                    sizeInfo[0] = twoBodyElements.innerSize();
+                    sizeInfo[1] = twoBodyElements.nonZeros();
+                } // end if
 
-                MPI_Bcast(twoBodyNonAntiSymmetrizedElements.data(),
-                        twoBodyNonAntiSymmetrizedElements.size(), MPI_DOUBLE,
+                MPI_Bcast(sizeInfo, 2, MPI_INT, 0, MPI_COMM_WORLD);
+                MPI_Bcast(twoBodyElements.valuePtr(), sizeInfo[1], MPI_DOUBLE,
                         0, MPI_COMM_WORLD);
+                MPI_Bcast(twoBodyElements.innerIndexPtr(), sizeInfo[1],
+                        MPI_INT, 0, MPI_COMM_WORLD);
+
+//                 MPI_Bcast(twoBodyNonAntiSymmetrizedElements.data(),
+//                         twoBodyNonAntiSymmetrizedElements.size(), MPI_DOUBLE,
+//                         0, MPI_COMM_WORLD);
             } // end if
         } // end function assemble
 
@@ -516,10 +532,43 @@ class HartreeFockSolver {
             return E;
         }  // end function groundStateEnergy
 
+        void setIteratorp() {
+            itp = Eigen::SparseVector<double>::InnerIterator(twoBodyElements);
+        } // end function setIteratorp
+        void setIteratorq() {
+            itq = Eigen::SparseVector<double>::InnerIterator(twoBodyElements);
+        } // end function setIteratorq
+        void setIteratorr() {
+            itr = Eigen::SparseVector<double>::InnerIterator(twoBodyElements);
+        } // end function setIteratorr
+        void setIterators() {
+            its = Eigen::SparseVector<double>::InnerIterator(twoBodyElements);
+        } // end function setIterators
+        
+        void incrIteratorp() {
+            ++itp;
+        } // end function incrIterator
+        void incrIteratorq() {
+            ++itq;
+        } // end function incrIterator
+        void incrIteratorr() {
+            ++itr;
+        } // end function incrIterator
+        void incrIterators() {
+            ++its;
+        } // end function incrIterator
+
         double getTwoBodyElement(const unsigned int& i, const unsigned int& j,
                 const unsigned int& k, const unsigned int& l) {
             /* return two-body non-antisymmetrized elements */
-            return twoBodyElements.coeff(dIndex(m_numStates, i,j,k,l));
+//             return twoBodyElements.coeff(dIndex(m_numStates, i,j,k,l));
+            double element = twoBodyIterator.value();
+            if (dIndex(m_numStates, i, j, k, l) == twoBodyIterator.index()) {
+                ++twoBodyIterator;
+                return element;
+            } else {
+                return 0;
+            }
 //             return twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates, i,j,k,l));
         } // end function getTwoBodyElement 
 
