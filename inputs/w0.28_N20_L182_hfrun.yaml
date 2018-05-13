@@ -1,0 +1,7 @@
+omega: 0.28
+numParticles: 20
+dim: 2
+numBasis: 182
+maxIter: 1000
+progress: true
+filename: "data/w0.28_N20_L182"

@@ -1,0 +1,7 @@
+omega: 0.50
+numParticles: 56
+dim: 2
+numBasis: 156
+maxIter: 1000
+progress: true
+filename: "data/w0.50_N56_L156"

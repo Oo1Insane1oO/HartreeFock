@@ -1,0 +1,7 @@
+omega: 1.00
+numParticles: 30
+dim: 2
+numBasis: 30
+maxIter: 1000
+progress: true
+filename: "data/w1.00_N30_L30"

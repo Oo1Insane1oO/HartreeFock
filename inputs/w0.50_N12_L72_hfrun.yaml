@@ -1,0 +1,7 @@
+omega: 0.50
+numParticles: 12
+dim: 2
+numBasis: 72
+maxIter: 1000
+progress: true
+filename: "data/w0.50_N12_L72"
