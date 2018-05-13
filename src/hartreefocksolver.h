@@ -22,7 +22,9 @@ class HartreeFockSolver {
 
         int myRank, numProcs;
 
-        double groundStateEnergy;
+        double energy;
+
+        static constexpr double mixingFactor = 0.5;
 
         bool interaction;
 
@@ -165,6 +167,14 @@ class HartreeFockSolver {
             for (auto& x : fs::directory_iterator(dirpath)) {
                 std::string Lstring = "";
                 std::string filex = x.path().filename().replace_extension("");
+                std::string filew = "";
+                for (unsigned int i = filex.find_first_of("w")+1; i <
+                        filex.find_first_of("_")+1; ++i) {
+                    filew += filex.at(i);
+                } // end fori
+                if (std::stod(filew) != omega) {
+                    continue;
+                }
                 for (unsigned int i = filex.find_first_of("L")+1; i <
                         filex.size(); ++i) {
                     Lstring += filex.at(i);
@@ -188,6 +198,8 @@ class HartreeFockSolver {
 
     protected:
         unsigned int m_dim, m_numStates, m_numParticles, m_basisSize;
+
+        double omega;
 
         std::string twoBodyFileName;
 
@@ -425,6 +437,8 @@ class HartreeFockSolver {
                 FockMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
                 Eigen::VectorXd previousEnergies =
                     Eigen::VectorXd::Zero(m_numStates);
+                Eigen::MatrixXd oldCoefficients = coefficients;
+                Eigen::VectorXd energies = Eigen::VectorXd::Zero(m_numStates);
 
                 // initialize eigenvalue/vector solver for hermitian matrix
                 // (Fock matrix is build to be hermitian)
@@ -444,21 +458,37 @@ class HartreeFockSolver {
                     // find eigenvalues and eigenvector (HartreeFock-energies
                     // and coefficients respectively)
                     eigenSolver.compute(FockMatrix, overlapElements);
+
+                    // perform mixing
+//                     coefficients = eigenSolver.eigenvectors();
+                    energies = eigenSolver.eigenvalues();
                     coefficients = eigenSolver.eigenvectors();
+//                     energies = (eigenSolver.eigenvalues().array()*mixingFactor
+//                             +
+//                             (1-mixingFactor)*previousEnergies.array()).matrix();
+//                     coefficients =
+//                         (eigenSolver.eigenvectors().array()*mixingFactor +
+//                          (1-mixingFactor)*oldCoefficients.array()).matrix();
 
                     // set density matrix with new coefficients
                     setDensityMatrix();
+                    densityMatrix = mixingFactor*densityMatrix + (1-mixingFactor)
+                        * oldCoefficients;
 
                     // check for convergence with RMS of difference between
                     // previous and current energies 
-                    double diff = sqrt((eigenSolver.eigenvalues() -
-                                previousEnergies).squaredNorm() / m_numStates);
+                    double diff = sqrt((energies - previousEnergies).norm() /
+                            m_numStates);
+                    energy = groundStateEnergy(energies);
+                    Methods::sepPrint(diff, energy);
+
                     if (diff < eps) {
                         break;
                     } // end if
 
-                    // update previous energies
-                    previousEnergies = eigenSolver.eigenvalues();
+                    // keep old values
+                    oldCoefficients = densityMatrix;
+                    previousEnergies = energies;
 
                     // print progress
                     if (progressDivider) {
@@ -476,24 +506,26 @@ class HartreeFockSolver {
                     } // end if
                 } // end forcount
 
-                // find estimate for ground state energy for m_numParticles
-                groundStateEnergy = 2*eigenSolver.eigenvalues().segment(0,
-                        m_numParticles/2).sum();
-                for (unsigned int a = 0; a < m_numStates; ++a)
-                for (unsigned int b = 0; b < m_numStates; ++b)
-                for (unsigned int c = 0; c < m_numStates; ++c)
-                for (unsigned int d = 0; d < m_numStates; ++d)
-                {
-                    groundStateEnergy -= densityMatrix(a,c) *
-                        densityMatrix(b,d) *
-                        twoBodyElements(dIndex(m_numStates, a,c,b,d));
-                } // end for a,b,c,d
-
-                return groundStateEnergy;
+                return energy;
             } // end if
 
             return 0;
         } // end function iterate
+
+        double groundStateEnergy(const Eigen::VectorXd& eigVals) {
+            // find estimate for ground state energy for m_numParticles
+            double E = 2*eigVals.segment(0, m_numParticles/2).sum();
+            for (unsigned int a = 0; a < m_numStates; ++a)
+            for (unsigned int b = 0; b < m_numStates; ++b)
+            for (unsigned int c = 0; c < m_numStates; ++c)
+            for (unsigned int d = 0; d < m_numStates; ++d)
+            {
+                E -= densityMatrix(a,c) * densityMatrix(b,d) *
+                    twoBodyElements(dIndex(m_numStates, a,c,b,d));
+            } // end for a,b,c,d
+
+            return E;
+        }  // end function groundStateEnergy
 
         const double& getTwoBodyElement(const unsigned int& i, const unsigned
                 int& j, const unsigned int& k, const unsigned int& l) const {

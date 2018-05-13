@@ -31,6 +31,8 @@ std::string GaussianIntegrals::initializeParameters(double omega) {
     // set filename for file containing two-body elements (let HFS calculate
     // and create one if it doesnt exist)
     setFileName(omega);
+
+    HartreeFockSolver::omega = omega;
     
     nSum = Eigen::ArrayXi::Zero(m_dim);
 
