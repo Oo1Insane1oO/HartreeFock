@@ -1,7 +1,0 @@
-omega: 0.28
-numParticles: 6
-dim: 2
-numBasis: 132
-maxIter: 1000
-progress: true
-filename: "data/w0.28_N6_L132"

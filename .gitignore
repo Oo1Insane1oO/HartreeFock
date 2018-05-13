@@ -1,5 +1,8 @@
 # ignore objects
 bin/*
 
+# ignore input objects
+inputs/*
+
 # ignore executable
 main

@@ -1,7 +1,0 @@
-omega: 2.00
-numParticles: 56
-dim: 2
-numBasis: 182
-maxIter: 1000
-progress: true
-filename: "data/w2.00_N56_L182"

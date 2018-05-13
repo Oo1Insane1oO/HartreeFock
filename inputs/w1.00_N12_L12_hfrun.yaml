@@ -1,7 +1,0 @@
-omega: 1.00
-numParticles: 12
-dim: 2
-numBasis: 12
-maxIter: 1000
-progress: true
-filename: "data/w1.00_N12_L12"

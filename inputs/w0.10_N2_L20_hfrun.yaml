@@ -1,7 +1,0 @@
-omega: 0.10
-numParticles: 2
-dim: 2
-numBasis: 20
-maxIter: 1000
-progress: true
-filename: "data/w0.10_N2_L20"

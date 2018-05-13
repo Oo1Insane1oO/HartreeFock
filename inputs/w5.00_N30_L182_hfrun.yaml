@@ -1,7 +1,0 @@
-omega: 5.00
-numParticles: 30
-dim: 2
-numBasis: 182
-maxIter: 1000
-progress: true
-filename: "data/w5.00_N30_L182"

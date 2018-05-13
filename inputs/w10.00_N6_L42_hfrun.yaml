@@ -1,7 +1,0 @@
-omega: 10.00
-numParticles: 6
-dim: 2
-numBasis: 42
-maxIter: 1000
-progress: true
-filename: "data/w10.00_N6_L42"
