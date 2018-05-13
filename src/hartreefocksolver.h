@@ -8,6 +8,7 @@
 #include <experimental/filesystem>
 
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include <yaml-cpp/yaml.h>
 #include <mpi.h>
 
@@ -30,7 +31,7 @@ class HartreeFockSolver {
 
         std::string dirpath;
 
-        Eigen::ArrayXd twoBodyElements, twoBodyNonAntiSymmetrizedElements;
+        Eigen::ArrayXd twoBodyNonAntiSymmetrizedElements;
         Eigen::MatrixXd oneBodyElements, overlapElements;
 
         Eigen::MatrixXd FockMatrix, densityMatrix, coefficients;
@@ -56,8 +57,11 @@ class HartreeFockSolver {
                     FockMatrix(p,q) = oneBodyElements(p,q);
                     for (unsigned int r = 0; r < m_numStates; ++r) {
                         for (unsigned int s = 0; s < m_numStates; ++s) {
-                            FockMatrix(p,q) += densityMatrix(r,s) *
-                                twoBodyElements(dIndex(m_numStates, p,q,r,s));
+                            FockMatrix(p,q) += densityMatrix(r,s) * (2 *
+                                    twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                            p,r,q,s)) -
+                                    twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                            p,r,s,q)));
                         } // end fors
                     } // end forr
 
@@ -74,22 +78,6 @@ class HartreeFockSolver {
              * (i,j,k,l) */
             return i + N * (j + N * (k + N*l));
         } // end function dIndex
-
-        void setAntiSymmetrizedElements() {
-            /* array containing antisymmetric elements <ij|1/r_12|kl>_AS =
-             * 2<ij|1/r_12|kl>_- <ij|1/r_12|lk> */
-            for (unsigned int p = 0; p < m_numStates; ++p)
-            for (unsigned int q = 0; q < m_numStates; ++q)
-            for (unsigned int r = 0; r < m_numStates; ++r)
-            for (unsigned int s = 0; s < m_numStates; ++s)
-            {
-                twoBodyElements(dIndex(m_numStates, p,q,r,s)) =
-                    2*twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                p,r,q,s)) -
-                    twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
-                                p,r,s,q));
-            } // end for p,q,r,s
-        } // end function setAntiSymmetrizedElements
 
         void setNonAntiSymmetrizedElements(const Eigen::ArrayXd& pqrsElements,
                 const Eigen::ArrayXd& pqsrElements) {
@@ -153,7 +141,6 @@ class HartreeFockSolver {
                 } // end for p,q,r,s
                 twoBodyFile.close();
             } // end if
-            setAntiSymmetrizedElements();
         } //  end function readTwoBodyMatrix
 
         bool checkAndPrependFileName() {
@@ -241,8 +228,6 @@ class HartreeFockSolver {
             // set two-body coupled (Coulomb) integral elements
             if (interaction) {
                 // let root check if file of two-body elements exists
-                twoBodyElements = Eigen::ArrayXd::Zero(m_numStates *
-                        m_numStates * m_numStates * m_numStates);
                 twoBodyNonAntiSymmetrizedElements =
                     Eigen::ArrayXd::Zero(m_numStates * m_numStates *
                             m_numStates * m_numStates);
@@ -383,7 +368,6 @@ class HartreeFockSolver {
                     if (myRank == 0) {
                         setNonAntiSymmetrizedElements(pqrsElements,
                                 pqsrElements);
-                        setAntiSymmetrizedElements();
                         writeTwoBodyElementsToFile();
                     } // end if
                 } // end if
@@ -515,8 +499,11 @@ class HartreeFockSolver {
             for (unsigned int c = 0; c < m_numStates; ++c)
             for (unsigned int d = 0; d < m_numStates; ++d)
             {
-                E -= densityMatrix(a,c) * densityMatrix(b,d) *
-                    twoBodyElements(dIndex(m_numStates, a,c,b,d));
+                E -= densityMatrix(a,b) * densityMatrix(c,d) *
+                    (2*twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                                                a,c,b,d)) -
+                     twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                             a,c,d,b)));
             } // end for a,b,c,d
 
             return E;
