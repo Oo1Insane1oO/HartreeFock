@@ -4,5 +4,8 @@ bin/*
 # ignore input objects
 inputs/*
 
+# ignore inputs
+src/integrals/inputs/*
+
 # ignore executable
 main

@@ -101,17 +101,19 @@ int main(int argc, char *argv[]) {
         double E = HFS->iterate(inputs["maxIter"].as<unsigned int>(), 1e-3,
                 progress);
         auto end = std::chrono::high_resolution_clock::now();
-//         if (myRank == 0) {
-//             if (inputs["filename"].as<std::string>().compare("")) {
-//                 HFS->writeCoefficientsToFile(inputs["filename"] .
-//                         as<std::string>(),
-//                         std::to_string(inputs["omega"].as<double>()));
-//             } // end if
-//             std::cout << Methods::stringPos(numProcs, 3) << std::endl;
-//             std::chrono::duration<double> time = end - start;
-//             std::cout << "Time: " << time.count() << "s" << std::endl;
-//             std::cout << std::setprecision(15) << "E0 = " << E << std::endl;
-//         } // end if
+        if (myRank == 0) {
+            if (inputs["filename"].as<std::string>().compare("")) {
+                HFS->writeCoefficientsToFile(inputs["filename"] .
+                        as<std::string>(),
+                        std::to_string(inputs["omega"].as<double>()));
+            } else {// end if
+                std::cout << Methods::stringPos(numProcs, 3) << std::endl;
+                std::chrono::duration<double> time = end - start;
+                std::cout << "Time: " << time.count() << "s" << std::endl;
+                std::cout << "Iter: " << HFS->getIterations() << std::endl;
+                std::cout << std::setprecision(15) << "E0 = " << E << std::endl;
+            } // end ifelse
+        } // end if
     #endif
     
 //     #ifdef STYPEGAUSSIAN

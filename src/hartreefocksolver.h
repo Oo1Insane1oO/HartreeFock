@@ -18,7 +18,7 @@ class HartreeFockSolver {
     private:
         Integrals* m_I;
 
-        unsigned int totalSize;
+        unsigned int totalSize, iterations;
 
         int myRank, numProcs;
 
@@ -459,19 +459,14 @@ class HartreeFockSolver {
                     // and coefficients respectively)
                     eigenSolver.compute(FockMatrix, overlapElements);
 
-                    // perform mixing
-//                     coefficients = eigenSolver.eigenvectors();
+                    // find eigenvalues and eigenvectors
                     energies = eigenSolver.eigenvalues();
                     coefficients = eigenSolver.eigenvectors();
-//                     energies = (eigenSolver.eigenvalues().array()*mixingFactor
-//                             +
-//                             (1-mixingFactor)*previousEnergies.array()).matrix();
-//                     coefficients =
-//                         (eigenSolver.eigenvectors().array()*mixingFactor +
-//                          (1-mixingFactor)*oldCoefficients.array()).matrix();
 
                     // set density matrix with new coefficients
                     setDensityMatrix();
+                    
+                    // perform mixing (for convergence, dont ask why...)
                     densityMatrix = mixingFactor*densityMatrix + (1-mixingFactor)
                         * oldCoefficients;
 
@@ -480,9 +475,9 @@ class HartreeFockSolver {
                     double diff = sqrt((energies - previousEnergies).norm() /
                             m_numStates);
                     energy = groundStateEnergy(energies);
-                    Methods::sepPrint(diff, energy);
 
                     if (diff < eps) {
+                        iterations = count;
                         break;
                     } // end if
 
@@ -534,6 +529,10 @@ class HartreeFockSolver {
                         i,j,k,l));
         } // end function getTwoBodyElement 
 
+        const unsigned int& getIterations() const {
+            return iterations;
+        } // end function getIterations
+
         void setInteraction(bool a) {
             /* set interaction on (if a=true) or false (if a=false) */
             interaction = a;
@@ -563,7 +562,8 @@ class HartreeFockSolver {
              * integral object) to YAML file */
             std::ofstream outFile(filename + ".yaml");
             YAML::Node info;
-            info["E0"] = groundStateEnergy;
+            info["E0"] = energy;
+            info["I"] = iterations;
             info["omega"] = omega;
             info["dim"] = m_dim;
             info["numbasis"] = m_numStates;
