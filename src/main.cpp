@@ -3,6 +3,8 @@
 #include <chrono>
 #include <string>
 
+#define EIGEN_NO_DEBUG
+
 #include <Eigen/Dense>
 #include <mpi.h>
 #include <yaml-cpp/yaml.h>
@@ -98,7 +100,7 @@ int main(int argc, char *argv[]) {
         } // end if
 
         auto start = std::chrono::high_resolution_clock::now();
-        double E = HFS->iterate(inputs["maxIter"].as<unsigned int>(), 1e-3,
+        double E = HFS->iterate(inputs["maxIter"].as<unsigned int>(), 1e-6,
                 progress);
         auto end = std::chrono::high_resolution_clock::now();
         if (myRank == 0) {
