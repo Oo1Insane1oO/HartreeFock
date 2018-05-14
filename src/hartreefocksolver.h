@@ -8,7 +8,6 @@
 #include <experimental/filesystem>
 
 #include <Eigen/Dense>
-#include <Eigen/Sparse>
 #include <yaml-cpp/yaml.h>
 #include <mpi.h>
 
@@ -183,6 +182,36 @@ class HartreeFockSolver {
             return fs::exists(twoBodyFileName);
         } // end function checkFileName
 
+        void weightSizesAndDispl(Eigen::ArrayXi& sizes, Eigen::ArrayXi& displ,
+                const Eigen::ArrayXXi& pqMap) {
+            /* Weight the sizes based on the sum of all (p,q,r,s)
+            in process. make sure total sum of pqrs within process chunk is
+            within originalMean */
+            Eigen::ArrayXi sums = Eigen::ArrayXi::Zero(numProcs);
+            for (unsigned int i = 0; i < sums.size(); ++i) {
+                sums(i) = pqMap.block(displ(i), 0, sizes(i), 4).sum();
+            } // end fori
+
+            int originalMean = ceil(sums.mean());
+
+            for (int i = 0; i < numProcs-1; ++i) {
+                int k = 0;
+                int j = displ(i+1);
+                int jSum = 0;
+                while (sums(i) <= originalMean) {
+                    int kSum = pqMap.row(j).sum();
+                    jSum += kSum;
+                    sums(i) += kSum; 
+                    j++;
+                    k++;
+                } // end while
+                sizes(i) += k;
+                sizes(i+1) -= k;
+                displ(i+1) += k;
+                sums(i+1) -= jSum;
+            } // end fori
+        } // end function weightSizesAndDispl
+
     protected:
         unsigned int m_dim, m_numStates, m_numParticles, m_basisSize;
 
@@ -276,37 +305,7 @@ class HartreeFockSolver {
                             displ(p) = sizes.head(p).sum();
                         } // end forp
 
-                        // Weight the sizes based on the sum of all (p,q,r,s)
-                        // in process. make sure total sum of pqrs within
-                        // process chunk is within originalMean
-                        Eigen::ArrayXi sums = Eigen::ArrayXi::Zero(numProcs);
-                        for (unsigned int i = 0; i < sums.size(); ++i) {
-                            sums(i) = pqMap.block(displ(i), 0,
-                                    sizes(i),4).sum();
-                        } // end fori
-                        int originalMean = ceil(sums.mean());
-                        for (int i = 0; i < numProcs-1; ++i) {
-                            for (int j = displ(i); j < displ(i)+sizes(i+1);
-                                    ++j) {
-                                /* iterate over elements in next process */
-                                double jSum = pqMap.row(j).sum();
-                                int newSum = sums(i) + jSum;
-                                if (newSum < originalMean) {
-                                    /* take pqrs element j from next process
-                                     * and update sums */
-                                    sizes(i) += 1;
-                                    sizes(i+1) -= 1;
-                                    displ(i+1) += 1;
-                                    sums(i) = newSum;
-                                    sums(i+1) -= jSum;
-                                } // end if
-                                if (newSum >= originalMean) {
-                                    /* break if total sum is within
-                                     * originalMean */
-                                    break;
-                                } // end if
-                            } // end forj
-                        } // end fori
+                        weightSizesAndDispl(sizes, displ, pqMap);
                     } // end if
                     MPI_Bcast(sizes.data(), numProcs, MPI_INT, 0,
                             MPI_COMM_WORLD);
