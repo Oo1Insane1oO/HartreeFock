@@ -189,7 +189,15 @@ class HartreeFockSolver {
             within originalMean */
             Eigen::ArrayXi sums = Eigen::ArrayXi::Zero(numProcs);
             for (unsigned int i = 0; i < sums.size(); ++i) {
-                sums(i) = pqMap.block(displ(i), 0, sizes(i), 2).sum();
+                const Eigen::Ref<const Eigen::ArrayXXi> pqBlock =
+                    pqMap.block(displ(i), 0, sizes(i), 2);
+                for (unsigned int k = 0; k < pqBlock.rows(); ++k) {
+                    for (unsigned int l = 0; l < pqBlock.cols(); ++l) {
+                        sums(i) +=
+                            (m_I->GaussianBasis::getnStates(pqBlock(k,l)) .
+                             array() + 1).prod();
+                    } // end forl
+                } // end fork
             } // end fori
 
             int originalMean = ceil(sums.mean());
@@ -198,10 +206,16 @@ class HartreeFockSolver {
                 int k = 0;
                 int j = displ(i+1);
                 int jSum = 0;
-                while (sums(i) <= originalMean) {
-                    int kSum = pqMap.row(j).sum();
+                while ((sums(i) <= originalMean)) {
+                    const Eigen::Ref<const Eigen::ArrayXi> pqRow =
+                        pqMap.row(j);
+                    int kSum = 0;
+                    for (unsigned int k = 0; k < pqRow.size(); ++k) {
+                        kSum += (m_I->GaussianBasis::getnStates(pqRow(k)) .
+                                array() + 1).prod();
+                    } // end fork
                     jSum += kSum;
-                    sums(i) += kSum; 
+                    sums(i) += kSum;
                     j++;
                     k++;
                 } // end while
@@ -317,15 +331,15 @@ class HartreeFockSolver {
                     } // end forp
                     Eigen::ArrayXd myTmpTwoBody(sizes(myRank)),
                         myTmpTwoBodyAS(sizes(myRank));
-                    if (progressDivider) {
-                        progressDivider = (int)exp(fmod(4.5, pqEnd));
-                    } // end if
+
                     // save first part of progress bar
                     std::string progressPosition, progressBuffer;
                     if (progressDivider) {
+                        progressDivider = (int)exp(fmod(4.5, pqEnd));
                         progressPosition = Methods::stringPos(myRank, 3) +
                             "Progress: [";
                     } // end if
+
                     int rs = 0;
                     for (int pq = pqstart; pq < pqEnd; ++pq) {
                         const int& p = pqMap(pq,0);
@@ -340,7 +354,7 @@ class HartreeFockSolver {
                                 // print progress
                                 if (progressDivider) {
                                     /* show progress if given */
-                                    int progressStart = pq - pqstart;
+                                    int progressStart = pq - pqstart + rs;
                                     if (!(static_cast<int>(fmod(progressStart,
                                                         Methods::divider(
                                                             progressStart,
@@ -353,7 +367,7 @@ class HartreeFockSolver {
                                                 (float)((progressStart==sizes(myRank)-1)
                                                     ?  progressStart :
                                                     (progressStart+1)) /
-                                                sizes(myRank), 55, "Two-Body");
+                                                sizes(myRank), 23, "Two-Body");
                                     } // end if
                                 } // end if
 
@@ -486,7 +500,7 @@ class HartreeFockSolver {
                             progressBuffer = progressPosition;
                             Methods::printProgressBar(progressBuffer,
                                     (float)((count==maxIterations-1) ? count :
-                                        (count+1)) / maxIterations, 55, "HF");
+                                        (count+1)) / maxIterations, 23, "HF");
                         } // end if
                     } // end if
                 } // end forcount

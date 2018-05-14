@@ -4,10 +4,9 @@
 void Methods::printProgressBar(std::string &flip, const float 
         &percentage, const int width, const std::string &extra) {
     /* print progressbar with percentage as output */
-    flip.append(width * percentage, '-');
-    flip.append(width * (1-percentage) - 1, ' ');
-    std::cout << flip + "] " + std::to_string((int)(round(percentage
-                    * 100.0))) + " % " + extra + "\n";
+    std::cout << flip + std::string(width*percentage,'-') +
+        std::string(width*(1-percentage),' ') + "] " +
+        std::to_string((int)(round(percentage*100.0))) + " % " + extra + "\n";
     std::cout.flush();
 } // end function printProgressBar
 

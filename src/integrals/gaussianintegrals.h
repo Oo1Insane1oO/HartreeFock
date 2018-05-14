@@ -12,6 +12,7 @@ class GaussianBasis;
 class GaussianIntegrals : 
     public HartreeFockSolver<GaussianIntegrals>, 
     protected GaussianBasis {
+    friend class HartreeFockSolver<GaussianIntegrals>;
     using HartreeFockSolver<GaussianIntegrals>::m_dim;
     private:
         double expScaleFactor, sqrtFactor, F0, F1, xScale, sqrtScale, powScale,
