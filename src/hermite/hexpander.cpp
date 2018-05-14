@@ -14,16 +14,19 @@ Hexpander::~Hexpander() {
 
 void Hexpander::setCoefficients(unsigned int iMax, unsigned int jMax, double a,
         double b, double Qx) {
-    /* find coefficients */
+    /* find coefficients for overlap distributions (product between two
+     * hermite-gaussians */
+    iMp1 = iMax+1;
+    jMp1 = jMax+1;
+    nMp1 = iMp1+jMp1+1;
+
     double p = a + b;
     double q = a*b/p;
 
-    unsigned int tMax = iMax+jMax+1;
-    coefficients = EigenMatArrXd::Constant(iMax+1, jMax+1,
-            Eigen::ArrayXd::Zero(tMax));
-    coefficients(0,0)(0) = exp(-q*Qx*Qx);
-    for (unsigned int i = 0; i < coefficients.cols(); ++i) {
-        for (unsigned int t = 0; t < tMax; t++) {
+    coefficients = Eigen::ArrayXd::Zero(iMp1*jMp1*nMp1);
+    coefficients(0) = exp(-q*Qx*Qx);
+    for (unsigned int i = 0; i < jMp1; ++i) {
+        for (unsigned int t = 0; t < nMp1; t++) {
             if ((i==0) && (t==0)) {
                 continue;
             } // end if
@@ -33,39 +36,40 @@ void Hexpander::setCoefficients(unsigned int iMax, unsigned int jMax, double a,
 
             double Em = 0;
             if(checkIndices(0, im, tm)) {
-                Em = coefficients(0,im)(tm);
+                Em = coefficients(cidx(0,im,tm));
             } // end if
             double Ed = 0;
             if(checkIndices(0, im, t)) {
-                Ed = coefficients(0,im)(t);
+                Ed = coefficients(cidx(0,im,t));
             } // end if
             double Ep = 0;
             if(checkIndices(0, im, tp)) {
-                Ep = coefficients(0,im)(tp);
+                Ep = coefficients(cidx(0,im,tp));
             } // end if
-            coefficients(0,i)(t) = 0.5/p*Em + q*Qx/b*Ed + tp*Ep;
+            coefficients(cidx(0,i,t)) = 0.5/p*Em + q*Qx/b*Ed + tp*Ep;
         } // end fort
     } // end fori
-    for (unsigned int i = 1; i < coefficients.rows(); ++i) {
-        for (unsigned int j = 0; j < coefficients.cols(); ++j) {
-            for (unsigned int t = 0; t < tMax; ++t) {
+
+    for (unsigned int i = 1; i < iMp1; ++i) {
+        for (unsigned int j = 0; j < jMp1; ++j) {
+            for (unsigned int t = 0; t < nMp1; ++t) {
                 int im = i - 1;
                 int tm = t - 1;
                 int tp = t + 1;
 
                 double Em = 0;
                 if(checkIndices(im, j, tm)) {
-                    Em = coefficients(im,j)(tm);
+                    Em = coefficients(cidx(im,j,tm));
                 } // end if
                 double Ed = 0;
                 if(checkIndices(im, j, t)) {
-                    Ed = coefficients(im,j)(t);
+                    Ed = coefficients(cidx(im,j,t));
                 } // end if
                 double Ep = 0;
                 if(checkIndices(im, j, tp)) {
-                    Ep = coefficients(im,j)(tp);
+                    Ep = coefficients(cidx(im,j,tp));
                 } // end if
-                coefficients(i,j)(t) = 0.5/p*Em + q*Qx/a*Ed + tp*Ep;
+                coefficients(cidx(i,j,t)) = 0.5/p*Em + q*Qx/a*Ed + tp*Ep;
             } // end fort
         } // end forj
     } // end fori
@@ -227,7 +231,7 @@ double Hexpander::modifiedIntegrand(double u, const unsigned int& n, const
 const double& Hexpander::coeff(const unsigned int& i, const unsigned int& j,
         const unsigned int& t) const {
     /* return coefficient E^{ij}_t */
-    return coefficients(i,j)(t);
+    return coefficients(cidx(i,j,t));
 } // end coeff
 
 const double& Hexpander::auxiliary2D(const unsigned int& n, const unsigned int&
