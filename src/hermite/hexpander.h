@@ -11,12 +11,15 @@ using EigenArrCubeXd = Eigen::Array<Eigen::Array<Eigen::MatrixXd,
 
 class Hexpander {
     private:
-        EigenArrMatXd integrals2D;
         EigenArrCubeXd integrals3D;
 
+        Eigen::ArrayXd integrals2D;
         Eigen::ArrayXd coefficients;
     
         unsigned int iMp1, jMp1, nMp1;
+        
+        unsigned int x2DMp1, y2DMp1, n2DMp1;
+        unsigned int x3DMp1, y3DMp1, z3DMp1, n3DMp1;
 
         double boys(const unsigned int&, const double&);
 
@@ -29,6 +32,18 @@ class Hexpander {
                 const unsigned int& n) const {
             /* calculate index in coefficients matrix */
             return n + nMp1 * (j + jMp1 * i);
+        } // end function cidx
+        
+        inline unsigned int I2Didx(const unsigned int& i, const unsigned int&
+                j, const unsigned int& n) const {
+            /* calculate index in integrals2D matrix */
+            return n + n2DMp1 * (j + y2DMp1 * i);
+        } // end function I2Didx
+
+        inline unsigned int I3Didx(const unsigned int& i, const unsigned int&
+                j, const unsigned int& k, const unsigned int& n) const {
+            /* calculate index in coefficients matrix */
+            return n + n3DMp1 * (k + z3DMp1 * (j + y3DMp1 * i));
         } // end function cidx
 
     public:

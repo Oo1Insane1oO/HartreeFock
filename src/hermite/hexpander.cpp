@@ -78,23 +78,27 @@ void Hexpander::setCoefficients(unsigned int iMax, unsigned int jMax, double a,
 void Hexpander::setAuxiliary2D(unsigned int xMax, unsigned int yMax, double a,
         double b, double c, double d, const Eigen::VectorXd& PQ) {
     /* setup integral elements in 2D */
-    unsigned int nMax = xMax + yMax;
+    x2DMp1 = xMax + 1;
+    y2DMp1 = yMax + 1;
+    n2DMp1 = x2DMp1 + y2DMp1 + 1;
+
     double p = (a+c)*(b+d) / (a+c+b+d);
-    integrals2D = EigenArrMatXd::Constant(nMax+1, Eigen::MatrixXd::Zero(xMax+1,
-                yMax+1));
+
+    integrals2D = Eigen::ArrayXd::Zero(x2DMp1 * y2DMp1 * n2DMp1);
+
     double powVal = 1;
-    for (unsigned int n = 0; n <= nMax; ++n) {
+    for (unsigned int n = 0; n < n2DMp1; ++n) {
         /* calculate initial integrals */
-        integrals2D(n)(0,0) = powVal *
+        integrals2D(I2Didx(0,0,n)) = powVal *
             GaussianQuadrature::gaussChebyshevQuad(50, this,
                     &Hexpander::modifiedIntegrand, n, p*PQ.squaredNorm());
         powVal *= -2*p;
     } // end forn
 
-    for (unsigned int ts = 1; ts <= nMax; ++ts) {
-        for (unsigned int n = 0; n <= nMax-ts; ++n) {
-            for (unsigned int i = 0; i <= xMax; ++i) {
-                for (unsigned int j = 0; j <= yMax; ++j) {
+    for (unsigned int ts = 1; ts < n2DMp1; ++ts) {
+        for (unsigned int n = 0; n < n2DMp1-ts; ++n) {
+            for (unsigned int i = 0; i < x2DMp1; ++i) {
+                for (unsigned int j = 0; j < y2DMp1; ++j) {
                     if ((i+j != ts) || (i+j == 0)) {
                         /* out of bounds */
                         continue;
@@ -119,12 +123,12 @@ void Hexpander::setAuxiliary2D(unsigned int xMax, unsigned int yMax, double a,
                     } // end ifelse
                     double currValue = 0;
                     if (i2 >= 0 && j2 >= 0) {
-                        currValue += factor * integrals2D(n+1)(i2,j2);
+                        currValue += factor * integrals2D(I2Didx(i2,j2,n+1));
                     } // end if
                     if (i3 >= 0 && j3 >= 0) {
-                        currValue += XPQ * integrals2D(n+1)(i3,j3);
+                        currValue += XPQ * integrals2D(I2Didx(i3,j3,n+1));
                     } // end if
-                    integrals2D(n)(i,j) = currValue;
+                    integrals2D(I2Didx(i,j,n)) = currValue;
                 } // end forj
             } // end fori
         } // end forn
@@ -237,7 +241,7 @@ const double& Hexpander::coeff(const unsigned int& i, const unsigned int& j,
 const double& Hexpander::auxiliary2D(const unsigned int& n, const unsigned int&
         i, const unsigned int& j) const {
     /* return integral R^{ij}_n */
-    return integrals2D(n)(i,j);
+    return integrals2D(I2Didx(i,j,n));
 } // end function integral2D
 
 const double& Hexpander::auxiliary3D(const unsigned int& n, const unsigned int&
