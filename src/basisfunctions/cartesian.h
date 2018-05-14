@@ -8,8 +8,6 @@
 #include "../methods.h"
 
 class Cartesian {
-    using EigenIntPtrMat = Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>;
-    using EigenIntPtrVec = Eigen::Matrix<int*, Eigen::Dynamic, 1>;
     private:
         int s;
         unsigned int m_dim, m_size, m_numStates;
@@ -17,7 +15,7 @@ class Cartesian {
 
         Eigen::VectorXi angularMomenta;
 
-        Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic> states;
+        Eigen::MatrixXi states;
 
         void addState(unsigned int&, const unsigned int, const unsigned int,
                 const unsigned int, const unsigned int, const unsigned int);
@@ -38,8 +36,10 @@ class Cartesian {
 
         void setup(unsigned int, const unsigned int);
 
-        const EigenIntPtrMat &getStates() const;
-        const Eigen::Ref<const EigenIntPtrVec> getStates(const unsigned int&)
+        const Eigen::MatrixXi& getStates() const;
+        const Eigen::Ref<const Eigen::VectorXi> getStates(const unsigned int&)
+            const;
+        const Eigen::Ref<const Eigen::VectorXi> getnStates(const unsigned int&)
             const;
         const int& getn(const unsigned int&, const unsigned int&) const;
         const Eigen::VectorXi &getn() const;

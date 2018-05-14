@@ -20,6 +20,8 @@ class GaussianIntegrals :
         Eigen::ArrayXd normalizationFactors;
         const double& normalizationFactor(const unsigned int&) const;
 
+        Eigen::ArrayXd xScaleSqrtPow;
+
         Eigen::ArrayXi nSum;
 
         std::unique_ptr<Hexpander> coeffs;

@@ -36,11 +36,19 @@ std::string GaussianIntegrals::initializeParameters(double omega) {
     
     nSum = Eigen::ArrayXi::Zero(m_dim);
 
+
     // choose coulombElement function for 2D or 3D and set all coefficients and
     // 1D integral elements
-    const Eigen::VectorXi& nvalues = GaussianBasis::Cartesian::getn();
+    const Eigen::Ref<const Eigen::VectorXi> nvalues =
+        GaussianBasis::Cartesian::getn();
     unsigned int pmax = nvalues(nvalues.size()-1);
     unsigned int auxMax = 2*(pmax+pmax);
+    
+    xScaleSqrtPow = Eigen::ArrayXd::Zero((pmax+1)*4*m_dim);
+    for (unsigned int i = 0; i < xScaleSqrtPow.size(); ++i) {
+        xScaleSqrtPow(i) = pow(xScale, i/2.);
+    } // end fori
+
     static Eigen::VectorXd centerVec = Eigen::VectorXd::Constant(m_dim, 0.0);
     coeffs->setCoefficients(pmax, pmax, xScaleHalf, xScaleHalf, 0.0);
     if (m_dim == 2) {
@@ -252,7 +260,7 @@ inline double GaussianIntegrals::coulomb2D(const unsigned int& i, const unsigned
     for (int lx = ((Lx+1)%2==0 ? 1 : 0); lx <= Lx; lx+=2)
     for (int ly = ((Ly+1)%2==0 ? 1 : 0); ly <= Ly; ly+=2)
     {
-        sum += pow(xScale, (ix+iy + kx+ky + jx+jy + lx+ly)/2.) *
+        sum += xScaleSqrtPow(ix+iy + kx+ky + jx+jy + lx+ly) *
             HC::coeff(Ix,ix) * HC::coeff(Iy,iy) * HC::coeff(Kx,kx) *
             HC::coeff(Ky,ky) * HC::coeff(Jx,jx) * HC::coeff(Jy,jy) *
             HC::coeff(Lx,lx) * HC::coeff(Ly,ly) * coulombElement2D(ix,iy,
@@ -326,7 +334,7 @@ inline double GaussianIntegrals::coulomb3D(const unsigned int& i, const unsigned
     for (int ly = ((Ly+1)%2==0 ? 1 : 0); ly <= Ly; ly+=2)
     for (int lz = ((Lz+1)%2==0 ? 1 : 0); lz <= Lz; lz+=2)
     {
-        sum += pow(xScale, (ix+iy+iz + kx+ky+kz + jx+jy+jz + lx+ly+lz)/2.) *
+        sum += xScaleSqrtPow(ix+iy+iz + kx+ky+kz + jx+jy+jz + lx+ly+lz) *
             HC::coeff(Ix,ix) * HC::coeff(Iy,iy) * HC::coeff(Iz,iz) *
             HC::coeff(Kx,kx) * HC::coeff(Ky,ky) * HC::coeff(Kz,kz) *
             HC::coeff(Jx,jx) * HC::coeff(Jy,jy) * HC::coeff(Jz,jz) *
@@ -362,22 +370,15 @@ double GaussianIntegrals::coulombElement(const unsigned int& i, const unsigned
     int& j, const unsigned int& k, const unsigned int& l) {
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
-    const Eigen::Array<int*, Eigen::Dynamic, 1>& ni =
-        GaussianBasis::Cartesian::getStates(i).segment(0, m_dim);
-    const Eigen::Array<int*, Eigen::Dynamic, 1>& nj =
-        GaussianBasis::Cartesian::getStates(j).segment(0, m_dim);
-    const Eigen::Array<int*, Eigen::Dynamic, 1>& nk =
-        GaussianBasis::Cartesian::getStates(k).segment(0, m_dim);
-    const Eigen::Array<int*, Eigen::Dynamic, 1>& nl =
-        GaussianBasis::Cartesian::getStates(l).segment(0, m_dim);
-
-    Methods::refSum(nSum, ni, nj, nk, nl);
-    nSum = nSum.unaryExpr([](const int m) {return m%2;});
+    nSum = (GaussianBasis::Cartesian::getnStates(i) +
+            GaussianBasis::Cartesian::getnStates(j) +
+            GaussianBasis::Cartesian::getnStates(k) +
+            GaussianBasis::Cartesian::getnStates(l));
 
     bool integrandIsEven = false;
     for (unsigned int i = 0; i < nSum.size(); ++i) {
         for (unsigned int j = 0; j < nSum.size(); ++j) {
-            if (nSum(i) == nSum(j)) {
+            if (nSum(i)%2 == nSum(j)%2) {
                 integrandIsEven = true;
             } else { 
                 integrandIsEven = false;

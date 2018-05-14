@@ -2,9 +2,6 @@
 #include <cmath>
 #include "cartesian.h"
 
-using EigenIntPtrMat = Eigen::Matrix<int*, Eigen::Dynamic, Eigen::Dynamic>;
-using EigenIntPtrVec = Eigen::Matrix<int*, Eigen::Dynamic, 1>;
-
 Cartesian::Cartesian() {
 } // end function constructor
 
@@ -21,10 +18,6 @@ void Cartesian::setup(unsigned int cut, const unsigned int dim) {
 
     setStates(cut);
 
-    for (unsigned int i = 1; i < M.size(); ++i) {
-        M(i) += M(i-1);
-    } // end fori
-
     // set angular momenta
     angularMomenta = Eigen::VectorXi::Zero(states.rows());
     sumn();
@@ -40,7 +33,7 @@ void Cartesian::setStates(const unsigned int& cut) {
         M = Eigen::VectorXi::Zero(cutHalf);
         n = Eigen::VectorXi::Zero(M.size());
         E = Eigen::VectorXi::Zero(M.size());
-        states = EigenIntPtrMat(cut, 5);
+        states = Eigen::MatrixXi(cut, 5);
         for (unsigned int i = 0; i < cutHalf; ++i) {
             M(i) = 2;
             n(i) = i;
@@ -51,16 +44,16 @@ void Cartesian::setStates(const unsigned int& cut) {
         } // end fori
 
         for (unsigned int i = 0; i < cutHalf; ++i) {
-            states.row(2*i)(0) = &(n(i));
-            states.row(2*i)(1) = &s;
-            states.row(2*i)(2) = &(ms(0));
-            states.row(2*i)(3) = &(E(i));
-            states.row(2*i)(4) = &(M(i));
-            states.row(2*i+1)(0) = &(n(i));
-            states.row(2*i+1)(1) = &s;
-            states.row(2*i+1)(2) = &(ms(1));
-            states.row(2*i+1)(3) = &(E(i));
-            states.row(2*i+1)(4) = &(M(i));
+            states.row(2*i)(0) = n(i);
+            states.row(2*i)(1) = s;
+            states.row(2*i)(2) = ms(0);
+            states.row(2*i)(3) = E(i);
+            states.row(2*i)(4) = M(i);
+            states.row(2*i+1)(0) = n(i);
+            states.row(2*i+1)(1) = s;
+            states.row(2*i+1)(2) = ms(1);
+            states.row(2*i+1)(3) = E(i);
+            states.row(2*i+1)(4) = M(i);
         } // end fori
         return;
     } // end if
@@ -89,9 +82,9 @@ void Cartesian::setStates(const unsigned int& cut) {
 
     // allocate and set states {nx, ny, nz, s, ms, E, M}
     if (m_dim == 2) {
-        states = EigenIntPtrMat(numStates, 6);
+        states = Eigen::MatrixXi(numStates, 6);
     } else {
-        states = EigenIntPtrMat(numStates, 7);
+        states = Eigen::MatrixXi(numStates, 7);
     } // end ifelse
     unsigned int i = 0;
     unsigned int e = 0;
@@ -113,6 +106,10 @@ void Cartesian::setStates(const unsigned int& cut) {
         } // end forj
         e++;
     } // end while
+
+    for (unsigned int i = 1; i < M.size(); ++i) {
+        M(i) += M(i-1);
+    } // end fori
 } // end function setStates
 
 const Eigen::VectorXi& Cartesian::getSumn() const {
@@ -120,18 +117,24 @@ const Eigen::VectorXi& Cartesian::getSumn() const {
     return angularMomenta;
 } // end function getsumn
 
-const int &Cartesian::getSumn(const unsigned int &i) const {
+const int& Cartesian::getSumn(const unsigned int &i) const {
     /* return sum of n-values for state i */
     return angularMomenta(i);
 } // end function getsumn
 
-const EigenIntPtrMat& Cartesian::getStates() const {
+const Eigen::MatrixXi& Cartesian::getStates() const {
     /* return states */
     return states;
 } // end function getStates
 
-const Eigen::Ref<const EigenIntPtrVec> Cartesian::getStates(const unsigned int
-        &i) const {
+const Eigen::Ref<const Eigen::VectorXi> Cartesian::getnStates(const unsigned
+        int& i) const {
+    /* return principal quantum numbers for state i */
+    return states.row(i).segment(0,m_dim);
+} // end function getnStates
+
+const Eigen::Ref<const Eigen::VectorXi> Cartesian::getStates(const unsigned
+        int& i) const {
     /* return state i */
     return states.row(i);
 } // end function getStates
@@ -139,7 +142,7 @@ const Eigen::Ref<const EigenIntPtrVec> Cartesian::getStates(const unsigned int
 const int& Cartesian::getn(const unsigned int& i, const unsigned int& d) const
 {
     /* get n in state i for dimension d */
-    return *(states(i,d));
+    return states(i,d);
 } // end function getn
 
 const Eigen::VectorXi& Cartesian::getn() const {
@@ -184,8 +187,8 @@ const unsigned int& Cartesian::getNumberOfStates() const {
 
 void Cartesian::restructureStates() {
     /* put spin-states in increasing order */
-    EigenIntPtrMat dStates = EigenIntPtrMat(states.rows()/2, states.cols());
-    EigenIntPtrMat uStates = EigenIntPtrMat(states.rows()/2, states.cols());
+    Eigen::MatrixXi dStates = Eigen::MatrixXi(states.rows()/2, states.cols());
+    Eigen::MatrixXi uStates = Eigen::MatrixXi(states.rows()/2, states.cols());
     for (unsigned int i = 0; i < states.rows(); i+=2) {
         dStates.row(i/2) = states.row(i);
         uStates.row(i/2) = states.row(i+1);
@@ -200,8 +203,7 @@ void Cartesian::restructureStates() {
 void Cartesian::sumn() {
     /* calculate angular momenta for each state */
     for (unsigned int i = 0; i < states.rows(); ++i) {
-        angularMomenta(i) =
-            Methods::refSum<int>(states.row(i).segment(0,m_dim));
+        angularMomenta(i) = states.row(i).segment(0,m_dim).sum();
     } // end fori
 } // end function sumn
 
@@ -240,13 +242,13 @@ void Cartesian::addState(unsigned int &i, const unsigned int j, const unsigned
         ud) {
     /* create state for given level i with nx(index j, ny(index k) and nz(index
      * l) and assign to states matrix */
-    states.row(i)(0) = &(n(j));
-    states.row(i)(1) = &(n(k));
-    states.row(i)(2) = &(n(l));
-    states.row(i)(3) = &s;
-    states.row(i)(4) = &(ms(ud));
-    states.row(i)(5) = &(E(e));
-    states.row(i)(6) = &(M(e));
+    states.row(i)(0) = n(j);
+    states.row(i)(1) = n(k);
+    states.row(i)(2) = n(l);
+    states.row(i)(3) = s;
+    states.row(i)(4) = ms(ud);
+    states.row(i)(5) = E(e);
+    states.row(i)(6) = M(e);
     i++;
 } // end function findPossiblePrincipal
 
@@ -254,23 +256,23 @@ void Cartesian::addState(unsigned int &i, const unsigned int j, const unsigned
         int k, const unsigned int e, const unsigned int ud) {
     /* create state for given level i with nx(index j) and ny(index k) and
      * assign to states matrix */
-    states.row(i)(0) = &(n(j));
-    states.row(i)(1) = &(n(k));
-    states.row(i)(2) = &s;
-    states.row(i)(3) = &(ms(ud));
-    states.row(i)(4) = &(E(e));
-    states.row(i)(5) = &(M(e));
+    states.row(i)(0) = n(j);
+    states.row(i)(1) = n(k);
+    states.row(i)(2) = s;
+    states.row(i)(3) = ms(ud);
+    states.row(i)(4) = E(e);
+    states.row(i)(5) = M(e);
     i++;
 } // end function findPossiblePrincipal
 
 void Cartesian::addState(unsigned int &i, const unsigned int j, const unsigned
         int e, const unsigned int ud) {
     /* create state for given level i with nx (index j) */
-    states.row(i)(0) = &(n(j));
-    states.row(i)(2) = &s;
-    states.row(i)(3) = &(ms(ud));
-    states.row(i)(4) = &(E(e));
-    states.row(i)(5) = &(M(e));
+    states.row(i)(0) = n(j);
+    states.row(i)(2) = s;
+    states.row(i)(3) = ms(ud);
+    states.row(i)(4) = E(e);
+    states.row(i)(5) = M(e);
     i++;
 } // end function findPossiblePrincipal
 
@@ -279,7 +281,7 @@ void Cartesian::printStates() {
     for (unsigned int i = 0; i < states.rows(); ++i) {
         std::cout << "(";
         for (int j = 0; j < states.cols(); ++j) {
-            std::cout << *states.row(i)(j) << (j==states.cols()-1 ? ")" : ",");
+            std::cout << states.row(i)(j) << (j==states.cols()-1 ? ")" : ",");
         } // end forj
         std::cout << std::endl;
     } // end fori
@@ -293,7 +295,7 @@ void Cartesian::writeStatesToFile(std::string filename) {
     outFile.open(filename);
     for (unsigned int i = 0; i < states.rows(); ++i) {
         for (unsigned int j = 0; j < states.cols(); ++j) {
-            outFile << *states(i,j) << " ";
+            outFile << states(i,j) << " ";
         } // end forj
         outFile << "\n";
     } // end fori
