@@ -3,18 +3,11 @@
 
 #include <Eigen/Dense>
 
-using EigenMatArrXd = Eigen::Matrix<Eigen::ArrayXd, Eigen::Dynamic,
-      Eigen::Dynamic>;
-using EigenArrMatXd = Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic, 1>;
-using EigenArrCubeXd = Eigen::Array<Eigen::Array<Eigen::MatrixXd,
-      Eigen::Dynamic, 1>, Eigen::Dynamic, 1>;
-
 class Hexpander {
     private:
-        EigenArrCubeXd integrals3D;
-
         Eigen::ArrayXd integrals2D;
         Eigen::ArrayXd coefficients;
+        Eigen::ArrayXd integrals3D;
     
         unsigned int iMp1, jMp1, nMp1;
         

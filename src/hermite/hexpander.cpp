@@ -140,23 +140,28 @@ void Hexpander::setAuxiliary3D(unsigned int xMax, unsigned int yMax, unsigned
         Eigen::VectorXd& PQ) {
     /* setup integral elements in 3D */
     unsigned int nMax = xMax + yMax + zMax;
+    x3DMp1 = xMax + 1;
+    y3DMp1 = yMax + 1;
+    z3DMp1 = zMax + 1;
+    n3DMp1 = xMax + yMax + zMax + 1;
+
     double p = (a+c)*(b+d) / (a+c+b+d);
-    integrals3D = EigenArrCubeXd::Constant(nMax+1,
-            Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic, 1>::Constant(xMax+1,
-                Eigen::MatrixXd::Zero(yMax+1, zMax+1)));
+
+    integrals3D = Eigen::ArrayXd::Zero(x3DMp1 * y3DMp1 * z3DMp1 * n3DMp1);
+
     double powVal = 1;
-    for (unsigned int n = 0; n < nMax; ++n) {
-        integrals3D(n)(0)(0,0) = powVal *
+    for (unsigned int n = 0; n < n3DMp1; ++n) {
+        integrals3D(I3Didx(0,0,0,n)) = powVal *
             GaussianQuadrature::gaussChebyshevQuad(50, this,
                     &Hexpander::boysIntegrand, n, p*PQ.squaredNorm());
         powVal *= -2*p;
     } // end forn
 
-    for (unsigned int ts = 1; ts <= nMax; ++ts) {
-        for (unsigned int n = 0; n <= nMax - ts; ++n) {
-            for (unsigned int i = 0; i <= xMax; ++i) {
-                for (unsigned int j = 0; j <= yMax; ++j) {
-                    for (unsigned int k = 0; k <= zMax; ++k) {
+    for (unsigned int ts = 1; ts < n3DMp1; ++ts) {
+        for (unsigned int n = 0; n < n3DMp1 - ts; ++n) {
+            for (unsigned int i = 0; i < x3DMp1; ++i) {
+                for (unsigned int j = 0; j < y3DMp1; ++j) {
+                    for (unsigned int k = 0; k < z3DMp1; ++k) {
                         if (i+j+k != ts || i+j+k == 0) {
                             /* out of bounds */
                             continue;
@@ -189,12 +194,14 @@ void Hexpander::setAuxiliary3D(unsigned int xMax, unsigned int yMax, unsigned
                         } // end ifeifelse
                         double  currValue = 0;
                         if (i2 >= 0 && j2 >= 0 && k2 >= 0) {
-                            currValue += factor * integrals3D(n+1)(i2)(j2,k2);
+                            currValue += factor *
+                                integrals3D(I3Didx(i2,j2,k2,n+1));
                         } // end if
                         if (i3 >= 0 && j3 >= 0 && k3 >= 0) {
-                            currValue += XPQ * integrals3D(n+1)(i3)(j3,k3);
+                            currValue += XPQ *
+                                integrals3D(I3Didx(i3,j3,k3,n+1));
                         } // end if
-                        integrals3D(n)(i)(j,k) = currValue;
+                        integrals3D(I3Didx(i,j,k,n)) = currValue;
                     } // end fork
                 } // end forj
             } // end fori
@@ -247,5 +254,5 @@ const double& Hexpander::auxiliary2D(const unsigned int& n, const unsigned int&
 const double& Hexpander::auxiliary3D(const unsigned int& n, const unsigned int&
         i, const unsigned int& j, const unsigned int& k) const {
     /* return integral R^{ij}_n */
-    return integrals3D(n)(i)(j,k);
+    return integrals3D(I3Didx(i,j,k,n));
 } // end function integral2D
