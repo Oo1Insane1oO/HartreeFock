@@ -184,46 +184,60 @@ class HartreeFockSolver {
 
         void weightSizesAndDispl(Eigen::ArrayXi& sizes, Eigen::ArrayXi& displ,
                 const Eigen::ArrayXXi& pqMap) {
-            /* Weight the sizes based on the sum of all (p,q,r,s)
-            in process. make sure total sum of pqrs within process chunk is
-            within originalMean */
+            /* Weight the sizes based on the sum of the product of
+             * (n_p,n_q,n_r,n_s) for each process. make sure total sum of pqrs
+             * within process chunk is within originalMean */
             Eigen::ArrayXi sums = Eigen::ArrayXi::Zero(numProcs);
             for (unsigned int i = 0; i < sums.size(); ++i) {
                 const Eigen::Ref<const Eigen::ArrayXXi> pqBlock =
                     pqMap.block(displ(i), 0, sizes(i), 2);
                 for (unsigned int k = 0; k < pqBlock.rows(); ++k) {
-                    for (unsigned int l = 0; l < pqBlock.cols(); ++l) {
-                        sums(i) +=
-                            (m_I->GaussianBasis::getnStates(pqBlock(k,l)).array()+1).prod();
-                    } // end forl
+                    sums(i) +=
+                        (m_I->GaussianBasis::getnStates(pqBlock(k,0)).array() +
+                         1).prod() *
+                        (m_I->GaussianBasis::getnStates(pqBlock(k,1)).array() +
+                         1).prod();
                 } // end fork
             } // end fori
 
+            // find mean value for reference
             int originalMean = ceil(sums.mean());
+            int proc = 0;
+            int jsum = 0;
+            int k = 1;
+            for (unsigned int pq = 0; pq < pqMap.rows(); ++pq) {
+                // iterate over rows in pqMap and add the sum product for each
+                // row as above. Break when jsum is larger then original mean,
+                // at which sizefor process proc is set, the sum is reset and
+                // next process is taken in.
+                jsum += (m_I->GaussianBasis::getnStates(pqMap(pq,0)).array() +
+                        1).prod() *
+                    (m_I->GaussianBasis::getnStates(pqMap(pq,1)).array() +
+                     1).prod();
+                if (jsum > originalMean) {
+                    sizes(proc) = k;
+                    k = 1;
+                    jsum = 0;
+                    proc++;
+                    continue;
+                } // end if
 
-            for (int i = 0; i < numProcs-1; ++i) {
-                int k = 0;
-                int j = displ(i+1);
-                int jSum = 0;
-                while (sums(i) <= originalMean + 2*m_dim* (numProcs-i) *
-                        (m_I->GaussianBasis::getn().maxCoeff()+1)) {
-                    const Eigen::Ref<const Eigen::ArrayXi> pqRow =
-                        pqMap.row(j);
-                    int kSum = 0;
-                    for (unsigned int k = 0; k < pqRow.size(); ++k) {
-                        kSum +=
-                            (m_I->GaussianBasis::getnStates(pqRow(k)).array()+1).prod();
-                    } // end fork
-                    jSum += kSum;
-                    sums(i) += kSum;
-                    j++;
-                    k++;
-                } // end while
-                sizes(i) += k;
-                sizes(i+1) -= k;
-                displ(i+1) += k;
-                sums(i+1) -= jSum;
-            } // end fori
+                if (proc >= numProcs-1) {
+                    break;
+                } // end if
+                
+                k++;
+            } // end for pq
+
+            // throw remaining elements to last process
+            int n2 = m_numStates * (m_numStates + 1);
+            n2 /= 2;
+            sizes(numProcs-1) = n2 - sizes.head(numProcs-1).sum();
+
+            // recalculate relative displacements
+            for (unsigned int p = 0; p < numProcs; ++p) {
+                displ(p) = sizes.head(p).sum();
+            } // end forp
         } // end function weightSizesAndDispl
 
     protected:
@@ -317,14 +331,12 @@ class HartreeFockSolver {
                         } // end for p,q,r,s
                         
                         // distribute sizes
-                        pqrsElements = Eigen::ArrayXd::Zero(subSize*subSize);
-                        pqsrElements = Eigen::ArrayXd::Zero(subSize*subSize);
                         for (int p = 0; p < numProcs; ++p) {
                             sizes(p) = Methods::divider(p, subSize, numProcs);
                             displ(p) = sizes.head(p).sum();
                         } // end forp
 
-//                         weightSizesAndDispl(sizes, displ, pqMap);
+                        weightSizesAndDispl(sizes, displ, pqMap);
                     } // end if
 
                     int mySize;
@@ -390,6 +402,8 @@ class HartreeFockSolver {
                     // gather subresults from slaves into complete matrix in
                     // root
                     if (myRank == 0) {
+                        pqrsElements = Eigen::ArrayXd::Zero(subSize*subSize);
+                        pqsrElements = Eigen::ArrayXd::Zero(subSize*subSize);
                         sizes /= 2;
                         sizes *= subSize;
                         calculateDispl();
