@@ -368,20 +368,17 @@ class HartreeFockSolver {
                                 // print progress
                                 if (progressDivider) {
                                     /* show progress if given */
-                                    int progressStart = pq + rs;
-                                    if (!(static_cast<int>(fmod(progressStart,
-                                                        Methods::divider(
-                                                            progressStart,
+                                    if (!(static_cast<int>(fmod(rs,
+                                                        Methods::divider( rs,
                                                             pSize,
                                                             progressDivider)))))
                                     {
                                         /* print only a few times */
                                         progressBuffer = progressPosition;
                                         Methods::printProgressBar(progressBuffer,
-                                                (float)((progressStart==pSize-1)
-                                                    ?  progressStart :
-                                                    (progressStart+1)) / pSize,
-                                                23, "Two-Body");
+                                                (float)((rs==pSize-1) ?  rs :
+                                                    (rs+1)) / pSize, 23,
+                                                "Two-Body");
                                     } // end if
                                 } // end if
 
@@ -393,7 +390,7 @@ class HartreeFockSolver {
                     // gather subresults from slaves into complete matrix in
                     // root
                     if (myRank == 0) {
-                        sizes *= subSize/2;
+                        sizes *= subSize;
                         calculateDispl();
                     } // end if
                     MPI_Gatherv(myTmpTwoBody.data(), pSize, MPI_DOUBLE,
