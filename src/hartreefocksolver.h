@@ -194,8 +194,7 @@ class HartreeFockSolver {
                 for (unsigned int k = 0; k < pqBlock.rows(); ++k) {
                     for (unsigned int l = 0; l < pqBlock.cols(); ++l) {
                         sums(i) +=
-                            (m_I->GaussianBasis::getnStates(pqBlock(k,l)) .
-                             array() + 1).prod();
+                            (m_I->GaussianBasis::getnStates(pqBlock(k,l)).array()+1).prod();
                     } // end forl
                 } // end fork
             } // end fori
@@ -206,13 +205,14 @@ class HartreeFockSolver {
                 int k = 0;
                 int j = displ(i+1);
                 int jSum = 0;
-                while ((sums(i) <= originalMean)) {
+                while (sums(i) <= originalMean + 2*m_dim* (numProcs-i) *
+                        (m_I->GaussianBasis::getn().maxCoeff()+1)) {
                     const Eigen::Ref<const Eigen::ArrayXi> pqRow =
                         pqMap.row(j);
                     int kSum = 0;
                     for (unsigned int k = 0; k < pqRow.size(); ++k) {
-                        kSum += (m_I->GaussianBasis::getnStates(pqRow(k)) .
-                                array() + 1).prod();
+                        kSum +=
+                            (m_I->GaussianBasis::getnStates(pqRow(k)).array()+1).prod();
                     } // end fork
                     jSum += kSum;
                     sums(i) += kSum;
@@ -292,21 +292,31 @@ class HartreeFockSolver {
                     // create matrix containing pairs (p,q)
                     int subSize = m_numStates * (m_numStates+1);
                     subSize /= 2;
-                    Eigen::ArrayXXi pqMap(subSize, 2);
-                    int j = 0;
-                    for (unsigned int p = 0; p < m_numStates; ++p)
-                    for (unsigned int q = p; q < m_numStates; ++q)
-                    {
-                        pqMap(j,0) = p;
-                        pqMap(j,1) = q;
-                        j++;
-                    } // end for p,q,r,s
-                    
-                    // distribute sizes
                     Eigen::ArrayXd pqrsElements, pqsrElements;
                     Eigen::ArrayXi displ(numProcs);
                     Eigen::ArrayXi sizes(numProcs);
+
+                    auto calculateDispl = [&,this]() {
+                        for (int p = 0; p < numProcs; ++p) {
+                            displ(p) = sizes.head(p).sum();
+                        } // end forp
+                    };
+                    using EigenRowArrayXXi = Eigen::Array<int, Eigen::Dynamic,
+                          Eigen::Dynamic, Eigen::RowMajor>;
+                    EigenRowArrayXXi pqMap;
+
                     if (myRank == 0) {
+                        pqMap = EigenRowArrayXXi::Zero(subSize, 2);
+                        int j = 0;
+                        for (unsigned int p = 0; p < m_numStates; ++p)
+                        for (unsigned int q = p; q < m_numStates; ++q)
+                        {
+                            pqMap(j,0) = p;
+                            pqMap(j,1) = q;
+                            j++;
+                        } // end for p,q,r,s
+                        
+                        // distribute sizes
                         pqrsElements = Eigen::ArrayXd::Zero(subSize*subSize);
                         pqsrElements = Eigen::ArrayXd::Zero(subSize*subSize);
                         for (int p = 0; p < numProcs; ++p) {
@@ -314,36 +324,40 @@ class HartreeFockSolver {
                             displ(p) = sizes.head(p).sum();
                         } // end forp
 
-                        weightSizesAndDispl(sizes, displ, pqMap);
+//                         weightSizesAndDispl(sizes, displ, pqMap);
                     } // end if
-                    MPI_Bcast(sizes.data(), numProcs, MPI_INT, 0,
-                            MPI_COMM_WORLD);
-                    MPI_Bcast(displ.data(), numProcs, MPI_INT, 0,
+
+                    int mySize;
+                    MPI_Scatter(sizes.data(), 1, MPI_INT, &mySize, 1, MPI_INT,
+                            0, MPI_COMM_WORLD);
+
+                    EigenRowArrayXXi mypqMap = EigenRowArrayXXi(mySize, 2);
+
+                    if (myRank == 0) {
+                        sizes *= 2;
+                        calculateDispl();
+                    } // end if
+                    MPI_Scatterv(pqMap.data(), sizes.data(), displ.data(),
+                            MPI_INT, mypqMap.data(), mySize*2, MPI_INT, 0,
                             MPI_COMM_WORLD);
 
                     // array containing two-body elements <ij|1/r_12|kl> for
                     // subset (r,s) of set of range of (p,q) in each process
-                    int pqstart = displ(myRank);
-                    int pqEnd = pqstart+sizes(myRank);
-                    sizes *= subSize;
-                    for (unsigned int p = 0; p < numProcs; ++p) {
-                        displ(p) = sizes.head(p).sum();
-                    } // end forp
-                    Eigen::ArrayXd myTmpTwoBody(sizes(myRank)),
-                        myTmpTwoBodyAS(sizes(myRank));
+                    int pSize = mySize * subSize;
+                    Eigen::ArrayXd myTmpTwoBody(pSize), myTmpTwoBodyAS(pSize);
 
                     // save first part of progress bar
                     std::string progressPosition, progressBuffer;
                     if (progressDivider) {
-                        progressDivider = (int)exp(fmod(4.5, pqEnd));
+                        progressDivider = (int)exp(fmod(4.5, pSize));
                         progressPosition = Methods::stringPos(myRank, 3) +
                             "Progress: [";
                     } // end if
 
                     int rs = 0;
-                    for (int pq = pqstart; pq < pqEnd; ++pq) {
-                        const int& p = pqMap(pq,0);
-                        const int& q = pqMap(pq,1);
+                    for (int pq = 0; pq < mySize; ++pq) {
+                        const int& p = mypqMap(pq,0);
+                        const int& q = mypqMap(pq,1);
                         for (unsigned int r = 0; r < m_numStates; ++r) {
                             for (unsigned int s = r; s < m_numStates; ++s) {
                                 myTmpTwoBody(rs) = m_I->coulombElement(p, q, r,
@@ -354,20 +368,20 @@ class HartreeFockSolver {
                                 // print progress
                                 if (progressDivider) {
                                     /* show progress if given */
-                                    int progressStart = pq - pqstart + rs;
+                                    int progressStart = pq + rs;
                                     if (!(static_cast<int>(fmod(progressStart,
                                                         Methods::divider(
                                                             progressStart,
-                                                            sizes(myRank),
+                                                            pSize,
                                                             progressDivider)))))
                                     {
                                         /* print only a few times */
                                         progressBuffer = progressPosition;
                                         Methods::printProgressBar(progressBuffer,
-                                                (float)((progressStart==sizes(myRank)-1)
+                                                (float)((progressStart==pSize-1)
                                                     ?  progressStart :
-                                                    (progressStart+1)) /
-                                                sizes(myRank), 23, "Two-Body");
+                                                    (progressStart+1)) / pSize,
+                                                23, "Two-Body");
                                     } // end if
                                 } // end if
 
@@ -378,12 +392,16 @@ class HartreeFockSolver {
 
                     // gather subresults from slaves into complete matrix in
                     // root
-                    MPI_Gatherv(myTmpTwoBody.data(), sizes(myRank), MPI_DOUBLE,
+                    if (myRank == 0) {
+                        sizes *= subSize/2;
+                        calculateDispl();
+                    } // end if
+                    MPI_Gatherv(myTmpTwoBody.data(), pSize, MPI_DOUBLE,
                             pqrsElements.data(), sizes.data(), displ.data(),
                             MPI_DOUBLE, 0, MPI_COMM_WORLD);
-                    MPI_Gatherv(myTmpTwoBodyAS.data(), sizes(myRank),
-                            MPI_DOUBLE, pqsrElements.data(), sizes.data(),
-                            displ.data(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+                    MPI_Gatherv(myTmpTwoBodyAS.data(), pSize, MPI_DOUBLE,
+                            pqsrElements.data(), sizes.data(), displ.data(),
+                            MPI_DOUBLE, 0, MPI_COMM_WORLD);
                 
                     if (myRank == 0) {
                         setNonAntiSymmetrizedElements(pqrsElements,
