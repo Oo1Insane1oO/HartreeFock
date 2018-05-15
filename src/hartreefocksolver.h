@@ -390,6 +390,7 @@ class HartreeFockSolver {
                     // gather subresults from slaves into complete matrix in
                     // root
                     if (myRank == 0) {
+                        sizes /= 2;
                         sizes *= subSize;
                         calculateDispl();
                     } // end if
