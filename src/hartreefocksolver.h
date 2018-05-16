@@ -200,33 +200,49 @@ class HartreeFockSolver {
                 } // end fork
             } // end fori
 
-            sizes.setZero();
-
             // find mean value for reference
+            sizes.setZero();
             int originalMean = ceil(sums.mean());
             int proc = 0;
             int jsum = 0;
             int k = 0;
+            int maxnFactor = originalMean + 2 *
+                pow(m_I->GaussianBasis::getn().maxCoeff()+1, 2);
             for (unsigned int pq = 0; pq < pqMap.rows(); ++pq) {
                 // iterate over rows in pqMap and add the sum product for each
-                // row as above. Break when jsum is larger then original mean,
+                // row as above. Break when jsum is larger than original mean,
                 // at which size for process proc is set, the sum is reset and
                 // next process is taken in.
+                auto resetAndGoToNext = [&]() {
+                    /* reset values for next process */
+                    k=0;
+                    jsum = 0;
+                    proc++;
+                }; // end lambda resetAndGoToNext
+
                 jsum += (m_I->GaussianBasis::getnStates(pqMap(pq,0)).array() +
                         1).prod() *
                     (m_I->GaussianBasis::getnStates(pqMap(pq,1)).array() +
                      1).prod();
                 k++;
 
-                if (jsum > originalMean) {
+                if (jsum >= maxnFactor) {
+                    /* dont count if overshot */
+                    sizes(proc) = k-1;
+                    pq -= 1;
+                    resetAndGoToNext();
+                } else if (jsum > originalMean) {
+                    /* go to next process */
                     sizes(proc) = k;
-                    k = 0;
-                    jsum = 0;
-                    proc++;
+                    resetAndGoToNext();
                 } else if ((pq == pqMap.rows()-1) && (jsum <= originalMean)) {
                     sizes(proc) = k;
                 } // end ifeif
             } // end for pq
+
+            int n2 = m_numStates * (m_numStates + 1);
+            n2 /= 2;
+            sizes(numProcs-1) = n2 - sizes.head(numProcs-1).sum();
 
             // recalculate relative displacements
             for (unsigned int p = 0; p < numProcs; ++p) {
