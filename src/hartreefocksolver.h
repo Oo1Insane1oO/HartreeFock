@@ -200,39 +200,33 @@ class HartreeFockSolver {
                 } // end fork
             } // end fori
 
+            sizes.setZero();
+
             // find mean value for reference
             int originalMean = ceil(sums.mean());
             int proc = 0;
             int jsum = 0;
-            int k = 1;
+            int k = 0;
             for (unsigned int pq = 0; pq < pqMap.rows(); ++pq) {
                 // iterate over rows in pqMap and add the sum product for each
                 // row as above. Break when jsum is larger then original mean,
-                // at which sizefor process proc is set, the sum is reset and
+                // at which size for process proc is set, the sum is reset and
                 // next process is taken in.
                 jsum += (m_I->GaussianBasis::getnStates(pqMap(pq,0)).array() +
                         1).prod() *
                     (m_I->GaussianBasis::getnStates(pqMap(pq,1)).array() +
                      1).prod();
+                k++;
+
                 if (jsum > originalMean) {
                     sizes(proc) = k;
-                    k = 1;
+                    k = 0;
                     jsum = 0;
                     proc++;
-                    continue;
-                } // end if
-
-                if (proc >= numProcs-1) {
-                    break;
-                } // end if
-                
-                k++;
+                } else if ((pq == pqMap.rows()-1) && (jsum <= originalMean)) {
+                    sizes(proc) = k;
+                } // end ifeif
             } // end for pq
-
-            // throw remaining elements to last process
-            int n2 = m_numStates * (m_numStates + 1);
-            n2 /= 2;
-            sizes(numProcs-1) = n2 - sizes.head(numProcs-1).sum();
 
             // recalculate relative displacements
             for (unsigned int p = 0; p < numProcs; ++p) {
@@ -348,6 +342,7 @@ class HartreeFockSolver {
                     if (myRank == 0) {
                         sizes *= 2;
                         calculateDispl();
+                        std::cout << sizes << std::endl;
                     } // end if
                     MPI_Scatterv(pqMap.data(), sizes.data(), displ.data(),
                             MPI_INT, mypqMap.data(), mySize*2, MPI_INT, 0,

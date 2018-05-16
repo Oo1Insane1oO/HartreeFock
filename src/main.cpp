@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
                 HFS->writeCoefficientsToFile(inputs["filename"] .
                         as<std::string>(),
                         std::to_string(inputs["omega"].as<double>()));
-            } else {// end if
+            } else {
                 std::cout << Methods::stringPos(numProcs, 3) << std::endl;
                 std::chrono::duration<double> time = end - start;
                 std::cout << "Time: " << time.count() << "s" << std::endl;
