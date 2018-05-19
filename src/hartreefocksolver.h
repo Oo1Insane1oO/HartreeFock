@@ -206,7 +206,7 @@ class HartreeFockSolver {
             int proc = 0;
             int jsum = 0;
             int k = 0;
-            int maxnFactor = originalMean + 2 *
+            int maxnFactor = originalMean + 3 *
                 pow(m_I->GaussianBasis::getn().maxCoeff()+1, 2);
             for (unsigned int pq = 0; pq < pqMap.rows(); ++pq) {
                 // iterate over rows in pqMap and add the sum product for each

@@ -13,6 +13,7 @@ class DoubleWell :
     public HartreeFockSolver<DoubleWell>,
     private DWC,
     private GaussianIntegrals {
+    friend class HartreeFockSolver<DoubleWell>;
     using HartreeFockSolver<DoubleWell>::m_dim;
     private:
         unsigned int m_axis, m_numBasis;

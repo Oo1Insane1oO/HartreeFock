@@ -174,6 +174,7 @@ class Fit:
         with open("dwc.h", "a") as writeFile:
             writeFile.write("#ifndef DWC_H\n#define DWC_H\n")
             writeFile.write("\n#include <array>\n")
+            writeFile.write("#include <Eigen/Sparse>\n")
             writeFile.write(
                     "\nclass DWC {\n"\
                     "   private:\n")
@@ -187,10 +188,10 @@ class Fit:
                     "   public:\n"
                     "       DWC(const unsigned int dim) {\n"
                     "           if (dim==2) {\n"
-                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C2D.data(),%i,%i);\n"
+                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C2D.data(),%i,%i).sparseView();\n"
                     "               epsDW = Eigen::Map<const Eigen::ArrayXd>(m_epsDW2D.data(),%i);\n"
                     "           } else if (dim==3) {\n"
-                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C3D.data(),%i,%i);\n"
+                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C3D.data(),%i,%i).sparseView();\n"
                     "               epsDW = Eigen::Map<const Eigen::ArrayXd>(m_epsDW3D.data(),%i);\n"
                     "           } // end ifeif\n\n"
                     "       } // end constructor\n" % (n2D, n2D, n2D, n3D, n3D, n3D))
@@ -198,7 +199,7 @@ class Fit:
             
         with open("dwc.h", "a") as writeFile:
             writeFile.write("       virtual ~DWC() {}\n\n"
-                            "       Eigen::MatrixXd C;\n"
+                            "       Eigen::SparseMatrix<double> C;\n"
                             "       Eigen::ArrayXd epsDW;\n")
             writeFile.write("};\n\n#endif\n")
 

@@ -52,17 +52,15 @@ double DoubleWell::coulombElement(const unsigned int& i, const unsigned int& j,
     /* calculate and return the two-body coulomb integral element
      * <ij|1/r_12|kl> */
     double res = 0.0;
-    for (unsigned int p = 0; p < DWC::C.rows(); ++p) {
-        for (unsigned int q = 0; q < DWC::C.rows(); ++q) {
-            for (unsigned int r = 0; r < DWC::C.rows(); ++r) {
-                for (unsigned int s = 0; s < DWC::C.rows(); ++s) {
-                    res += DWC::C(p,i)*DWC::C(q,j)*DWC::C(r,k)*DWC::C(s,l) *
-                        GaussianIntegrals::HartreeFockSolver::
-                        getTwoBodyElement(p,q,r,s);
-                } // end fors
-            } // end forr
-        } // end forq
-    } // end forp
+    for (Eigen::SparseMatrix<double>::InnerIterator pIt(DWC::C, i); pIt; ++pIt)
+    for (Eigen::SparseMatrix<double>::InnerIterator qIt(DWC::C, j); qIt; ++qIt)
+    for (Eigen::SparseMatrix<double>::InnerIterator rIt(DWC::C, k); rIt; ++rIt)
+    for (Eigen::SparseMatrix<double>::InnerIterator sIt(DWC::C, l); sIt; ++sIt)
+    {
+        res += pIt.value()*qIt.value()*rIt.value()*sIt.value() *
+            GaussianIntegrals::HartreeFockSolver::getTwoBodyElement(pIt.row(),
+                    qIt.row(), rIt.row(), sIt.row());
+    } // end for pIt,qIt,rIt,sIt
 
     return res;
 } // end function coulombElement

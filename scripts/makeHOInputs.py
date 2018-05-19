@@ -28,24 +28,26 @@ def makeFiles(omegaList, numParticlesMax, numBasisMax, dim, dName):
     for w in omegaList:
         for p,i in enumerate(particles):
             for j,l in enumerate(basisSizes):
-                fname = "w%.2f_N%i_L%i" % (w, i, l)
-                if j==len(basisSizes)-1 and p==len(particles)-1:
-                    dd = dName
-                    dName = dName+"max/"
+                if l >= i:
+                    fname = "w%.2f_N%i_L%i" % (w, i, l)
+                    if j==len(basisSizes)-1 and p==len(particles)-1:
+                        dd = dName
+                        dName = dName+"max/"
+                    # end if
+                    with open(dName + "/" + fname + "_hfrun.yaml", "w") as openFile:
+                        openFile.write(("omega: %.2f\n"
+                                       "numParticles: %i\n"
+                                       "dim: %i\n"
+                                       "numBasis: %i\n"
+                                       "maxIter: 1000\n"
+                                       "progress: true\n"
+                                       "filename: "+'"data/'+fname+".yaml"+'"\n') % (w,
+                                           i, dim, l))
+                    # end with open openFile
+                    if j==len(basisSizes)-1 and p==len(particles)-1:
+                        dName = dd
+                    # endif
                 # end if
-                with open(dName + "/" + fname + "_hfrun.yaml", "w") as openFile:
-                    openFile.write(("omega: %.2f\n"
-                                   "numParticles: %i\n"
-                                   "dim: %i\n"
-                                   "numBasis: %i\n"
-                                   "maxIter: 1000\n"
-                                   "progress: true\n"
-                                   "filename: "+'"'+fname+".yaml"+'"\n') % (w,
-                                       i, dim, l))
-                # end with open openFile
-                if j==len(basisSizes)-1 and p==len(particles)-1:
-                    dName = dd
-                # endif
             # end forl
         # end fori
     # end forw
