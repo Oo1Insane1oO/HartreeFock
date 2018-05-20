@@ -119,10 +119,15 @@ class HartreeFockSolver {
         void readTwoBodyMatrix() {
             /* read in two-body non-antisymmetrized elements and set *
              * anti-symmetrized elements */
-            std::ifstream twoBodyFile;
-            twoBodyFile.open(twoBodyFileName);
-            double buf = 0;
+            std::ifstream twoBodyFile(twoBodyFileName.c_str(), std::ios::binary
+                    | std::ios::in);
             if (twoBodyFile.is_open()) {
+                size_t LN = pow(totalSize,4);
+                double* memblock = new double[LN];
+                twoBodyFile.read(reinterpret_cast<char*>(memblock),
+                        std::streamsize(LN*sizeof(double)));
+                twoBodyFile.close();
+                unsigned int j = 0;
                 for (unsigned int p = 0; p < totalSize; ++p)
                 for (unsigned int q = 0; q < totalSize; ++q)
                 for (unsigned int r = 0; r < totalSize; ++r)
@@ -132,13 +137,12 @@ class HartreeFockSolver {
                         (q < m_numStates) && 
                         (r < m_numStates) && 
                         (s < m_numStates)) {
-                        twoBodyFile >> twoBodyNonAntiSymmetrizedElements(
-                                dIndex(m_numStates, p,q,r,s));
-                    } else {
-                        twoBodyFile >> buf;
-                    } // end ifelse
+                        twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
+                                    p,q,r,s)) = memblock[j];
+                    } // end if
+                    j++;
                 } // end for p,q,r,s
-                twoBodyFile.close();
+                delete[] memblock;
             } // end if
         } //  end function readTwoBodyMatrix
 
@@ -596,20 +600,15 @@ class HartreeFockSolver {
 
         void writeTwoBodyElementsToFile() {
             /* write elements to file */
-            std::ofstream twoBodyFile(twoBodyFileName);
+            std::ofstream twoBodyFile(twoBodyFileName.c_str(), std::ios::binary
+                    | std::ios::out);
             if (twoBodyFile.is_open()) {
-                for (unsigned int p = 0; p < m_numStates; ++p)
-                for (unsigned int q = 0; q < m_numStates; ++q)
-                for (unsigned int r = 0; r < m_numStates; ++r)
-                for (unsigned int s = 0; s < m_numStates; ++s)
-                {
-                    twoBodyFile << std::fixed << std::setprecision(16) <<
-                        twoBodyNonAntiSymmetrizedElements( dIndex(m_numStates,
-                                    p,q,r,s));
-                    twoBodyFile << " ";
-                } // end for p,q,r,s
+                twoBodyFile.write(reinterpret_cast<const
+                        char*>(twoBodyNonAntiSymmetrizedElements.data()),
+                        std::streamsize(twoBodyNonAntiSymmetrizedElements.size()
+                            * sizeof(double)));
+                twoBodyFile.close();
             } // end if
-            twoBodyFile.close();
         } // end function writeTwoBodyElementsToFile
 
         void writeCoefficientsToFile(const std::string& filename, const

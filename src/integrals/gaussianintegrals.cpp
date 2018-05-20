@@ -98,7 +98,7 @@ void GaussianIntegrals::setFileName(const double& omega) {
     std::string LString = std::to_string(m_cutOff);
 
     HartreeFockSolver::twoBodyFileName = "w" + wString + "_D" +
-        std::to_string(m_dim) + "_L" + LString  + ".txt";
+        std::to_string(m_dim) + "_L" + LString  + ".bin";
 } // end function setFileName
 
 void GaussianIntegrals::setNormalizations() {
