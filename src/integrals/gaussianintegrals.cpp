@@ -97,7 +97,8 @@ void GaussianIntegrals::setFileName(const double& omega) {
     // basis size is an int, let it be
     std::string LString = std::to_string(m_cutOff);
 
-    HartreeFockSolver::twoBodyFileName = "w" + wString  + "_L" + LString  +
+    HartreeFockSolver::twoBodyFileName = "w" + wString + "_D" +
+        std::to_string(m_dim) + "_L" + LString  +
         ".txt";
 } // end function setFileName
 
