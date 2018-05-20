@@ -160,7 +160,15 @@ class HartreeFockSolver {
                 } // end fori
                 if (std::stod(filew) != omega) {
                     continue;
-                }
+                } // end if
+                std::string fileD = "";
+                for (unsigned int i = filex.find_first_of("D")+1; i <
+                        filex.find_first_of("_")+1; ++i) {
+                    fileD += filex.at(i);
+                } // end fori
+                if (std::stod(fileD) != m_dim) {
+                    continue;
+                } // end if
                 for (unsigned int i = filex.find_first_of("L")+1; i <
                         filex.size(); ++i) {
                     Lstring += filex.at(i);
@@ -570,8 +578,8 @@ class HartreeFockSolver {
             return E;
         }  // end function groundStateEnergy
 
-        const double& getTwoBodyElement(const unsigned int& i, const unsigned
-                int& j, const unsigned int& k, const unsigned int& l) const {
+         double getTwoBodyElement(const unsigned int& i, const unsigned int& j,
+                 const unsigned int& k, const unsigned int& l) {
             /* return two-body non-antisymmetrized elements */
             return twoBodyNonAntiSymmetrizedElements(dIndex(m_numStates,
                         i,j,k,l));

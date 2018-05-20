@@ -29,7 +29,7 @@ def makeFiles(omegaList, numParticlesMax, numBasisMax, dim, dName):
         for p,i in enumerate(particles):
             for j,l in enumerate(basisSizes):
                 if l >= i:
-                    fname = "w%.2f_N%i_L%i" % (w, i, l)
+                    fname = "w%.2f_D%i_N%i_L%i" % (w, dim, i, l)
                     if j==len(basisSizes)-1 and p==len(particles)-1:
                         dd = dName
                         dName = dName+"max/"
