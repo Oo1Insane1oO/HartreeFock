@@ -616,7 +616,7 @@ class HartreeFockSolver {
                 std::string& omega) {
             /* write coefficients (in order basis functions were given in
              * integral object) to YAML file */
-            std::ofstream outFile(filename + ".yaml");
+            std::ofstream outFile(filename);
             YAML::Node info;
             info["E0"] = energy;
             info["I"] = iterations;

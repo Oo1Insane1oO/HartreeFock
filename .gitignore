@@ -3,6 +3,7 @@ bin/*
 
 # ignore input objects
 inputs/*
+dwinputs/*
 
 # ignore inputs
 src/integrals/inputs/*
