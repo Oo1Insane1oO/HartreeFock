@@ -18,7 +18,7 @@ class HartreeFockSolver {
     private:
         Integrals* m_I;
 
-        unsigned int totalSize, iterations;
+        unsigned int totalSize, count;
 
         int myRank, numProcs;
 
@@ -508,7 +508,7 @@ class HartreeFockSolver {
                 std::string progressPosition, progressBuffer;
                 progressPosition = Methods::stringPos(myRank, 3) + "Progress:"
                     " [";
-                for (unsigned int count = 0; count < maxIterations; ++count) {
+                for (count = 0; count < maxIterations; ++count) {
                     /* run for maxIterations or until convergence is reached */
 
                     // set HF-matrix with current coefficients
@@ -538,7 +538,6 @@ class HartreeFockSolver {
                     std::cout << energy << std::endl;
 
                     if (diff < eps) {
-                        iterations = count;
                         break;
                     } // end if
 
@@ -594,7 +593,7 @@ class HartreeFockSolver {
         } // end function getTwoBodyElement 
 
         const unsigned int& getIterations() const {
-            return iterations;
+            return count;
         } // end function getIterations
 
         void setInteraction(bool a) {
@@ -622,7 +621,7 @@ class HartreeFockSolver {
             std::ofstream outFile(filename);
             YAML::Node info;
             info["E0"] = energy;
-            info["I"] = iterations;
+            info["I"] = count;
             info["omega"] = omega;
             info["dim"] = m_dim;
             info["numbasis"] = m_numStates;
