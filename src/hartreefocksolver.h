@@ -35,25 +35,23 @@ class HartreeFockSolver {
 
         Eigen::MatrixXd FockMatrix, densityMatrix, coefficients;
 
-        Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic, 1> FockMatrices;
+        Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic, 1> densityMatrices;
         Eigen::MatrixXd errorMatrix, errorOverlapMatrix;
         Eigen::VectorXd coeffDIIS, rhsDIIS;
 
         void DIIS() {
             if (count < mixMemory) {
-                errorMatrix.col(count) = FockMatrix*densityMatrix -
-                    densityMatrix*FockMatrix;
-                FockMatrices(count) = FockMatrix;
+                errorMatrix.col(count) = energies - previousEnergies;
+                densityMatrices(count) = densityMatrix;
             } else {
                 // only keep the last mixMemory elements
                 static unsigned int mm1 = mixMemory-1;
                 errorMatrix.block(0,0, m_numStates, mm1) =
                     errorMatrix.block(0,1, m_numStates, mm1);
-                FockMatrices.head(mm1) = FockMatrices.tail(mm1);
+                densityMatrices.head(mm1) = densityMatrices.tail(mm1);
 
-                errorMatrix.col(mm1) = FockMatrix*densityMatrix -
-                    densityMatrix*FockMatrix;
-                FockMatrices(mm1) = FockMatrix;
+                errorMatrix.col(mm1) = energies - previousEnergies;
+                densityMatrices(mm1) = densityMatrix;
 
                 for (unsigned int i = 0; i < mixMemory; ++i) {
                     for (unsigned int j = 0; j < mixMemory; ++j) {
@@ -65,9 +63,9 @@ class HartreeFockSolver {
                 coeffDIIS =
                     errorOverlapMatrix.colPivHouseholderQr().solve(rhsDIIS);
 
-                FockMatrix.setZero();
+                densityMatrix.setZero();
                 for (unsigned int i = 0; i < mixMemory; ++i) {
-                    FockMatrix += coeffDIIS(i) * FockMatrices(i);
+                    densityMatrix += coeffDIIS(i) * densityMatrices(i);
                 } // end fori
             } // end ifselse
         } // end function DIIS
@@ -534,12 +532,12 @@ class HartreeFockSolver {
                 energies = Eigen::VectorXd::Zero(m_numStates);
                 Eigen::MatrixXd prevDens = densityMatrix;
 
-                mixMemory = 7;
+                mixMemory = 6;
 
-                FockMatrices = Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic,
-                             1>::Constant(mixMemory,
-                                     Eigen::MatrixXd::Zero(m_numStates,
-                                         m_numStates));
+                densityMatrices = Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic,
+                                1>::Constant(mixMemory,
+                                        Eigen::MatrixXd::Zero(m_numStates,
+                                            m_numStates));
                 errorMatrix = Eigen::MatrixXd(m_numStates, mixMemory);
                 errorOverlapMatrix = Eigen::MatrixXd::Zero(mixMemory+1,
                         mixMemory+1);
@@ -567,12 +565,12 @@ class HartreeFockSolver {
 
                     // set density matrix
                     setDensityMatrix();
-
-                    // set HF-matrix with current coefficients
-                    setFockMatrix();
                     
                     // perform mixing (for convergence, dont ask why...)
                     DIIS();
+
+                    // set HF-matrix with mixed density
+                    setFockMatrix();
 
                     // find eigenvalues and eigenvector (HartreeFock-energies
                     // and coefficients respectively)
@@ -582,10 +580,6 @@ class HartreeFockSolver {
                     // find eigenvalues and eigenvectors
                     energies = eigenSolver.eigenvalues();
                     coefficients = eigenSolver.eigenvectors();
-
-//                     static double mixFac = 0.9;
-//                     static double mmixFac = 1-mixFac;
-//                     densityMatrix = mixFac*densityMatrix + mmixFac*prevDens;
 
                     // check for convergence with RMS of difference between
                     // previous and current energies 
@@ -599,8 +593,6 @@ class HartreeFockSolver {
                     } // end if
 
                     // keep old values
-//                     setDensityMatrix();
-//                     prevDens = densityMatrix;
                     previousEnergies = energies;
 
                     // print progress
