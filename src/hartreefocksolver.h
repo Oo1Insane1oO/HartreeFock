@@ -18,23 +18,60 @@ class HartreeFockSolver {
     private:
         Integrals* m_I;
 
-        unsigned int totalSize, count;
+        unsigned int totalSize, count, mixMemory;
 
         int myRank, numProcs;
 
         double energy, sqrtState;
 
-        static constexpr double mixingFactor = 0.8;
-
         bool interaction;
 
         std::string dirpath;
+
+        Eigen::VectorXd energies, previousEnergies;
 
         Eigen::ArrayXd twoBodyNonAntiSymmetrizedElements;
         Eigen::MatrixXd oneBodyElements, overlapElements;
 
         Eigen::MatrixXd FockMatrix, densityMatrix, coefficients;
-        
+
+        Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic, 1> FockMatrices;
+        Eigen::MatrixXd errorMatrix, errorOverlapMatrix;
+        Eigen::VectorXd coeffDIIS, rhsDIIS;
+
+        void DIIS() {
+            if (count < mixMemory) {
+                errorMatrix.col(count) = FockMatrix*densityMatrix -
+                    densityMatrix*FockMatrix;
+                FockMatrices(count) = FockMatrix;
+            } else {
+                // only keep the last mixMemory elements
+                static unsigned int mm1 = mixMemory-1;
+                errorMatrix.block(0,0, m_numStates, mm1) =
+                    errorMatrix.block(0,1, m_numStates, mm1);
+                FockMatrices.head(mm1) = FockMatrices.tail(mm1);
+
+                errorMatrix.col(mm1) = FockMatrix*densityMatrix -
+                    densityMatrix*FockMatrix;
+                FockMatrices(mm1) = FockMatrix;
+
+                for (unsigned int i = 0; i < mixMemory; ++i) {
+                    for (unsigned int j = 0; j < mixMemory; ++j) {
+                        errorOverlapMatrix(i,j) =
+                            errorMatrix.col(i).dot(errorMatrix.col(j));
+                    } // end forj
+                } // end fori
+
+                coeffDIIS =
+                    errorOverlapMatrix.colPivHouseholderQr().solve(rhsDIIS);
+
+                FockMatrix.setZero();
+                for (unsigned int i = 0; i < mixMemory; ++i) {
+                    FockMatrix += coeffDIIS(i) * FockMatrices(i);
+                } // end fori
+            } // end ifselse
+        } // end function DIIS
+
         inline void setDensityMatrix() {
             /* set density matrix in HartreeFock */
             for (unsigned int c = 0; c < coefficients.rows(); ++c) {
@@ -493,10 +530,27 @@ class HartreeFockSolver {
                         m_numStates);
                 setDensityMatrix();
                 FockMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
-                Eigen::VectorXd previousEnergies =
-                    Eigen::VectorXd::Zero(m_numStates);
-                Eigen::MatrixXd oldCoefficients = coefficients;
-                Eigen::VectorXd energies = Eigen::VectorXd::Zero(m_numStates);
+                previousEnergies = Eigen::VectorXd::Zero(m_numStates);
+                energies = Eigen::VectorXd::Zero(m_numStates);
+                Eigen::MatrixXd prevDens = densityMatrix;
+
+                mixMemory = 7;
+
+                FockMatrices = Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic,
+                             1>::Constant(mixMemory,
+                                     Eigen::MatrixXd::Zero(m_numStates,
+                                         m_numStates));
+                errorMatrix = Eigen::MatrixXd(m_numStates, mixMemory);
+                errorOverlapMatrix = Eigen::MatrixXd::Zero(mixMemory+1,
+                        mixMemory+1);
+                errorOverlapMatrix.row(mixMemory) =
+                    Eigen::RowVectorXd::Constant(mixMemory, -1);
+                errorOverlapMatrix.col(mixMemory) =
+                    Eigen::VectorXd::Constant(mixMemory, -1);
+                errorOverlapMatrix(mixMemory, mixMemory) = 0.0;
+                rhsDIIS = Eigen::VectorXd::Zero(mixMemory+1);
+                rhsDIIS(mixMemory) = -1.0;
+                coeffDIIS = Eigen::VectorXd::Constant(mixMemory+1, 1.0);
 
                 // initialize eigenvalue/vector solver for hermitian matrix
                 // (Fock matrix is build to be hermitian)
@@ -511,8 +565,14 @@ class HartreeFockSolver {
                 for (count = 0; count < maxIterations; ++count) {
                     /* run for maxIterations or until convergence is reached */
 
+                    // set density matrix
+                    setDensityMatrix();
+
                     // set HF-matrix with current coefficients
                     setFockMatrix();
+                    
+                    // perform mixing (for convergence, dont ask why...)
+                    DIIS();
 
                     // find eigenvalues and eigenvector (HartreeFock-energies
                     // and coefficients respectively)
@@ -523,26 +583,24 @@ class HartreeFockSolver {
                     energies = eigenSolver.eigenvalues();
                     coefficients = eigenSolver.eigenvectors();
 
-                    // set density matrix with new coefficients
-                    setDensityMatrix();
-                    
-                    // perform mixing (for convergence, dont ask why...)
-                    densityMatrix = mixingFactor*densityMatrix + (1-mixingFactor)
-                        * oldCoefficients;
+//                     static double mixFac = 0.9;
+//                     static double mmixFac = 1-mixFac;
+//                     densityMatrix = mixFac*densityMatrix + mmixFac*prevDens;
 
                     // check for convergence with RMS of difference between
                     // previous and current energies 
                     double diff = (energies - previousEnergies).norm() /
                         sqrtState;
                     energy = groundStateEnergy(energies); 
-                    std::cout << energy << std::endl;
+                    std::cout << energy << " " << count << std::endl;
 
                     if (diff < eps) {
                         break;
                     } // end if
 
                     // keep old values
-                    oldCoefficients = densityMatrix;
+//                     setDensityMatrix();
+//                     prevDens = densityMatrix;
                     previousEnergies = energies;
 
                     // print progress
