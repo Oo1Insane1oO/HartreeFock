@@ -24,7 +24,7 @@ class HartreeFockSolver {
 
         double energy, sqrtState;
 
-        static constexpr double mixingFactor = 0.8;
+        static constexpr double mixingFactor = 0.85;
 
         bool interaction;
 
@@ -500,9 +500,9 @@ class HartreeFockSolver {
 
                 // initialize eigenvalue/vector solver for hermitian matrix
                 // (Fock matrix is build to be hermitian)
-//                 Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd>
-//                     eigenSolver;
-                Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
+                Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd>
+                    eigenSolver;
+//                 Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
 
                 // run Hartree-Fock algorithm
                 std::string progressPosition, progressBuffer;
@@ -516,8 +516,8 @@ class HartreeFockSolver {
 
                     // find eigenvalues and eigenvector (HartreeFock-energies
                     // and coefficients respectively)
-//                     eigenSolver.compute(FockMatrix, overlapElements);
-                    eigenSolver.compute(FockMatrix);
+                    eigenSolver.compute(FockMatrix, overlapElements);
+//                     eigenSolver.compute(FockMatrix);
 
                     // find eigenvalues and eigenvectors
                     energies = eigenSolver.eigenvalues();
