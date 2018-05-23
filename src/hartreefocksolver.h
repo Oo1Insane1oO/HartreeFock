@@ -22,9 +22,9 @@ class HartreeFockSolver {
 
         int myRank, numProcs;
 
-        double energy;
+        double energy, sqrtState;
 
-        static constexpr double mixingFactor = 0.6;
+        static constexpr double mixingFactor = 0.8;
 
         bool interaction;
 
@@ -278,6 +278,7 @@ class HartreeFockSolver {
             // Hartree-Fock equation.
 
             m_numStates = m_basisSize / 2;
+            sqrtState = sqrt(m_numStates);
             totalSize = m_numStates;
 
             // matrix containing elements <i|h|j> (one-body elements) and
@@ -499,8 +500,9 @@ class HartreeFockSolver {
 
                 // initialize eigenvalue/vector solver for hermitian matrix
                 // (Fock matrix is build to be hermitian)
-                Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd>
-                    eigenSolver;
+//                 Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd>
+//                     eigenSolver;
+                Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
 
                 // run Hartree-Fock algorithm
                 std::string progressPosition, progressBuffer;
@@ -514,7 +516,8 @@ class HartreeFockSolver {
 
                     // find eigenvalues and eigenvector (HartreeFock-energies
                     // and coefficients respectively)
-                    eigenSolver.compute(FockMatrix, overlapElements);
+//                     eigenSolver.compute(FockMatrix, overlapElements);
+                    eigenSolver.compute(FockMatrix);
 
                     // find eigenvalues and eigenvectors
                     energies = eigenSolver.eigenvalues();
@@ -529,9 +532,10 @@ class HartreeFockSolver {
 
                     // check for convergence with RMS of difference between
                     // previous and current energies 
-                    double diff = sqrt((energies - previousEnergies).norm() /
-                            m_numStates);
-                    energy = groundStateEnergy(energies);
+                    double diff = (energies - previousEnergies).norm() /
+                        sqrtState;
+                    energy = groundStateEnergy(energies); 
+                    std::cout << energy << std::endl;
 
                     if (diff < eps) {
                         iterations = count;

@@ -22,7 +22,7 @@ def createMagic(numParticlesMax, dim):
     return magic
 # end function createMagic
 
-def makeFiles(omegaList, numParticlesMax, numBasisMax, dim, dName):
+def makeFiles(omegaList, numParticlesMax, numBasisMax, dim, dName, dataDirName):
     particles = createMagic(numParticlesMax, dim)
     basisSizes = createMagic(numBasisMax, dim)
     for w in omegaList:
@@ -41,8 +41,8 @@ def makeFiles(omegaList, numParticlesMax, numBasisMax, dim, dName):
                                        "numBasis: %i\n"
                                        "maxIter: 1000\n"
                                        "progress: true\n"
-                                       "filename: "+'"data/'+fname+".yaml"+'"\n') % (w,
-                                           i, dim, l))
+                                       "filename: "+'"' + dataDirName + '/' +
+                                       fname + ".yaml" + '"\n') % (w,i,dim,l))
                     # end with open openFile
                     if j==len(basisSizes)-1 and p==len(particles)-1:
                         dName = dd
@@ -59,11 +59,13 @@ if __name__ == "__main__":
         numBasisMax = int(sys.argv[2])
         dim = int(sys.argv[3])
         dirName = sys.argv[4]
-        omegaList = map(float, sys.argv[5:])
+        dataDirName = sys.argv[5]
+        omegaList = map(float, sys.argv[6:])
     except IndexError:
-        print("USAGE: 'Nmax' 'Lmax' 'dim' 'dir' 'list omega'")
+        print("USAGE: 'Nmax' 'Lmax' 'dim' 'dir' 'datadir' 'list omega'")
         sys.exit(1)
     # end try-except
 
-    makeFiles(omegaList, numParticlesMax, numBasisMax, dim, dirName)
+    makeFiles(omegaList, numParticlesMax, numBasisMax, dim, dirName,
+            dataDirName)
 # end ifmain
