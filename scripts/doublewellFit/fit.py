@@ -284,6 +284,20 @@ if __name__ == "__main__":
             sys.exit()
         # end if
     # end function checkFullShell
+
+    def writeEigenValuesToFile(E2D, E3D, fname2D, fname3D):
+        """ write energies to text file """
+        with open(fname2D, "w") as file2d:
+            for e2 in E2D:
+                file2d.write(str(e2) + " ")
+            # end fore2
+        # end withopen
+        with open(fname3D, "w") as file3d:
+            for e3 in E3D:
+                file3d.write(str(e3) + " ")
+            # end fore2
+        # end withopen
+    # end function writeEigenValuesToFile
    
     # write both 2D and 3D
     # write basis file first
@@ -310,4 +324,8 @@ if __name__ == "__main__":
     print C3D
 
     fit.writeToFile(C2D, C3D, e2D, e3D)
+
+    if argv[6] and argv[7]:
+        writeEigenValuesToFile(argv[6], argv[7])
+    # end if
 # end ifmain

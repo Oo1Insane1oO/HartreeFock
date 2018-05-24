@@ -534,7 +534,7 @@ class HartreeFockSolver {
                 energies = Eigen::VectorXd::Zero(m_numStates);
                 Eigen::MatrixXd prevDens = densityMatrix;
 
-                mixMemory = 7;
+                mixMemory = 4;
 
                 FockMatrices = Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic,
                              1>::Constant(mixMemory,
@@ -554,9 +554,9 @@ class HartreeFockSolver {
 
                 // initialize eigenvalue/vector solver for hermitian matrix
                 // (Fock matrix is build to be hermitian)
-//                 Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd>
-//                     eigenSolver;
-                Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
+                Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd>
+                    eigenSolver;
+//                 Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver;
 
                 // run Hartree-Fock algorithm
                 std::string progressPosition, progressBuffer;
@@ -576,8 +576,8 @@ class HartreeFockSolver {
 
                     // find eigenvalues and eigenvector (HartreeFock-energies
                     // and coefficients respectively)
-//                     eigenSolver.compute(FockMatrix, overlapElements);
-                    eigenSolver.compute(FockMatrix);
+                    eigenSolver.compute(FockMatrix, overlapElements);
+//                     eigenSolver.compute(FockMatrix);
 
                     // find eigenvalues and eigenvectors
                     energies = eigenSolver.eigenvalues();
