@@ -532,7 +532,6 @@ class HartreeFockSolver {
                 FockMatrix = Eigen::MatrixXd::Zero(m_numStates, m_numStates);
                 previousEnergies = Eigen::VectorXd::Zero(m_numStates);
                 energies = Eigen::VectorXd::Zero(m_numStates);
-                Eigen::MatrixXd prevDens = densityMatrix;
 
                 mixMemory = 4;
 
@@ -583,9 +582,6 @@ class HartreeFockSolver {
                     energies = eigenSolver.eigenvalues();
                     coefficients = eigenSolver.eigenvectors();
 
-//                     static double mixFac = 0.9;
-//                     static double mmixFac = 1-mixFac;
-//                     densityMatrix = mixFac*densityMatrix + mmixFac*prevDens;
 
                     // check for convergence with RMS of difference between
                     // previous and current energies 
@@ -599,8 +595,6 @@ class HartreeFockSolver {
                     } // end if
 
                     // keep old values
-//                     setDensityMatrix();
-//                     prevDens = densityMatrix;
                     previousEnergies = energies;
 
                     // print progress
