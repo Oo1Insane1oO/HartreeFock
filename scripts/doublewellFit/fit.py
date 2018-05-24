@@ -325,7 +325,7 @@ if __name__ == "__main__":
 
     fit.writeToFile(C2D, C3D, e2D, e3D)
 
-    if argv[6] and argv[7]:
-        writeEigenValuesToFile(argv[6], argv[7])
+    if sys.argv[6] and sys.argv[7]:
+        writeEigenValuesToFile(e2D, e3D, sys.argv[6], sys.argv[7])
     # end if
 # end ifmain
