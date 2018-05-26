@@ -30,6 +30,7 @@ std::string DoubleWell::initializeParameters(double _R, unsigned int axis) {
     GaussianIntegrals::HartreeFockSolver<GaussianIntegrals>::assemble(1);
     
     DoubleWell::HartreeFockSolver<DoubleWell>::setReadFile(false);
+    DoubleWell::HartreeFockSolver<DoubleWell>::setIndexWeigthing(false);
 
     return message;
 } // end function initializeParameters

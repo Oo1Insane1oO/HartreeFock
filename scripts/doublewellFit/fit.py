@@ -188,10 +188,10 @@ class Fit:
                     "   public:\n"
                     "       DWC(const unsigned int dim) {\n"
                     "           if (dim==2) {\n"
-                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C2D.data(),%i,%i).sparseView();\n"
+                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C2D.data(),%i,%i).sparseView(1,1e-8);\n"
                     "               epsDW = Eigen::Map<const Eigen::ArrayXd>(m_epsDW2D.data(),%i);\n"
                     "           } else if (dim==3) {\n"
-                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C3D.data(),%i,%i).sparseView();\n"
+                    "               C = Eigen::Map<const Eigen::MatrixXd>(m_C3D.data(),%i,%i).sparseView(1,1e-8);\n"
                     "               epsDW = Eigen::Map<const Eigen::ArrayXd>(m_epsDW3D.data(),%i);\n"
                     "           } // end ifeif\n\n"
                     "       } // end constructor\n" % (n2D, trunc2D, trunc2D, n3D, trunc3D, trunc3D))

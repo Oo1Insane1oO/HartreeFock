@@ -24,7 +24,7 @@ class HartreeFockSolver {
 
         double energy, sqrtState;
 
-        bool interaction, readFile;
+        bool interaction, readFile, indexWeigthing;
 
         std::string dirpath;
 
@@ -398,7 +398,9 @@ class HartreeFockSolver {
                             displ(p) = sizes.head(p).sum();
                         } // end forp
 
-                        weightSizesAndDispl(sizes, displ, pqMap);
+                        if (indexWeigthing) {
+                            weightSizesAndDispl(sizes, displ, pqMap);
+                        } // end if
                     } // end if
 
                     int mySize;
@@ -491,9 +493,16 @@ class HartreeFockSolver {
         } // end function assemble
 
         void setReadFile(bool v) {
-            /* tell assemble to read file or not (depending on v) */
+            /* tell assemble to read file or not (depending on v, true by
+             * default) */
             readFile = v;
         } // end function setReadFile
+
+        void setIndexWeigthing(bool v) {
+            /* tell wether or not to weight processes based on basis index
+             * (true by default) */
+            indexWeigthing = v;
+        } // end function setIndexWeigthing
 
     public:
         HartreeFockSolver(Integrals* IIn, const unsigned int dimension,
@@ -505,6 +514,8 @@ class HartreeFockSolver {
             twoBodyFileName = "";
 
             readFile = true;
+
+            indexWeigthing = true;
 
             m_I = IIn;
 
