@@ -168,7 +168,7 @@ class Fit:
         return eigh(H)
     # end function findCoefficients
 
-    def writeToFile(self, C2D, C3D, E2D, E3D):
+    def writeToFile(self, C2D, C3D, E2D, E3D, trunc2D, trunc3D):
         n2D = len(C2D)
         n3D = len(C3D)
         with open("dwc.h", "a") as writeFile:
@@ -180,8 +180,8 @@ class Fit:
                     "   private:\n")
         # end with open
 
-        self.writePrivate(C2D, E2D, "2D")
-        self.writePrivate(C3D, E3D, "3D")
+        self.writePrivate(C2D, E2D, "2D", trunc2D)
+        self.writePrivate(C3D, E3D, "3D", trunc3D)
 
         with open("dwc.h", "a") as writeFile:
             writeFile.write("\n\n"
@@ -194,7 +194,7 @@ class Fit:
                     "               C = Eigen::Map<const Eigen::MatrixXd>(m_C3D.data(),%i,%i).sparseView();\n"
                     "               epsDW = Eigen::Map<const Eigen::ArrayXd>(m_epsDW3D.data(),%i);\n"
                     "           } // end ifeif\n\n"
-                    "       } // end constructor\n" % (n2D, n2D, n2D, n3D, n3D, n3D))
+                    "       } // end constructor\n" % (n2D, trunc2D, trunc2D, n3D, trunc3D, trunc3D))
         # end with open
             
         with open("dwc.h", "a") as writeFile:
@@ -202,16 +202,15 @@ class Fit:
                             "       Eigen::SparseMatrix<double> C;\n"
                             "       Eigen::ArrayXd epsDW;\n")
             writeFile.write("};\n\n#endif\n")
-
     # end function writeDefine
 
-    def writePrivate(self, C, E, ext):
+    def writePrivate(self, C, E, ext, trunc):
         """ write coefficients matrix C to C++ header DWC """
         with open("dwc.h", "a") as writeFile:
             n = len(C)
             writeFile.write("       static constexpr std::array<double,%i> m_epsDW%s = {\n"
                 % (n,ext))
-            for i in range(n):
+            for i in range(trunc):
                 if i==n-1:
                     writeFile.write("                   " + str(E[i]))
                 else:
@@ -220,11 +219,11 @@ class Fit:
                 # end ifelse
             # end fori
             writeFile.write("\n             };\n")
-            writeFile.write("       static constexpr std::array<double,%i> m_C%s = {\n" % (n*n,ext))
+            writeFile.write("       static constexpr std::array<double,%i> m_C%s = {\n" % (n*trunc,ext))
             writeFile.write("               ")
             for i in range(n):
-                for j in range(n):
-                    if ((i==n-1) and (j==n-1)):
+                for j in range(trunc):
+                    if ((i==n-1) and (j==trunc-1)):
                         writeFile.write(str(C[i,j]))
                     else:
                         writeFile.write(str(C[i,j]))
@@ -323,7 +322,7 @@ if __name__ == "__main__":
     print "Coefficients matrix 3D:"
     print C3D
 
-    fit.writeToFile(C2D, C3D, e2D, e3D)
+    fit.writeToFile(C2D, C3D, e2D, e3D, int(sys.argv[8]), int(sys.argv[9]))
 
     if sys.argv[6] and sys.argv[7]:
         writeEigenValuesToFile(e2D, e3D, sys.argv[6], sys.argv[7])

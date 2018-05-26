@@ -18,7 +18,7 @@ class DoubleWell :
     private:
         unsigned int m_axis, m_numBasis;
         double R, RsqrdFactor;
-
+        
         double potentialDWElement(const unsigned int&, const unsigned int&);
         double potDWSum(const int&, const int&);
 

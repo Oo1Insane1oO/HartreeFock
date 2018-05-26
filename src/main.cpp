@@ -1,9 +1,10 @@
+#define NDEBUG
+#define EIGEN_NO_DEBUG
+
 #include <iostream>
 #include <iomanip>
 #include <chrono>
 #include <string>
-
-#define EIGEN_NO_DEBUG
 
 #include <Eigen/Dense>
 #include <mpi.h>

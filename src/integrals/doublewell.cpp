@@ -6,7 +6,7 @@
 
 DoubleWell::DoubleWell(const unsigned int dim, unsigned int cutOff, const
         unsigned int numParticles) :
-    HartreeFockSolver<DoubleWell>(this, dim, cutOff, numParticles),
+    HartreeFockSolver<DoubleWell>(this, dim, 2*cutOff, numParticles),
     DWC(dim),
     GaussianIntegrals(dim, 2*DWC::C.rows(), numParticles) {
     /* construct */
@@ -27,7 +27,9 @@ std::string DoubleWell::initializeParameters(double _R, unsigned int axis) {
     std::string message = GaussianIntegrals::initializeParameters(1.0);
 
     // precalculate two-body elements over HO-functions elements
-    GaussianIntegrals::HartreeFockSolver::assemble(1);
+    GaussianIntegrals::HartreeFockSolver<GaussianIntegrals>::assemble(1);
+    
+    DoubleWell::HartreeFockSolver<DoubleWell>::setReadFile(false);
 
     return message;
 } // end function initializeParameters

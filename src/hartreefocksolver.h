@@ -24,7 +24,7 @@ class HartreeFockSolver {
 
         double energy, sqrtState;
 
-        bool interaction;
+        bool interaction, readFile;
 
         std::string dirpath;
 
@@ -349,7 +349,7 @@ class HartreeFockSolver {
                     Eigen::ArrayXd::Zero(m_numStates * m_numStates *
                             m_numStates * m_numStates);
                 bool fileExists = false;
-                if (myRank == 0) {
+                if (myRank == 0 && readFile) {
                     if (twoBodyFileName.compare("")) {
                         fileExists = checkAndPrependFileName();
                         if (fileExists) {
@@ -359,7 +359,9 @@ class HartreeFockSolver {
                 } // end if
 
                 // let slaves know of the file-check clarity (#religous?)
-                MPI_Bcast(&fileExists, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                if (readFile) {
+                    MPI_Bcast(&fileExists, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                } // end if
 
                 if (fileExists == 0) {
                     /* only calculate if file does not exist */
@@ -408,7 +410,6 @@ class HartreeFockSolver {
                     if (myRank == 0) {
                         sizes *= 2;
                         calculateDispl();
-                        std::cout << sizes << std::endl;
                     } // end if
                     MPI_Scatterv(pqMap.data(), sizes.data(), displ.data(),
                             MPI_INT, mypqMap.data(), mySize*2, MPI_INT, 0,
@@ -489,6 +490,11 @@ class HartreeFockSolver {
             } // end if
         } // end function assemble
 
+        void setReadFile(bool v) {
+            /* tell assemble to read file or not (depending on v) */
+            readFile = v;
+        } // end function setReadFile
+
     public:
         HartreeFockSolver(Integrals* IIn, const unsigned int dimension,
                 unsigned int cut, const unsigned int numParticles) {
@@ -497,6 +503,8 @@ class HartreeFockSolver {
             dirpath = "src/integrals/inputs";
 
             twoBodyFileName = "";
+
+            readFile = true;
 
             m_I = IIn;
 
@@ -588,7 +596,6 @@ class HartreeFockSolver {
                     double diff = (energies - previousEnergies).norm() /
                         sqrtState;
                     energy = groundStateEnergy(energies); 
-                    std::cout << energy << " " << count << std::endl;
 
                     if (diff < eps) {
                         break;
