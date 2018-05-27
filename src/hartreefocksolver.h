@@ -590,7 +590,7 @@ class HartreeFockSolver {
                     setFockMatrix();
                     
                     // perform mixing (for convergence, dont ask why...)
-                    DIIS();
+//                     DIIS();
 
                     // find eigenvalues and eigenvector (HartreeFock-energies
                     // and coefficients respectively)
@@ -600,7 +600,6 @@ class HartreeFockSolver {
                     // find eigenvalues and eigenvectors
                     energies = eigenSolver.eigenvalues();
                     coefficients = eigenSolver.eigenvectors();
-
 
                     // check for convergence with RMS of difference between
                     // previous and current energies 

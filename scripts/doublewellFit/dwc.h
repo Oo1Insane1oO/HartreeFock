@@ -499,10 +499,10 @@ class DWC {
    public:
        DWC(const unsigned int dim) {
            if (dim==2) {
-               C = Eigen::Map<const Eigen::MatrixXd>(m_C2D.data(),120,120).sparseView(1,1e-15);
+               C = Eigen::Map<const Eigen::MatrixXd>(m_C2D.data(),120,120).sparseView(1,1e-8);
                epsDW = Eigen::Map<const Eigen::ArrayXd>(m_epsDW2D.data(),120);
            } else if (dim==3) {
-               C = Eigen::Map<const Eigen::MatrixXd>(m_C3D.data(),120,120).sparseView(1,1e-15);
+               C = Eigen::Map<const Eigen::MatrixXd>(m_C3D.data(),120,120).sparseView(1,1e-8);
                epsDW = Eigen::Map<const Eigen::ArrayXd>(m_epsDW3D.data(),120);
            } // end ifeif
 
