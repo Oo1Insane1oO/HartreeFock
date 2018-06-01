@@ -552,7 +552,7 @@ class HartreeFockSolver {
                 previousEnergies = Eigen::VectorXd::Zero(m_numStates);
                 energies = Eigen::VectorXd::Zero(m_numStates);
 
-                mixMemory = 4;
+                mixMemory = 2;
 
                 FockMatrices = Eigen::Array<Eigen::MatrixXd, Eigen::Dynamic,
                              1>::Constant(mixMemory,
@@ -590,7 +590,7 @@ class HartreeFockSolver {
                     setFockMatrix();
                     
                     // perform mixing (for convergence, dont ask why...)
-//                     DIIS();
+                    DIIS();
 
                     // find eigenvalues and eigenvector (HartreeFock-energies
                     // and coefficients respectively)
@@ -698,7 +698,7 @@ class HartreeFockSolver {
             std::vector<double> tmpCol(m_numStates);
             for (unsigned int p = 0; p < m_numParticles/2; ++p) {
                 for (unsigned int i = 0; i < m_numStates; ++i) {
-                    tmpCol[i] = coefficients(i,p);
+                    tmpCol[i] = coefficients.col(p)(i);
                 } // end fori
                 info["coeffs"].push_back(tmpCol);
             } // end forp

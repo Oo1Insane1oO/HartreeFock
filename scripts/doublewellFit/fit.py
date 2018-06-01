@@ -6,8 +6,9 @@ from scipy.linalg import eigh
 # SPECIALIZED TO OMEGA=1.0
 
 class Fit:
-    def __init__(self, R, dim, basisFile, orderDW=1, perturbAxis=0):
+    def __init__(self, R, w, dim, basisFile, orderDW=1, perturbAxis=0):
         self.R = float(R)
+        self.w = float(w)
         self.dim = int(dim)
 
         self.orderDW = int(orderDW)
@@ -34,8 +35,8 @@ class Fit:
         for i in range(len(self.basisList)):
             for d in range(self.dim):
                 nd = self.basisList[i,d]
-                self.normalizationFactors[i] *= 1.0 / np.sqrt(np.sqrt(np.pi) *\
-                        2**nd * factorial(nd))
+                self.normalizationFactors[i] *= np.sqrt(np.sqrt(self.w) /
+                        (np.sqrt(np.pi) * 2**nd * factorial(nd)))
             # end ford
         # end fori
     # end function setNormalizationFactors
@@ -86,7 +87,7 @@ class Fit:
             return 0.0
         # end if
 
-        return gamma((s+1)/2.)
+        return gamma((s+1)/2.) / np.sqrt(self.w)
     # end function overlapd
 
     def overlapdDW(self, n, m):
@@ -96,7 +97,7 @@ class Fit:
             return 0.0
         # end if
 
-        return gamma((s+self.orderDW+1.)/2.)
+        return gamma((s+self.orderDW+1.)/2.) / np.sqrt(self.w)
     # end function overlapdDW
 
     def ddexpr(self, nd, md, f):
@@ -136,7 +137,7 @@ class Fit:
             res += 1/8. * R**2
         # end if
 
-        return res
+        return res * self.w**2
     # end function potDWElement
 
     def HDWij(self, i, j):
@@ -146,9 +147,9 @@ class Fit:
         if i==j:
             """ kinetic + HO potential part """
             if (self.dim == 2):
-                res += self.basisList[i,-2]
+                res += self.basisList[i,-2] * self.w
             else:
-                res += 3/2. + (self.basisList[i,-2] - 1)
+                res += (3/2. + (self.basisList[i,-2] - 1)) * self.w
         # end if
 
         return res
@@ -224,9 +225,9 @@ class Fit:
             for i in range(n):
                 for j in range(trunc):
                     if ((i==n-1) and (j==trunc-1)):
-                        writeFile.write(str(C[i,j]))
+                        writeFile.write(str(C[j,i]))
                     else:
-                        writeFile.write(str(C[i,j]))
+                        writeFile.write(str(C[j,i]))
                         writeFile.write(", ")
                     # end ifelse
                 # end forj
@@ -247,12 +248,13 @@ if __name__ == "__main__":
 
     try:
         R = float(sys.argv[1])
-        numBasis2D = int(sys.argv[2])
-        numBasis3D = int(sys.argv[3])
-        basisfname2D = sys.argv[4]
-        basisfname3D = sys.argv[5]
+        w = float(sys.argv[2])
+        numBasis2D = int(sys.argv[3])
+        numBasis3D = int(sys.argv[4])
+        basisfname2D = sys.argv[5]
+        basisfname3D = sys.argv[6]
     except IndexError:
-        print "USAGE: python fit.py 'R' 'cutoff 2D' 'cutoff 3D' 'filename 2D' 'filename 3D'"
+        print "USAGE: python fit.py 'R' 'w' 'cutoff 2D' 'cutoff 3D' 'filename 2D' 'filename 3D'"
         sys.exit()
     # end try-except
 
@@ -301,7 +303,7 @@ if __name__ == "__main__":
     # write both 2D and 3D
     # write basis file first
     compileBasis(numBasis2D, 2, basisfname2D)
-    fit = Fit(R, 2, basisfname2D)
+    fit = Fit(R, w, 2, basisfname2D)
     checkFullShell(numBasis2D, fit)
 
     print "\nFinding coefficients 2D..."
@@ -322,9 +324,9 @@ if __name__ == "__main__":
     print "Coefficients matrix 3D:"
     print C3D
 
-    fit.writeToFile(C2D, C3D, e2D, e3D, int(sys.argv[8]), int(sys.argv[9]))
+    fit.writeToFile(C2D, C3D, e2D, e3D, int(sys.argv[9]), int(sys.argv[10]))
 
     if sys.argv[6] and sys.argv[7]:
-        writeEigenValuesToFile(e2D, e3D, sys.argv[6], sys.argv[7])
+        writeEigenValuesToFile(e2D, e3D, sys.argv[7], sys.argv[8])
     # end if
 # end ifmain
